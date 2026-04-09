@@ -11,6 +11,10 @@ async function main() {
   const server = Fastify({
     logger: {
       level: config.log_level,
+      transport:
+        process.env.NODE_ENV !== "production"
+          ? { target: "pino-pretty", options: { translateTime: "SYS:HH:MM:ss.l", ignore: "pid,hostname" } }
+          : undefined,
     },
   });
 
