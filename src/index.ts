@@ -2,6 +2,8 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import "dotenv/config";
 import { loadConfig } from "./config/index.js";
+import { chatCompletionsPlugin } from "./routes/v1/chat-completions.js";
+import { modelsPlugin } from "./routes/v1/models.js";
 
 async function main() {
   const config = loadConfig();
@@ -19,6 +21,10 @@ async function main() {
   });
 
   server.decorate("config", config);
+
+  await server.register(chatCompletionsPlugin);
+
+  await server.register(modelsPlugin);
 
   await server.listen({ port: config.PORT, host: config.HOST });
 }
