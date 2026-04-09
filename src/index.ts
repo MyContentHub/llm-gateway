@@ -4,6 +4,11 @@ import { loadConfig } from "./config/index.js";
 import { chatCompletionsPlugin } from "./routes/v1/chat-completions.js";
 import { embeddingsPlugin } from "./routes/v1/embeddings.js";
 import { modelsPlugin } from "./routes/v1/models.js";
+import createDbPlugin from "./db/index.js";
+import { RateLimiter, createRateLimitMiddleware, createRateLimitResponseHook } from "./middleware/rate-limit.js";
+import { createAuthMiddleware } from "./middleware/auth.js";
+import { adminKeysPlugin } from "./routes/admin/keys.js";
+import "./types.js";
 
 async function main() {
   const config = await loadConfig();
@@ -26,10 +31,24 @@ async function main() {
 
   server.decorate("config", config);
 
-  await server.register(chatCompletionsPlugin);
-  await server.register(embeddingsPlugin);
+  await server.register(createDbPlugin, { databasePath: config.database_path });
 
-  await server.register(modelsPlugin);
+  const rateLimiter = new RateLimiter({ rpm: config.default_rpm, tpm: config.default_tpm, rpd: config.default_rpd });
+  server.decorate("rateLimiter", rateLimiter);
+
+  await server.register(
+    async (v1Scope) => {
+      v1Scope.addHook("onRequest", createAuthMiddleware(server.db));
+      v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
+      v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
+      await v1Scope.register(chatCompletionsPlugin);
+      await v1Scope.register(embeddingsPlugin);
+      await v1Scope.register(modelsPlugin);
+    },
+    { prefix: "/v1" },
+  );
+
+  await server.register(adminKeysPlugin);
 
   await server.listen({ port: config.port, host: config.host });
 }

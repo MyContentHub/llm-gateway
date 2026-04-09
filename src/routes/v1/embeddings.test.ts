@@ -40,6 +40,7 @@ function createServer(): Fastify.FastifyInstance {
     admin_token: "admin-secret-key",
     default_rpm: 60,
     default_tpm: 100000,
+    default_rpd: 1000,
   } satisfies AppConfig);
   server.register(embeddingsPlugin);
   return server;
@@ -185,6 +186,7 @@ describe("POST /v1/embeddings", () => {
       admin_token: "admin-secret-key",
       default_rpm: 60,
       default_tpm: 100000,
+      default_rpd: 1000,
     } satisfies AppConfig);
     server.register(embeddingsPlugin);
 

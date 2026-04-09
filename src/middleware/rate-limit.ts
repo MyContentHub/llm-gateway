@@ -148,3 +148,78 @@ export class RateLimiter {
     return { allowed: true, limit, current, resetAt };
   }
 }
+
+import type { FastifyRequest, FastifyReply, preHandlerAsyncHookHandler, onSendAsyncHookHandler } from "fastify";
+import type { ApiKeyInfo } from "./auth.js";
+
+declare module "fastify" {
+  interface FastifyRequest {
+    rateLimitResult?: RateLimitResult;
+  }
+}
+
+export function createRateLimitMiddleware(rateLimiter: RateLimiter): preHandlerAsyncHookHandler {
+  return async function rateLimitPreHandler(request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const apiKey = request.apiKey as ApiKeyInfo | undefined;
+    if (!apiKey) {
+      return;
+    }
+
+    const result = rateLimiter.check(apiKey.id, 0, apiKey.rateLimits);
+
+    if (!result.allowed) {
+      const retryAfterSec = Math.ceil(result.retryAfterMs! / 1000);
+      reply.header("Retry-After", retryAfterSec);
+      reply.code(429).send({
+        error: {
+          message: `Rate limit exceeded. Please retry after ${result.retryAfterMs}ms.`,
+          type: "rate_limit_error",
+          code: "rate_limit_exceeded",
+        },
+      });
+      return;
+    }
+
+    request.rateLimitResult = result;
+  };
+}
+
+export function createRateLimitResponseHook(rateLimiter: RateLimiter): onSendAsyncHookHandler {
+  return async function rateLimitOnSend(
+    request: FastifyRequest,
+    reply: FastifyReply,
+    payload: unknown,
+  ): Promise<unknown> {
+    const apiKey = request.apiKey as ApiKeyInfo | undefined;
+    if (!apiKey) {
+      return payload;
+    }
+
+    let tokenCount = 0;
+
+    const isStreaming = reply.getHeader("content-type") === "text/event-stream";
+
+    if (!isStreaming && payload && typeof payload === "string") {
+      try {
+        const body = JSON.parse(payload);
+        if (body && typeof body === "object" && body.usage) {
+          const usage = body.usage as { prompt_tokens?: number; completion_tokens?: number };
+          tokenCount = (usage.prompt_tokens ?? 0) + (usage.completion_tokens ?? 0);
+        }
+      } catch {
+        tokenCount = 0;
+      }
+    }
+
+    rateLimiter.record(apiKey.id, tokenCount);
+
+    const result = request.rateLimitResult;
+    if (result) {
+      reply.header("X-RateLimit-Limit", result.limit);
+      reply.header("X-RateLimit-Remaining", result.remaining);
+      reply.header("X-RateLimit-Reset", Math.ceil(result.resetAt / 1000));
+    }
+
+    return payload;
+  };
+}

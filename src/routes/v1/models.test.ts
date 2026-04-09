@@ -18,6 +18,7 @@ function createServer(providers: ProviderConfig[] = []) {
     admin_token: "admin-secret-key",
     default_rpm: 60,
     default_tpm: 100000,
+    default_rpd: 1000,
   });
   server.register(modelsPlugin);
   return server;

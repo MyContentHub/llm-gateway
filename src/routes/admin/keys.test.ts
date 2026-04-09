@@ -31,6 +31,7 @@ function createServer(): Fastify.FastifyInstance {
     admin_token: ADMIN_TOKEN,
     default_rpm: 60,
     default_tpm: 100000,
+    default_rpd: 1000,
   };
 
   server.decorate("config", config);
