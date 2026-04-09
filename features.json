@@ -193,7 +193,7 @@
       "id": "sprint-002",
       "name": "Phase 2 - Auth & Rate Limiting",
       "goal": "Add virtual API Key authentication with argon2 hashing, SQLite persistence, in-memory sliding window rate limiting (RPM/TPM), and admin CRUD endpoints for key management",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-09",
       "features": [
         {
@@ -209,7 +209,7 @@
             "Unit tests verify table creation and basic CRUD operations work"
           ],
           "technical_notes": "Use better-sqlite3 synchronous API (single-threaded, fits Node.js event loop). Register as a Fastify plugin with onClose hook to close the db connection. Migration table tracks applied migrations. Config for db path (default: ./data/gateway.db). Need to add better-sqlite3 and @types/better-sqlite3 to dependencies.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -233,7 +233,7 @@
             "All crypto operations have unit tests including edge cases (empty strings, very long keys)"
           ],
           "technical_notes": "Use Node.js built-in crypto for AES-256-GCM. Use argon2 npm package for hashing (native bindings, faster than pure JS). Master encryption key comes from config.toml [security] section. Export encrypt/decrypt/hash/verify functions. Need to add argon2 to dependencies.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -256,7 +256,7 @@
             "Unit tests cover all CRUD operations with an in-memory SQLite database"
           ],
           "technical_notes": "Use better-sqlite3 prepared statements for performance. Key format: 'gwk_' + 32 random hex chars. LRU cache with TTL (5 min default) for hot key lookups. Cache invalidation on revoke/update. In-memory SQLite (:memory:) for tests.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s2-feat-001", "s2-feat-002"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -280,7 +280,7 @@
             "Unit tests with mock key store verify all auth scenarios"
           ],
           "technical_notes": "Use Fastify onRequest hook. Cache stores { id, name, rateLimits } after successful verification. Cache entry invalidated on revoke. argon2 verify is intentionally slow (~100ms) — cache is critical for performance. Admin routes use a separate static admin token from config.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s2-feat-003"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -305,7 +305,7 @@
             "Unit tests verify all window types and edge cases (burst requests, exactly-at-limit)"
           ],
           "technical_notes": "Use a Map<string, RateLimitState> where each entry stores timestamped request counts. Sliding window: count requests in [now - windowSize, now]. Cleanup: periodically prune entries older than the largest window (24h). No Redis needed — single-node in-memory. Export checkRateLimit(keyId, tokenCount) function.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -328,7 +328,7 @@
             "Integration test with mocked upstream verifies the full auth -> rate limit -> proxy pipeline"
           ],
           "technical_notes": "Use Fastify preHandler hook, runs after auth onRequest hook. Token counting for TPM: non-streaming reads from response.usage; streaming estimates from input tokens only (output unknown until complete). Add rate limit state to request context for downstream use.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s2-feat-004", "s2-feat-005"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -354,7 +354,7 @@
             "All endpoints have integration tests using an in-memory SQLite database"
           ],
           "technical_notes": "Use a separate admin auth middleware checking against config [admin] token. Fastify route registration under /admin prefix. Zod schema for request body validation. The plaintext key is returned ONLY on POST create — never stored, never retrievable again. Use Fastify schema validation for request/response.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s2-feat-003"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -379,7 +379,7 @@
             "All Phase 2 integration tests pass alongside Phase 1 tests with `pnpm test`"
           ],
           "technical_notes": "Extend the existing test helpers (mock-upstream.ts) to support auth headers. Use an in-memory SQLite database for test isolation. Test the full Fastify lifecycle including middleware chain. Verify that Phase 1 routes still work without auth (backward compatibility) if auth is not configured.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s2-feat-006", "s2-feat-007"],
           "estimated_complexity": "medium",
           "files_affected": [
