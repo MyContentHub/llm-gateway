@@ -39,54 +39,47 @@ pnpm install
 
 ### 配置
 
-复制 `.env.example` 为 `.env` 并填入配置：
+复制 `config.example.toml` 为 `config.toml` 并填入配置：
 
 ```bash
-cp .env.example .env
+cp config.example.toml config.toml
 ```
 
-在 `PROVIDERS` 中配置你的 LLM 提供商。支持任何 OpenAI 兼容的 API 端点：
+编辑 `config.toml`，配置你的 LLM 提供商。支持任何 OpenAI 兼容的 API 端点：
 
-```env
-PROVIDERS=[
-  {
-    "name": "zhipuai",
-    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
-    "apiKey": "your-api-key",
-    "isDefault": true,
-    "modelMappings": {
-      "glm-5": "glm-5"
-    }
-  },
-  {
-    "name": "deepseek",
-    "baseUrl": "https://api.deepseek.com/v1",
-    "apiKey": "sk-...",
-    "modelMappings": {
-      "reasoner": "deepseek-reasoner"
-    }
-  },
-  {
-    "name": "openai",
-    "baseUrl": "https://api.openai.com/v1",
-    "apiKey": "sk-...",
-    "modelMappings": {
-      "gpt4": "gpt-4o",
-      "gpt4-mini": "gpt-4o-mini"
-    }
-  }
-]
+```toml
+# Server
+port = 3000
+host = "0.0.0.0"
+log_level = "info"
+
+# Providers
+[[providers]]
+name = "zhipuai"
+baseUrl = "https://open.bigmodel.cn/api/paas/v4"
+apiKey = "your-api-key"
+isDefault = true
+
+[providers.modelMappings]
+glm-5 = "glm-5"
+
+# [[providers]]
+# name = "deepseek"
+# baseUrl = "https://api.deepseek.com/v1"
+# apiKey = "sk-..."
+#
+# [providers.modelMappings]
+# reasoner = "deepseek-reasoner"
+
+# [[providers]]
+# name = "openai"
+# baseUrl = "https://api.openai.com/v1"
+# apiKey = "sk-..."
+#
+# [providers.modelMappings]
+# gpt4 = "gpt-4o"
+# gpt4-mini = "gpt-4o-mini"
 ```
-
-#### 配置说明
-
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| `name` | 是 | 提供商标识名，用于模型列表前缀（如 `zhipuai/glm-5`） |
-| `baseUrl` | 是 | 提供商的 OpenAI 兼容 API 根地址 |
-| `apiKey` | 是 | 提供商的 API Key |
-| `isDefault` | 否 | 设为 `true` 后，未匹配到任何映射的模型会路由到此提供商 |
-| `modelMappings` | 否 | 模型别名映射，key 为对外暴露的名称，value 为提供商的实际模型名 |
 
 #### 模型路由规则
 
@@ -196,18 +189,82 @@ curl http://localhost:3000/v1/models
 
 返回的模型 ID 格式为 `{providerName}/{modelName}`，如 `zhipuai/glm-5`。
 
-## 环境变量参考
+## 配置参考
 
-| 变量 | 默认值 | 说明 |
+所有配置项都在 `config.toml` 中（参考 `config.example.toml`）：
+
+| 字段 | 默认值 | 说明 |
 |------|--------|------|
-| `PORT` | `3000` | 服务端口 |
-| `HOST` | `0.0.0.0` | 监听地址 |
-| `LOG_LEVEL` | `info` | 日志级别：`fatal` / `error` / `warn` / `info` / `debug` / `trace` / `silent` |
-| `PROVIDERS` | `[]` | 提供商配置（JSON 数组） |
-| `DATABASE_PATH` | `./data/gateway.db` | SQLite 数据库路径 |
-| `ENCRYPTION_KEY` | — | 用于加密存储上游 API Key 的密钥（32 位十六进制） |
-| `DEFAULT_RPM` | `60` | 默认每分钟请求限制 |
-| `DEFAULT_TPM` | `100000` | 默认每分钟 Token 限制 |
+| `port` | `3000` | 服务端口 |
+| `host` | `"0.0.0.0"` | 监听地址 |
+| `log_level` | `"info"` | 日志级别：`fatal` / `error` / `warn` / `info` / `debug` / `trace` / `silent` |
+| `database_path` | `"./data/gateway.db"` | SQLite 数据库路径 |
+| `encryption_key` | `""` | 用于加密存储上游 API Key 的密钥（32 位十六进制） |
+| `default_rpm` | `60` | 默认每分钟请求限制 |
+| `default_tpm` | `100000` | 默认每分钟 Token 限制 |
+| `[[providers]]` | — | 提供商配置（可配置多个） |
+
+#### Provider 字段
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| `name` | 是 | 提供商标识名，用于模型列表前缀（如 `zhipuai/glm-5`） |
+| `baseUrl` | 是 | 提供商的 OpenAI 兼容 API 根地址 |
+| `apiKey` | 是 | 提供商的 API Key |
+| `isDefault` | 否 | 设为 `true` 后，未匹配到任何映射的模型会路由到此提供商 |
+| `[providers.modelMappings]` | 否 | 模型别名映射，key 为对外暴露的名称，value 为提供商的实际模型名 |
+
+## 与 OpenCode 配合使用
+
+本网关完全兼容 OpenAI API 格式，可以直接作为 [OpenCode](https://opencode.ai) 的自定义 Provider 使用。
+
+### 方式一：自定义 Provider
+
+在项目根目录创建 `opencode.json`：
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "llm-gateway": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LLM Gateway",
+      "options": {
+        "baseURL": "http://localhost:3000/v1",
+        "apiKey": "unused"
+      },
+      "models": {
+        "glm-5": {
+          "name": "GLM-5"
+        }
+      }
+    }
+  },
+  "model": "llm-gateway/glm-5"
+}
+```
+
+### 方式二：覆写 Z.AI 内置 Provider
+
+OpenCode 已内置 Z.AI（智谱）支持，可以直接将 `baseURL` 指向本网关：
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "zai": {
+      "options": {
+        "baseURL": "http://localhost:3000/v1"
+      }
+    }
+  },
+  "model": "zai/glm-5"
+}
+```
+
+使用此方式需先通过 `/connect` 命令配置 Z.AI 的 API Key（或设置 `ZAI_API_KEY` 环境变量），该 Key 会通过网关透传到智谱 AI。
+
+> 无论哪种方式，都需要先启动网关服务（`pnpm dev`），OpenCode 的所有请求将通过网关路由到后端 LLM 提供商。
 
 ## 文档
 

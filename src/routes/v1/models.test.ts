@@ -9,14 +9,14 @@ const originalFetch = globalThis.fetch;
 function createServer(providers: ProviderConfig[] = []) {
   const server = Fastify({ logger: false });
   server.decorate("config", {
-    PROVIDERS: providers,
-    PORT: 3000,
-    HOST: "0.0.0.0",
-    LOG_LEVEL: "silent",
-    DATABASE_PATH: "./test.db",
-    ENCRYPTION_KEY: "",
-    DEFAULT_RPM: 60,
-    DEFAULT_TPM: 100000,
+    providers: providers,
+    port: 3000,
+    host: "0.0.0.0",
+    log_level: "silent",
+    database_path: "./test.db",
+    encryption_key: "",
+    default_rpm: 60,
+    default_tpm: 100000,
   });
   server.register(modelsPlugin);
   return server;

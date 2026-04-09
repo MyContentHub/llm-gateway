@@ -16,12 +16,12 @@ afterEach(() => {
 function createServer(): Fastify.FastifyInstance {
   const server = Fastify({ logger: false });
   server.decorate("config", {
-    PORT: 3000,
-    HOST: "0.0.0.0",
-    LOG_LEVEL: "silent",
-    DATABASE_PATH: "./data/gateway.db",
-    ENCRYPTION_KEY: "",
-    PROVIDERS: [
+    port: 3000,
+    host: "0.0.0.0",
+    log_level: "silent",
+    database_path: "./data/gateway.db",
+    encryption_key: "",
+    providers: [
       {
         name: "openai",
         baseUrl: "https://api.openai.com/v1",
@@ -37,8 +37,8 @@ function createServer(): Fastify.FastifyInstance {
         isDefault: false,
       },
     ],
-    DEFAULT_RPM: 60,
-    DEFAULT_TPM: 100000,
+    default_rpm: 60,
+    default_tpm: 100000,
   } satisfies AppConfig);
   server.register(embeddingsPlugin);
   return server;
@@ -175,14 +175,14 @@ describe("POST /v1/embeddings", () => {
   it("returns 404 when no provider matches and no default exists", async () => {
     const server = Fastify({ logger: false });
     server.decorate("config", {
-      PORT: 3000,
-      HOST: "0.0.0.0",
-      LOG_LEVEL: "silent",
-      DATABASE_PATH: "./data/gateway.db",
-      ENCRYPTION_KEY: "",
-      PROVIDERS: [],
-      DEFAULT_RPM: 60,
-      DEFAULT_TPM: 100000,
+      port: 3000,
+      host: "0.0.0.0",
+      log_level: "silent",
+      database_path: "./data/gateway.db",
+      encryption_key: "",
+      providers: [],
+      default_rpm: 60,
+      default_tpm: 100000,
     } satisfies AppConfig);
     server.register(embeddingsPlugin);
 

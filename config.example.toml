@@ -1,0 +1,41 @@
+# Server
+port = 3000
+host = "0.0.0.0"
+log_level = "info"
+
+# Database
+database_path = "./data/gateway.db"
+
+# Encryption key for storing upstream API keys (32 hex chars = 128-bit)
+encryption_key = ""
+
+# Rate limits
+default_rpm = 60
+default_tpm = 100000
+
+# Providers
+[[providers]]
+name = "zhipuai"
+baseUrl = "https://open.bigmodel.cn/api/paas/v4"
+apiKey = "your-api-key"
+isDefault = true
+
+[providers.modelMappings]
+glm-5 = "glm-5"
+
+# [[providers]]
+# name = "deepseek"
+# baseUrl = "https://api.deepseek.com/v1"
+# apiKey = "sk-..."
+#
+# [providers.modelMappings]
+# reasoner = "deepseek-reasoner"
+
+# [[providers]]
+# name = "openai"
+# baseUrl = "https://api.openai.com/v1"
+# apiKey = "sk-..."
+#
+# [providers.modelMappings]
+# gpt4 = "gpt-4o"
+# gpt4-mini = "gpt-4o-mini"

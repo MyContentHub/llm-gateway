@@ -11,15 +11,15 @@ importers:
       '@fastify/cors':
         specifier: ^11.2.0
         version: 11.2.0
-      dotenv:
-        specifier: ^17.4.1
-        version: 17.4.1
       eventsource-parser:
         specifier: ^3.0.6
         version: 3.0.6
       fastify:
         specifier: ^5.8.4
         version: 5.8.4
+      smol-toml:
+        specifier: ^1.6.1
+        version: 1.6.1
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -423,10 +423,6 @@ packages:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
 
-  dotenv@17.4.1:
-    resolution: {integrity: sha512-k8DaKGP6r1G30Lx8V4+pCsLzKr8vLmV2paqEj1Y55GdAgJuIqpRp5FfajGF8KtwMxCz9qJc6wUIJnm053d/WCw==}
-    engines: {node: '>=12'}
-
   es-module-lexer@2.0.0:
     resolution: {integrity: sha512-5POEcUuZybH7IdmGsD8wlf0AI55wMecM9rVBTI/qEAy2c1kTOm3DjFYjrBdI2K3BaJjJYfYFeRtM0t9ssnRuxw==}
 
@@ -670,6 +666,10 @@ packages:
 
   siginfo@2.0.0:
     resolution: {integrity: sha512-ybx0WO1/8bSBLEWXZvEd7gMW3Sn3JFlW3TvX1nREbDLRNQNaeNN8WK0meBwPdAaOI7TtRRRJn/Es1zhrrCHu7g==}
+
+  smol-toml@1.6.1:
+    resolution: {integrity: sha512-dWUG8F5sIIARXih1DTaQAX4SsiTXhInKf1buxdY9DIg4ZYPZK5nGM1VRIYmEbDbsHt7USo99xSLFu5Q1IqTmsg==}
+    engines: {node: '>= 18'}
 
   sonic-boom@4.2.1:
     resolution: {integrity: sha512-w6AxtubXa2wTXAUsZMMWERrsIRAdrK0Sc+FUytWvYAhBJLyuI4llrMIC1DtlNSdI99EI86KZum2MMq3EAZlF9Q==}
@@ -1100,8 +1100,6 @@ snapshots:
 
   detect-libc@2.1.2: {}
 
-  dotenv@17.4.1: {}
-
   es-module-lexer@2.0.0: {}
 
   esbuild@0.27.7:
@@ -1358,6 +1356,8 @@ snapshots:
   set-cookie-parser@2.7.2: {}
 
   siginfo@2.0.0: {}
+
+  smol-toml@1.6.1: {}
 
   sonic-boom@4.2.1:
     dependencies:

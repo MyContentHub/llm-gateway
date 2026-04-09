@@ -4,7 +4,7 @@
 
 LLM API security proxy gateway — intercepts, scans, and audits all OpenAI-compatible API requests.
 
-**Status**: Design phase only. No source code yet. See `docs/DESIGN.md` for the full architecture plan.
+**Status**: Phase 1 (core proxy) implemented. See `docs/DESIGN.md` for the full architecture plan.
 
 ## Tech Stack (from design)
 
@@ -14,6 +14,7 @@ LLM API security proxy gateway — intercepts, scans, and audits all OpenAI-comp
 - **Package manager**: pnpm 10 (`packageManager` field in `package.json`)
 - **Database**: better-sqlite3 (single-file, zero-ops)
 - **Testing**: vitest
+- **Configuration**: TOML (`config.toml` + `smol-toml`) — all settings in one file, no `.env`
 - **Validation**: zod
 - **Logging**: pino (structured JSON, Fastify default)
 - **Metrics**: prom-client (Prometheus export)
@@ -38,7 +39,7 @@ Client → [Auth] → [Rate Limit] → [PII Redact] → [Content Filter] → [Ro
 ```
 src/
   index.ts              # Fastify entrypoint
-  config/               # zod env + config parsing, provider registration
+  config/               # TOML config parsing with zod validation, provider registration
   routes/v1/            # chat-completions, completions, embeddings, models
   routes/admin/         # virtual Key CRUD, audit log queries
   middleware/            # auth, rate-limit, request-context
@@ -60,13 +61,15 @@ migrations/
 
 ## Commands
 
-No commands exist yet. Once source code is added, expected commands:
-
 ```bash
 pnpm install          # install dependencies
-pnpm dev              # dev server (to be created)
-pnpm test             # run tests with vitest (to be configured)
-pnpm build            # TypeScript compile (to be configured)
+pnpm dev              # dev server (tsx watch)
+pnpm test             # run tests with vitest
+pnpm test:watch       # run tests in watch mode
+pnpm test:coverage    # run tests with coverage
+pnpm build            # TypeScript compile
+pnpm typecheck        # TypeScript type check (no emit)
+pnpm lint             # ESLint
 ```
 
 ## Conventions

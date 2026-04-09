@@ -1,7 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { loadConfig, getDefaultProvider, resolveModel, AppConfigSchema } from "./index.js";
 
-const validProviders = JSON.stringify([
+const validProviders = [
   {
     name: "openai",
     baseUrl: "https://api.openai.com/v1",
@@ -14,103 +14,58 @@ const validProviders = JSON.stringify([
     baseUrl: "https://api.deepseek.com/v1",
     apiKey: "sk-deepseek",
   },
-]);
+];
 
 describe("loadConfig", () => {
-  it("parses valid config with all fields", () => {
-    const config = loadConfig({
-      PORT: "8080",
-      HOST: "127.0.0.1",
-      LOG_LEVEL: "debug",
-      DATABASE_PATH: "./test.db",
-      ENCRYPTION_KEY: "abc123",
-      PROVIDERS: validProviders,
-      DEFAULT_RPM: "120",
-      DEFAULT_TPM: "200000",
-    });
+  it("parses valid config from toml file", async () => {
+    const config = await loadConfig("config.example.toml");
 
-    expect(config.PORT).toBe(8080);
-    expect(config.HOST).toBe("127.0.0.1");
-    expect(config.LOG_LEVEL).toBe("debug");
-    expect(config.DATABASE_PATH).toBe("./test.db");
-    expect(config.ENCRYPTION_KEY).toBe("abc123");
-    expect(config.PROVIDERS).toHaveLength(2);
-    expect(config.DEFAULT_RPM).toBe(120);
-    expect(config.DEFAULT_TPM).toBe(200000);
+    expect(config.port).toBe(3000);
+    expect(config.host).toBe("0.0.0.0");
+    expect(config.log_level).toBe("info");
+    expect(config.database_path).toBe("./data/gateway.db");
+    expect(config.providers).toHaveLength(1);
+    expect(config.default_rpm).toBe(60);
+    expect(config.default_tpm).toBe(100000);
   });
 
-  it("applies default values when fields are missing", () => {
-    const config = loadConfig({});
+  it("applies default values when config file is missing", async () => {
+    const config = await loadConfig("nonexistent.toml");
 
-    expect(config.PORT).toBe(3000);
-    expect(config.HOST).toBe("0.0.0.0");
-    expect(config.LOG_LEVEL).toBe("info");
-    expect(config.DATABASE_PATH).toBe("./data/gateway.db");
-    expect(config.PROVIDERS).toEqual([]);
-    expect(config.DEFAULT_RPM).toBe(60);
-    expect(config.DEFAULT_TPM).toBe(100000);
+    expect(config.port).toBe(3000);
+    expect(config.host).toBe("0.0.0.0");
+    expect(config.log_level).toBe("info");
+    expect(config.database_path).toBe("./data/gateway.db");
+    expect(config.providers).toEqual([]);
+    expect(config.default_rpm).toBe(60);
+    expect(config.default_tpm).toBe(100000);
   });
 
-  it("parses provider model mappings correctly", () => {
-    const config = loadConfig({ PROVIDERS: validProviders });
+  it("parses provider model mappings correctly", async () => {
+    const config = await loadConfig("config.example.toml");
 
-    expect(config.PROVIDERS[0].modelMappings).toEqual({ gpt4: "gpt-4o" });
-    expect(config.PROVIDERS[1].modelMappings).toEqual({});
-  });
-
-  it("coerces PORT from string to number", () => {
-    const config = loadConfig({ PORT: "4000" });
-    expect(config.PORT).toBe(4000);
-  });
-
-  it("throws on invalid LOG_LEVEL", () => {
-    expect(() => loadConfig({ LOG_LEVEL: "verbose" })).toThrow();
-  });
-
-  it("throws on invalid PROVIDERS JSON", () => {
-    expect(() => loadConfig({ PROVIDERS: "not-json" })).toThrow();
-  });
-
-  it("throws when provider is missing required fields", () => {
-    const badProviders = JSON.stringify([{ name: "openai" }]);
-    expect(() => loadConfig({ PROVIDERS: badProviders })).toThrow();
-  });
-
-  it("throws when provider baseUrl is not a URL", () => {
-    const badProviders = JSON.stringify([
-      { name: "bad", baseUrl: "not-a-url", apiKey: "key" },
-    ]);
-    expect(() => loadConfig({ PROVIDERS: badProviders })).toThrow();
-  });
-
-  it("throws on non-integer PORT", () => {
-    expect(() => loadConfig({ PORT: "3.14" })).toThrow();
-  });
-
-  it("allows empty providers array", () => {
-    const config = loadConfig({ PROVIDERS: "[]" });
-    expect(config.PROVIDERS).toEqual([]);
+    expect(config.providers[0].modelMappings).toEqual({ "glm-5": "glm-5" });
   });
 });
 
 describe("getDefaultProvider", () => {
   it("returns the provider marked isDefault", () => {
-    const config = loadConfig({ PROVIDERS: validProviders });
+    const config = AppConfigSchema.parse({ providers: validProviders });
     const provider = getDefaultProvider(config);
     expect(provider?.name).toBe("openai");
   });
 
   it("returns first provider when none is marked default", () => {
-    const providers = JSON.stringify([
+    const providers = [
       { name: "a", baseUrl: "https://a.com/v1", apiKey: "k1" },
       { name: "b", baseUrl: "https://b.com/v1", apiKey: "k2", isDefault: true },
-    ]);
-    const config = loadConfig({ PROVIDERS: providers });
+    ];
+    const config = AppConfigSchema.parse({ providers });
     expect(getDefaultProvider(config)?.name).toBe("b");
   });
 
   it("returns undefined when no providers configured", () => {
-    const config = loadConfig({});
+    const config = AppConfigSchema.parse({});
     expect(getDefaultProvider(config)).toBeUndefined();
   });
 });
@@ -136,16 +91,39 @@ describe("resolveModel", () => {
 describe("AppConfigSchema type inference", () => {
   it("infers correct types from schema", () => {
     const parsed = AppConfigSchema.parse({
-      PORT: "3000",
-      PROVIDERS: JSON.stringify([
+      port: 3000,
+      providers: [
         { name: "test", baseUrl: "https://test.com/v1", apiKey: "key" },
-      ]),
+      ],
     });
 
-    expect(typeof parsed.PORT).toBe("number");
-    expect(Array.isArray(parsed.PROVIDERS)).toBe(true);
-    expect(parsed.PROVIDERS[0].name).toBe("test");
-    expect(parsed.PROVIDERS[0].isDefault).toBe(false);
-    expect(parsed.PROVIDERS[0].modelMappings).toEqual({});
+    expect(typeof parsed.port).toBe("number");
+    expect(Array.isArray(parsed.providers)).toBe(true);
+    expect(parsed.providers[0].name).toBe("test");
+    expect(parsed.providers[0].isDefault).toBe(false);
+    expect(parsed.providers[0].modelMappings).toEqual({});
+  });
+
+  it("throws when provider is missing required fields", () => {
+    expect(() =>
+      AppConfigSchema.parse({ providers: [{ name: "openai" }] }),
+    ).toThrow();
+  });
+
+  it("throws when provider baseUrl is not a URL", () => {
+    expect(() =>
+      AppConfigSchema.parse({
+        providers: [{ name: "bad", baseUrl: "not-a-url", apiKey: "key" }],
+      }),
+    ).toThrow();
+  });
+
+  it("throws on invalid log_level", () => {
+    expect(() => AppConfigSchema.parse({ log_level: "verbose" })).toThrow();
+  });
+
+  it("allows empty providers array", () => {
+    const config = AppConfigSchema.parse({ providers: [] });
+    expect(config.providers).toEqual([]);
   });
 });

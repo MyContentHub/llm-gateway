@@ -38,7 +38,7 @@ async function fetchProviderModels(
 const modelsPlugin: FastifyPluginCallback = (server, _opts, done) => {
   server.get("/v1/models", async (_request, reply) => {
     const config = server.config;
-    const providers = config.PROVIDERS;
+    const providers = config.providers;
 
     if (providers.length === 0) {
       return reply.send({

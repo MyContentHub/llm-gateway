@@ -142,16 +142,16 @@ export async function createGateway(
     ...(options?.extraProviders ?? []),
   ];
 
-  const config = {
-    PORT: 3000,
-    HOST: "127.0.0.1",
-    LOG_LEVEL: "silent",
-    DATABASE_PATH: "./data/gateway.db",
-    ENCRYPTION_KEY: "",
-    PROVIDERS: providers,
-    DEFAULT_RPM: 60,
-    DEFAULT_TPM: 100000,
-  } satisfies AppConfig;
+  const config: AppConfig = {
+    port: 3000,
+    host: "127.0.0.1",
+    log_level: "silent",
+    database_path: "./data/gateway.db",
+    encryption_key: "",
+    providers: providers as AppConfig["providers"],
+    default_rpm: 60,
+    default_tpm: 100000,
+  };
 
   const gateway = Fastify({ logger: false });
   gateway.decorate("config", config);

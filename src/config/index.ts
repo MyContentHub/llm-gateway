@@ -1,36 +1,41 @@
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import TOML from "smol-toml";
 import { z } from "zod";
 import { ProviderSchema } from "./providers.js";
 import type { ProviderConfig } from "./providers.js";
 
 export const AppConfigSchema = z.object({
-  PORT: z.coerce.number().int().positive().default(3000),
-  HOST: z.string().default("0.0.0.0"),
-  LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
-  DATABASE_PATH: z.string().default("./data/gateway.db"),
-  ENCRYPTION_KEY: z.string().optional().default(""),
-  PROVIDERS: z.preprocess(
-    (val) => {
-      const str = typeof val === "string" ? val : "[]";
-      try {
-        return JSON.parse(str);
-      } catch {
-        throw new Error("PROVIDERS must be a valid JSON string");
-      }
-    },
-    z.array(ProviderSchema),
-  ),
-  DEFAULT_RPM: z.coerce.number().int().positive().default(60),
-  DEFAULT_TPM: z.coerce.number().int().positive().default(100000),
+  port: z.number().int().positive().default(3000),
+  host: z.string().default("0.0.0.0"),
+  log_level: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
+  database_path: z.string().default("./data/gateway.db"),
+  encryption_key: z.string().optional().default(""),
+  providers: z.array(ProviderSchema).default([]),
+  default_rpm: z.number().int().positive().default(60),
+  default_tpm: z.number().int().positive().default(100000),
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;
 
-export function loadConfig(env?: Record<string, string | undefined>): AppConfig {
-  return AppConfigSchema.parse(env ?? process.env);
+const DEFAULT_CONFIG_PATH = "config.toml";
+
+export async function loadConfig(configPath?: string): Promise<AppConfig> {
+  const resolvedPath = resolve(configPath ?? DEFAULT_CONFIG_PATH);
+
+  let raw: string;
+  try {
+    raw = await readFile(resolvedPath, "utf-8");
+  } catch {
+    raw = "";
+  }
+
+  const parsed = raw ? TOML.parse(raw) : {};
+  return AppConfigSchema.parse(parsed);
 }
 
 export function getDefaultProvider(config: AppConfig): ProviderConfig | undefined {
-  return config.PROVIDERS.find((p) => p.isDefault) ?? config.PROVIDERS[0];
+  return config.providers.find((p) => p.isDefault) ?? config.providers[0];
 }
 
 export function resolveModel(provider: ProviderConfig, model: string): string {

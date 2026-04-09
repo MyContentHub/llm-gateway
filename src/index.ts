@@ -1,24 +1,23 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
-import "dotenv/config";
 import { loadConfig } from "./config/index.js";
 import { chatCompletionsPlugin } from "./routes/v1/chat-completions.js";
 import { embeddingsPlugin } from "./routes/v1/embeddings.js";
 import { modelsPlugin } from "./routes/v1/models.js";
 
 async function main() {
-  const config = loadConfig();
+  const config = await loadConfig();
 
   const server = Fastify({
     logger: {
-      level: config.LOG_LEVEL,
+      level: config.log_level,
     },
   });
 
   await server.register(cors, { origin: true });
 
   server.get("/health", async () => {
-    return { status: "ok", providers: config.PROVIDERS.length };
+    return { status: "ok", providers: config.providers.length };
   });
 
   server.decorate("config", config);
@@ -28,7 +27,7 @@ async function main() {
 
   await server.register(modelsPlugin);
 
-  await server.listen({ port: config.PORT, host: config.HOST });
+  await server.listen({ port: config.port, host: config.host });
 }
 
 main().catch((err) => {

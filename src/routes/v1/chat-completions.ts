@@ -30,7 +30,7 @@ const chatCompletionsPlugin: FastifyPluginCallback = (server, _opts, done) => {
 
     let route;
     try {
-      route = resolveRoute(body.model, config.PROVIDERS);
+      route = resolveRoute(body.model, config.providers);
     } catch (err) {
       if (err instanceof RouteError) {
         return reply.code(err.statusCode).send({
