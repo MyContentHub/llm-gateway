@@ -4,29 +4,66 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 ---
 
-## Session Template
+## Sprint Planning - 2026-04-09
+**Agent**: Sprint Agent
+**Sprint**: sprint-002 - Phase 2: Auth & Rate Limiting
 
-```markdown
-## Session N - YYYY-MM-DD
-**Agent**: Sprint | Coding
-**Sprint**: [Sprint ID if applicable]
-**Feature**: [Feature ID if applicable]
+### Requirements Received
+- Based on DESIGN.md Phase 2: Add authentication and rate limiting to the proxy
+- Virtual API Key system with SQLite + argon2 hashing
+- Request authentication middleware with LRU cache
+- In-memory sliding window rate limiting (RPM/TPM/RPD)
+- Admin API for virtual key CRUD management
 
-### Work Completed
-- [What was implemented or done]
+### Features Planned
+- Total: 8 features
+- High priority: 7 (s2-feat-001 through s2-feat-007)
+- Medium priority: 1 (s2-feat-008)
+- Low priority: 0
 
-### Tests Performed
-- [How changes were verified]
+### Sprint Goal
+Add virtual API Key authentication with argon2 hashing, SQLite persistence, in-memory sliding window rate limiting (RPM/TPM), and admin CRUD endpoints for key management.
 
-### Issues Encountered
-- [Any blockers, bugs, or challenges]
+### Implementation Order
+1. s2-feat-001 - SQLite database initialization + migration (infra) - medium
+2. s2-feat-002 - Crypto utilities AES-256-GCM + argon2 (infra) - medium
+3. s2-feat-003 - Virtual API Key storage layer (data) - medium
+4. s2-feat-004 - Request authentication middleware (auth) - medium
+5. s2-feat-005 - In-memory sliding window rate limiter (auth) - medium
+6. s2-feat-006 - Rate limit middleware integration (auth) - medium
+7. s2-feat-007 - Admin API - Virtual Key CRUD (api) - medium
+8. s2-feat-008 - Phase 2 integration tests (infra) - medium
 
-### Decisions Made
-- [Architectural or design choices]
+### Dependencies
+- s2-feat-003 depends on s2-feat-001, s2-feat-002
+- s2-feat-004 depends on s2-feat-003
+- s2-feat-006 depends on s2-feat-004, s2-feat-005
+- s2-feat-007 depends on s2-feat-003
+- s2-feat-008 depends on s2-feat-006, s2-feat-007
+- No blockers for: s2-feat-001, s2-feat-002, s2-feat-005 (can start in parallel)
 
-### Next Steps
-- [Recommended next actions]
-```
+### Parallelization Opportunities
+- Batch 1: s2-feat-001 + s2-feat-002 + s2-feat-005 (no dependencies, different files)
+- Batch 2: s2-feat-003 (depends on 001 + 002)
+- Batch 3: s2-feat-004 + s2-feat-007 (both depend on 003, no file conflicts)
+- Batch 4: s2-feat-006 (depends on 004 + 005)
+- Batch 5: s2-feat-008 (depends on 006 + 007)
+
+### Technical Decisions
+- argon2id for key hashing (native bindings via argon2 npm package)
+- AES-256-GCM for upstream key encryption (Node.js built-in crypto)
+- LRU cache with TTL for auth middleware to avoid argon2 on every request (~100ms cost)
+- In-memory sliding window for rate limiting (no Redis — single-node deployment)
+- Admin auth uses separate static token from config, not virtual keys
+- Key format: 'gwk_' + 32 hex chars (identifiable prefix for gateway keys)
+- SQLite file path configurable, default: ./data/gateway.db
+- New dependencies needed: better-sqlite3, @types/better-sqlite3, argon2
+
+### Notes
+- Phase 1 sprint (sprint-001) archived — all 8 features completed with 81 tests
+- Phase 2 middleware chain: Auth (onRequest) → Rate Limit (preHandler) → Proxy forwarding
+- Auth is optional in config — when no keys exist, all requests pass through (backward compat)
+- Admin routes use their own auth middleware, separate from /v1/* auth
 
 ---
 
@@ -55,26 +92,6 @@ This file tracks the progress of all agent sessions. Each session should add an 
 - Blocked: 0
 - Success rate: 100%
 - Total tests: 81 passing
-
-### Execution Batches
-- Batch 1: s1-feat-001 (sequential — no deps satisfied)
-- Batch 2: s1-feat-002 (sequential — depends on 001)
-- Batch 3: s1-feat-003 (sequential — depends on 002)
-- Batch 4: s1-feat-004 + s1-feat-006 (parallel — no file conflicts)
-- Batch 5: s1-feat-005 then s1-feat-007 (sequential — file conflict on forwarder.ts)
-- Batch 6: s1-feat-008 (sequential — depends on 005, 006, 007)
-
-### Files Created
-- src/index.ts — Fastify entrypoint with health check
-- src/config/index.ts, src/config/providers.ts — Zod config system
-- src/proxy/router.ts — Model-to-provider routing
-- src/proxy/forwarder.ts — Generic proxy forwarder (streaming + non-streaming)
-- src/proxy/sse-parser.ts — SSE TransformStream with eventsource-parser
-- src/routes/v1/chat-completions.ts — Chat completions (streaming + non-streaming)
-- src/routes/v1/models.ts — Models aggregation
-- src/routes/v1/embeddings.ts — Embeddings passthrough
-- tests/helpers/mock-upstream.ts — Mock upstream helper
-- tests/integration/*.test.ts — E2E integration tests
 
 ### Next Steps
 - Sprint-001 (Phase 1) is COMPLETE

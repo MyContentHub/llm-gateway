@@ -3,7 +3,7 @@
     "name": "LLM Gateway",
     "description": "LLM API security proxy gateway — intercepts, scans, and audits all OpenAI-compatible API requests",
     "tech_stack": [
-      "Node.js 20+",
+      "Node.js 22+ (LTS)",
       "Fastify 5",
       "TypeScript 5 (strict)",
       "better-sqlite3",
@@ -20,7 +20,7 @@
   "sprints": [
     {
       "id": "sprint-001",
-      "name": "Phase 1: Core Proxy MVP",
+      "name": "Phase 1 - Core Proxy MVP",
       "goal": "Build a working OpenAI-compatible proxy that forwards chat completions (non-streaming + streaming SSE), embeddings, and models requests to upstream providers, driven by config-based routing",
       "status": "completed",
       "created_at": "2026-04-09",
@@ -37,7 +37,7 @@
             "Vitest test runner executes (even with 0 tests)",
             "Directory structure matches DESIGN.md layout"
           ],
-          "technical_notes": "Use pnpm 10, tsx for dev runtime, tsc for build. Fastify register pattern for route organization. Add .env.example with placeholder vars.",
+          "technical_notes": "Use pnpm 10, tsx for dev runtime, tsc for build. Fastify register pattern for route organization.",
           "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
@@ -45,30 +45,27 @@
             "package.json",
             "tsconfig.json",
             "vitest.config.ts",
-            "src/index.ts",
-            ".env.example"
+            "src/index.ts"
           ]
         },
         {
           "id": "s1-feat-002",
           "category": "infra",
           "priority": "high",
-          "title": "Configuration system (zod + .env)",
-          "description": "Implement config parsing with zod: read .env and optional config file, validate provider definitions (name, baseUrl, apiKey, model aliases). Export typed config object for use across the app.",
+          "title": "Configuration system (zod + TOML)",
+          "description": "Implement config parsing with zod + smol-toml: read config.toml, validate provider definitions (name, baseUrl, apiKey, model aliases). Export typed config object for use across the app.",
           "acceptance_criteria": [
-            "Given a valid .env with PROVIDERS config, when the app starts, then config is parsed into a typed object",
+            "Given a valid config.toml with providers, when the app starts, then config is parsed into a typed object",
             "Given an invalid config (missing required field), when the app starts, then it exits with a clear zod error message",
-            "Provider entries contain: name, baseUrl, apiKey, modelMappings (alias -> real model name)",
-            ".env.example documents all config variables"
+            "Provider entries contain: name, baseUrl, apiKey, modelMappings (alias -> real model name)"
           ],
-          "technical_notes": "Use dotenv for .env loading. Define zod schema for PORT, LOG_LEVEL, PROVIDERS (JSON string or separate vars). Provider config is the foundation for routing.",
+          "technical_notes": "Use smol-toml for TOML parsing. Define zod schema for PORT, LOG_LEVEL, PROVIDERS. Provider config is the foundation for routing.",
           "status": "completed",
           "dependencies": ["s1-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
             "src/config/index.ts",
-            "src/config/providers.ts",
-            ".env.example"
+            "src/config/providers.ts"
           ]
         },
         {
@@ -80,10 +77,9 @@
           "acceptance_criteria": [
             "Given a request for model 'gpt-4o' which maps to provider 'openai', when routing, then the correct baseUrl and apiKey are returned",
             "Given a request for an aliased model 'fast-chat' mapped to 'claude-3-haiku', when routing, then the resolved model name is 'claude-3-haiku' on the mapped provider",
-            "Given a model not in any mapping, when a default provider is configured, then it routes to the default provider with the original model name",
             "Given no matching provider and no default, when routing, then return a 404-style error"
           ],
-          "technical_notes": "Pure function, no I/O. Config-driven: router reads from the parsed provider config. This is the backbone for all proxy routes.",
+          "technical_notes": "Pure function, no I/O. Config-driven: router reads from the parsed provider config.",
           "status": "completed",
           "dependencies": ["s1-feat-002"],
           "estimated_complexity": "small",
@@ -100,10 +96,9 @@
           "acceptance_criteria": [
             "Given a valid chat completions request with stream:false, when proxied, then the upstream response is returned to the client with identical JSON structure",
             "Given the upstream returns an error (4xx/5xx), when proxied, then the error is forwarded with correct status code and OpenAI error format",
-            "Given a request with a model alias, when proxied, then the model name is resolved before forwarding",
-            "Response includes correct Content-Type and timing headers"
+            "Given a request with a model alias, when proxied, then the model name is resolved before forwarding"
           ],
-          "technical_notes": "Use native fetch for upstream calls. This is the baseline proxy before adding streaming complexity. Keep forwarder generic — it should work for any OpenAI-compatible endpoint.",
+          "technical_notes": "Use native fetch for upstream calls. Keep forwarder generic for reuse across endpoints.",
           "status": "completed",
           "dependencies": ["s1-feat-003"],
           "estimated_complexity": "medium",
@@ -117,15 +112,13 @@
           "category": "api",
           "priority": "high",
           "title": "Streaming SSE chat completions proxy",
-          "description": "Extend the chat completions proxy to support stream:true. Implement SSE parsing with eventsource-parser via Web Streams TransformStream, handling partial line buffering across TCP packets and the data: [DONE] special case. Relay SSE chunks to the client in real-time.",
+          "description": "Extend the chat completions proxy to support stream:true. Implement SSE parsing with eventsource-parser via Web Streams TransformStream, handling partial line buffering across TCP packets and the data: [DONE] special case.",
           "acceptance_criteria": [
             "Given a chat completions request with stream:true, when proxied, then SSE chunks are relayed to the client in real-time with correct content-type: text/event-stream",
             "Given partial TCP packets, when the SSE parser buffers, then lines are correctly reassembled before processing",
-            "Given 'data: [DONE]' from upstream, when parsed, then it is forwarded as-is and the stream closes cleanly",
-            "Given an upstream error mid-stream, when it occurs, then an SSE error event is sent to the client before closing",
-            "Streaming latency overhead is < 5ms compared to direct upstream connection"
+            "Given 'data: [DONE]' from upstream, when parsed, then it is forwarded as-is and the stream closes cleanly"
           ],
-          "technical_notes": "This is the core technical challenge per DESIGN.md. Use TransformStream with a line buffer. Parse with eventsource-parser. The transform hook point is where PII scanning will plug in later (Phase 3).",
+          "technical_notes": "Core technical challenge per DESIGN.md. TransformStream design should anticipate PII scanning hooks (Phase 3).",
           "status": "completed",
           "dependencies": ["s1-feat-004"],
           "estimated_complexity": "large",
@@ -140,13 +133,12 @@
           "category": "api",
           "priority": "medium",
           "title": "/v1/models passthrough",
-          "description": "Implement GET /v1/models that forwards to the upstream provider. Aggregate models from all configured providers, prefixing with provider name or returning a unified list.",
+          "description": "Implement GET /v1/models that forwards to the upstream provider. Aggregate models from all configured providers.",
           "acceptance_criteria": [
             "Given a GET /v1/models request, when proxied, then a list of available models is returned in OpenAI format",
-            "Given multiple providers configured, when models are listed, then models from all providers are included",
-            "Response matches OpenAI /v1/models response schema (object with 'data' array of model objects)"
+            "Given multiple providers configured, when models are listed, then models from all providers are included"
           ],
-          "technical_notes": "Can aggregate from multiple providers or just proxy to a single default. Keep it simple for MVP — aggregate is preferred but single-provider passthrough is acceptable.",
+          "technical_notes": "Aggregate from all providers. Response matches OpenAI /v1/models schema.",
           "status": "completed",
           "dependencies": ["s1-feat-003"],
           "estimated_complexity": "small",
@@ -159,13 +151,12 @@
           "category": "api",
           "priority": "medium",
           "title": "/v1/embeddings passthrough",
-          "description": "Implement POST /v1/embeddings that forwards embedding requests to the upstream provider. Similar pattern to non-streaming chat completions but for the embeddings endpoint.",
+          "description": "Implement POST /v1/embeddings that forwards embedding requests to the upstream provider.",
           "acceptance_criteria": [
             "Given a valid embeddings request, when proxied, then the upstream response is returned with correct embedding vectors",
-            "Given an upstream error, when proxied, then the error is forwarded with correct status",
-            "Given a model alias for embeddings, when proxied, then the model name is resolved before forwarding"
+            "Given an upstream error, when proxied, then the error is forwarded with correct status"
           ],
-          "technical_notes": "Re-use the forwarder from s1-feat-004. Embeddings is a simpler endpoint (no streaming variant), good place to validate the generic forwarder works for multiple endpoints.",
+          "technical_notes": "Re-use the forwarder from s1-feat-004.",
           "status": "completed",
           "dependencies": ["s1-feat-004"],
           "estimated_complexity": "small",
@@ -177,16 +168,15 @@
           "id": "s1-feat-008",
           "category": "infra",
           "priority": "medium",
-          "title": "End-to-end integration test",
-          "description": "Write vitest integration tests that spin up the gateway and a mock upstream server. Verify the full request lifecycle: non-streaming chat, streaming SSE chat, models listing, and embeddings. Include error scenarios.",
+          "title": "End-to-end integration tests",
+          "description": "Write vitest integration tests that spin up the gateway and a mock upstream server. Verify the full request lifecycle: non-streaming chat, streaming SSE chat, models listing, and embeddings.",
           "acceptance_criteria": [
             "Integration test suite starts a real Fastify instance and a mock upstream",
-            "Non-streaming chat completions are proxied correctly (request body forwarded, response returned)",
-            "Streaming SSE chat completions relay chunks in order with [DONE] termination",
+            "Non-streaming and streaming chat completions are proxied correctly",
             "Error responses from upstream are forwarded with correct status codes",
             "All tests pass with `pnpm test`"
           ],
-          "technical_notes": "Use vitest with a mock HTTP server (e.g., Fastify instance as mock upstream). Test the full Fastify lifecycle, not individual functions in isolation. This validates the entire Phase 1 pipeline.",
+          "technical_notes": "Use vitest with a mock HTTP server. Test the full Fastify lifecycle.",
           "status": "completed",
           "dependencies": ["s1-feat-005", "s1-feat-006", "s1-feat-007"],
           "estimated_complexity": "medium",
@@ -195,6 +185,208 @@
             "tests/integration/models.test.ts",
             "tests/integration/embeddings.test.ts",
             "tests/helpers/mock-upstream.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sprint-002",
+      "name": "Phase 2 - Auth & Rate Limiting",
+      "goal": "Add virtual API Key authentication with argon2 hashing, SQLite persistence, in-memory sliding window rate limiting (RPM/TPM), and admin CRUD endpoints for key management",
+      "status": "planning",
+      "created_at": "2026-04-09",
+      "features": [
+        {
+          "id": "s2-feat-001",
+          "category": "infra",
+          "priority": "high",
+          "title": "SQLite database initialization + migration",
+          "description": "Initialize better-sqlite3 as the database layer. Create the 001-init.sql migration with tables for virtual keys (id, name, key_hash, rate_limits, created_at, revoked_at), upstream providers (id, name, encrypted_api_key, base_url, created_at), and audit_logs (id, request_id, timestamp, api_key_id, model, endpoint, prompt_tokens, completion_tokens, cost_usd, latency_ms, status, pii_detected, pii_types_found, prompt_injection_score, content_hash_sha256). Implement db connection lifecycle managed by Fastify plugins.",
+          "acceptance_criteria": [
+            "Given the app starts, when db initializes, then all tables from 001-init.sql are created in the configured SQLite file path",
+            "Given the db is already initialized, when the app restarts, then migrations are not re-run (idempotent)",
+            "Given an invalid migration SQL, when the app starts, then it exits with a clear error message",
+            "Unit tests verify table creation and basic CRUD operations work"
+          ],
+          "technical_notes": "Use better-sqlite3 synchronous API (single-threaded, fits Node.js event loop). Register as a Fastify plugin with onClose hook to close the db connection. Migration table tracks applied migrations. Config for db path (default: ./data/gateway.db). Need to add better-sqlite3 and @types/better-sqlite3 to dependencies.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/db/index.ts",
+            "src/db/migrations.ts",
+            "migrations/001-init.sql",
+            "src/types.ts"
+          ]
+        },
+        {
+          "id": "s2-feat-002",
+          "category": "infra",
+          "priority": "high",
+          "title": "Crypto utilities (AES-256-GCM + argon2)",
+          "description": "Implement encryption utilities for two purposes: (1) AES-256-GCM encryption/decryption for upstream provider API keys stored in DB, using a master encryption key from config; (2) Argon2id hashing for virtual API keys (client-facing) with proper salt generation. Also implement constant-time key comparison to prevent timing attacks.",
+          "acceptance_criteria": [
+            "Given a plaintext API key and a master key, when encrypt() is called, then the result is a deterministic-format string containing IV + authTag + ciphertext",
+            "Given an encrypted API key, when decrypt() is called with the same master key, then the original plaintext is recovered",
+            "Given a plaintext virtual key, when hash() is called, then an argon2id hash is produced with a random salt",
+            "Given a plaintext key and a stored hash, when verify() is called, then it returns true if they match and false otherwise, using constant-time comparison",
+            "All crypto operations have unit tests including edge cases (empty strings, very long keys)"
+          ],
+          "technical_notes": "Use Node.js built-in crypto for AES-256-GCM. Use argon2 npm package for hashing (native bindings, faster than pure JS). Master encryption key comes from config.toml [security] section. Export encrypt/decrypt/hash/verify functions. Need to add argon2 to dependencies.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/utils/crypto.ts",
+            "src/utils/crypto.test.ts"
+          ]
+        },
+        {
+          "id": "s2-feat-003",
+          "category": "data",
+          "priority": "high",
+          "title": "Virtual API Key storage layer",
+          "description": "Implement the data access layer for virtual API keys in SQLite. CRUD operations: createKey (generate random key, hash with argon2, store hash + metadata), getKeyById, listKeys (pagination), revokeKey (soft delete with revoked_at timestamp), updateRateLimits. Include upstream provider key storage with AES-256-GCM encryption. Add an in-memory LRU cache for key lookups by ID to avoid hitting SQLite on every request.",
+          "acceptance_criteria": [
+            "Given a new key request with name and rate limits, when createKey() is called, then a virtual key (gwk_...) is generated, its argon2 hash is stored in DB, and the plaintext is returned once",
+            "Given a key ID, when getKeyById() is called, then key metadata (id, name, rate_limits, created_at, revoked) is returned from cache or DB",
+            "Given a revoked key ID, when getKeyById() is called, then the key is returned with revoked=true and revoked_at timestamp",
+            "Given multiple keys exist, when listKeys() is called with offset/limit, then paginated results are returned",
+            "Given an upstream provider with plaintext API key, when stored, then the key is encrypted with AES-256-GCM before writing to DB",
+            "Unit tests cover all CRUD operations with an in-memory SQLite database"
+          ],
+          "technical_notes": "Use better-sqlite3 prepared statements for performance. Key format: 'gwk_' + 32 random hex chars. LRU cache with TTL (5 min default) for hot key lookups. Cache invalidation on revoke/update. In-memory SQLite (:memory:) for tests.",
+          "status": "pending",
+          "dependencies": ["s2-feat-001", "s2-feat-002"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/db/keys.ts",
+            "src/db/keys.test.ts"
+          ]
+        },
+        {
+          "id": "s2-feat-004",
+          "category": "auth",
+          "priority": "high",
+          "title": "Request authentication middleware",
+          "description": "Implement Fastify authentication middleware that: extracts Bearer token from Authorization header, verifies the virtual key against stored hashes (argon2), attaches key metadata (id, name, rate limits) to the request context, and returns proper OpenAI-compatible error responses (401 for invalid/expired keys, missing header). Integrate with the key LRU cache for fast lookups on subsequent requests.",
+          "acceptance_criteria": [
+            "Given a valid Bearer token in Authorization header, when the auth middleware runs, then request.apiKey is populated with { id, name, rateLimits }",
+            "Given an invalid or expired Bearer token, when the auth middleware runs, then a 401 response is returned with OpenAI error format: { error: { message, type: 'invalid_request_error', code: 'invalid_api_key' } }",
+            "Given a missing Authorization header, when the auth middleware runs, then a 401 response is returned",
+            "Given a revoked key, when the auth middleware runs, then a 401 response is returned with message indicating the key has been revoked",
+            "Given the same valid key on repeated requests, when the cache is warm, then argon2 verification is skipped and cached metadata is used",
+            "Auth middleware applies to /v1/* routes but NOT to /admin/* routes (admin has its own auth via config)",
+            "Unit tests with mock key store verify all auth scenarios"
+          ],
+          "technical_notes": "Use Fastify onRequest hook. Cache stores { id, name, rateLimits } after successful verification. Cache entry invalidated on revoke. argon2 verify is intentionally slow (~100ms) — cache is critical for performance. Admin routes use a separate static admin token from config.",
+          "status": "pending",
+          "dependencies": ["s2-feat-003"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/middleware/auth.ts",
+            "src/middleware/auth.test.ts"
+          ]
+        },
+        {
+          "id": "s2-feat-005",
+          "category": "auth",
+          "priority": "high",
+          "title": "In-memory sliding window rate limiter",
+          "description": "Implement a sliding window rate limiter supporting RPM (requests per minute), TPM (tokens per minute), and RPD (requests per day) limits per virtual key. Use an in-memory data structure (Map of sorted arrays or circular buffers) with automatic cleanup of expired windows. Configurable default limits and per-key overrides.",
+          "acceptance_criteria": [
+            "Given a key with RPM=60, when 60 requests arrive within 1 minute, then the 61st request returns a rate limit check result of { allowed: false, retryAfterMs: <remaining ms> }",
+            "Given a key with TPM=100000, when 100000 tokens are consumed within 1 minute, then the next request exceeding the limit is rejected",
+            "Given a key with RPD=1000, when 1000 requests arrive within 24 hours, then the 1001st is rejected",
+            "Given requests from 2 minutes ago, when the sliding window check runs, then those old requests are excluded from the count",
+            "Given a key with no per-key limits, when the check runs, then global default limits from config are applied",
+            "Given rate limit rejection, when the response is formed, then retryAfterMs is a positive integer indicating when to retry",
+            "Memory usage grows bounded — old entries are cleaned up automatically",
+            "Unit tests verify all window types and edge cases (burst requests, exactly-at-limit)"
+          ],
+          "technical_notes": "Use a Map<string, RateLimitState> where each entry stores timestamped request counts. Sliding window: count requests in [now - windowSize, now]. Cleanup: periodically prune entries older than the largest window (24h). No Redis needed — single-node in-memory. Export checkRateLimit(keyId, tokenCount) function.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/middleware/rate-limit.ts",
+            "src/middleware/rate-limit.test.ts"
+          ]
+        },
+        {
+          "id": "s2-feat-006",
+          "category": "auth",
+          "priority": "high",
+          "title": "Rate limit middleware integration",
+          "description": "Integrate the rate limiter into the Fastify request pipeline as a middleware that runs after auth but before proxy forwarding. On rate limit exceeded, return HTTP 429 with OpenAI-compatible error format and standard rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset). Also return these headers on successful requests.",
+          "acceptance_criteria": [
+            "Given a request that passes auth, when the rate limit check passes, then the request proceeds to proxy forwarding and response includes X-RateLimit-* headers",
+            "Given a request that passes auth, when RPM is exceeded, then a 429 response is returned with { error: { message, type: 'rate_limit_error', code: 'rate_limit_exceeded' } } and Retry-After header",
+            "Given a streaming request, when TPM is tracked, then token count from the response is counted toward the rate limit (best-effort: count from response usage field)",
+            "Given a successful non-streaming response, when it includes usage.prompt_tokens + usage.completion_tokens, then those tokens are counted toward TPM",
+            "Rate limit headers appear on all successful /v1/* responses",
+            "Integration test with mocked upstream verifies the full auth -> rate limit -> proxy pipeline"
+          ],
+          "technical_notes": "Use Fastify preHandler hook, runs after auth onRequest hook. Token counting for TPM: non-streaming reads from response.usage; streaming estimates from input tokens only (output unknown until complete). Add rate limit state to request context for downstream use.",
+          "status": "pending",
+          "dependencies": ["s2-feat-004", "s2-feat-005"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/middleware/rate-limit.ts",
+            "src/index.ts",
+            "src/types.ts"
+          ]
+        },
+        {
+          "id": "s2-feat-007",
+          "category": "api",
+          "priority": "high",
+          "title": "Admin API - Virtual Key CRUD",
+          "description": "Implement admin endpoints for virtual API key management. Endpoints: POST /admin/keys (create key with name + optional rate limits), GET /admin/keys (list all keys with pagination), GET /admin/keys/:id (get key details), DELETE /admin/keys/:id (revoke key), PATCH /admin/keys/:id (update key name/rate limits). Admin endpoints are protected by a static admin token from config (separate from virtual keys).",
+          "acceptance_criteria": [
+            "Given a valid admin token, when POST /admin/keys with { name: 'test', rateLimits: { rpm: 60, tpm: 100000, rpd: 1000 } }, then a new key is created and { id, name, key: 'gwk_...', createdAt } is returned (key shown only once)",
+            "Given a valid admin token, when GET /admin/keys is called, then a paginated list of key metadata (without hashes) is returned",
+            "Given a valid admin token, when GET /admin/keys/:id is called, then key details are returned",
+            "Given a valid admin token, when DELETE /admin/keys/:id is called, then the key is soft-deleted (revoked_at set) and 200 is returned",
+            "Given a valid admin token, when PATCH /admin/keys/:id with { rateLimits: { rpm: 120 } }, then rate limits are updated",
+            "Given an invalid or missing admin token, when any /admin/* endpoint is called, then 401 is returned",
+            "Given a request to create a key without a name, when POST /admin/keys is called, then 400 is returned with validation error",
+            "All endpoints have integration tests using an in-memory SQLite database"
+          ],
+          "technical_notes": "Use a separate admin auth middleware checking against config [admin] token. Fastify route registration under /admin prefix. Zod schema for request body validation. The plaintext key is returned ONLY on POST create — never stored, never retrievable again. Use Fastify schema validation for request/response.",
+          "status": "pending",
+          "dependencies": ["s2-feat-003"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/routes/admin/keys.ts",
+            "src/routes/admin/keys.test.ts",
+            "src/middleware/admin-auth.ts",
+            "src/config/index.ts"
+          ]
+        },
+        {
+          "id": "s2-feat-008",
+          "category": "infra",
+          "priority": "medium",
+          "title": "Phase 2 integration tests",
+          "description": "Write end-to-end integration tests covering the full Phase 2 pipeline: key creation via admin API, authenticated requests with valid/invalid/revoked keys, rate limit enforcement (RPM/TPM), 429 responses with correct headers, and the complete request lifecycle from auth through rate limit through proxy forwarding.",
+          "acceptance_criteria": [
+            "Given a created virtual key, when a /v1/chat/completions request is made with that key, then the request is proxied successfully",
+            "Given a valid key that has exceeded RPM, when a request is made, then 429 is returned with Retry-After header",
+            "Given a revoked key, when a request is made, then 401 is returned",
+            "Given an admin token, when admin CRUD operations are performed, then they work correctly",
+            "Given rate limit headers on a successful response, when checked, then X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset are present",
+            "All Phase 2 integration tests pass alongside Phase 1 tests with `pnpm test`"
+          ],
+          "technical_notes": "Extend the existing test helpers (mock-upstream.ts) to support auth headers. Use an in-memory SQLite database for test isolation. Test the full Fastify lifecycle including middleware chain. Verify that Phase 1 routes still work without auth (backward compatibility) if auth is not configured.",
+          "status": "pending",
+          "dependencies": ["s2-feat-006", "s2-feat-007"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "tests/integration/auth.test.ts",
+            "tests/integration/rate-limit.test.ts",
+            "tests/integration/admin-keys.test.ts",
+            "tests/helpers/setup.ts"
           ]
         }
       ]
