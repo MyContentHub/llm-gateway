@@ -1,7 +1,14 @@
+import { createSSETransformStream } from "./sse-parser.js";
+import type { SSETransformOptions } from "./sse-parser.js";
+
 export interface ForwardRequest {
   upstreamUrl: string;
   apiKey: string;
   body: unknown;
+}
+
+export interface StreamForwardRequest extends ForwardRequest {
+  sseOptions?: SSETransformOptions;
 }
 
 export interface ForwardResponse {
@@ -9,6 +16,21 @@ export interface ForwardResponse {
   headers: Record<string, string>;
   body: unknown;
 }
+
+export interface StreamForwardSuccess {
+  ok: true;
+  status: number;
+  headers: Record<string, string>;
+  stream: ReadableStream<Uint8Array>;
+}
+
+export interface StreamForwardError {
+  ok: false;
+  status: number;
+  body: unknown;
+}
+
+export type StreamForwardResponse = StreamForwardSuccess | StreamForwardError;
 
 export interface UpstreamError {
   error: {
@@ -99,5 +121,76 @@ export async function forwardRequest(request: ForwardRequest): Promise<ForwardRe
       "X-Response-Time": `${elapsed}ms`,
     },
     body: responseBody,
+  };
+}
+
+export async function forwardStreamRequest(
+  request: StreamForwardRequest,
+): Promise<StreamForwardResponse> {
+  let upstreamResponse: Response;
+  try {
+    upstreamResponse = await fetch(request.upstreamUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${request.apiKey}`,
+      },
+      body: JSON.stringify(request.body),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unknown upstream error";
+    return {
+      ok: false,
+      status: 502,
+      body: {
+        error: {
+          message,
+          type: "upstream_connection_error",
+          code: "upstream_unreachable",
+        },
+      },
+    };
+  }
+
+  if (!upstreamResponse.ok) {
+    const rawText = await upstreamResponse.text();
+    let responseBody: unknown;
+    try {
+      responseBody = JSON.parse(rawText);
+    } catch {
+      responseBody = rawText;
+    }
+    return {
+      ok: false,
+      status: upstreamResponse.status,
+      body: formatUpstreamError(upstreamResponse.status, responseBody),
+    };
+  }
+
+  const body = upstreamResponse.body;
+  if (!body) {
+    return {
+      ok: false,
+      status: 502,
+      body: {
+        error: {
+          message: "Upstream returned empty body for streaming request",
+          type: "upstream_error",
+          code: "upstream_empty_body",
+        },
+      },
+    };
+  }
+
+  const sseTransform = createSSETransformStream(request.sseOptions);
+  const transformedStream = body.pipeThrough(sseTransform);
+
+  return {
+    ok: true,
+    status: upstreamResponse.status,
+    headers: {
+      "X-Request-Id": upstreamResponse.headers.get("x-request-id") ?? "",
+    },
+    stream: transformedStream,
   };
 }

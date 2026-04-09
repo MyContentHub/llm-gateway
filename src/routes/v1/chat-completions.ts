@@ -1,7 +1,8 @@
 import type { FastifyPluginCallback } from "fastify";
+import { Readable } from "node:stream";
 import "../../types.js";
 import { resolveRoute, RouteError } from "../../proxy/router.js";
-import { forwardRequest } from "../../proxy/forwarder.js";
+import { forwardRequest, forwardStreamRequest } from "../../proxy/forwarder.js";
 
 interface ChatCompletionRequest {
   model: string;
@@ -27,16 +28,6 @@ const chatCompletionsPlugin: FastifyPluginCallback = (server, _opts, done) => {
       });
     }
 
-    if (body.stream === true) {
-      return reply.code(400).send({
-        error: {
-          message: "Streaming is not yet supported. Set stream to false or omit it.",
-          type: "invalid_request_error",
-          code: "streaming_not_supported",
-        },
-      });
-    }
-
     let route;
     try {
       route = resolveRoute(body.model, config.PROVIDERS);
@@ -55,6 +46,30 @@ const chatCompletionsPlugin: FastifyPluginCallback = (server, _opts, done) => {
 
     const upstreamBody = { ...body, model: route.resolvedModel };
     const upstreamUrl = `${route.baseUrl.replace(/\/+$/, "")}/chat/completions`;
+
+    if (body.stream === true) {
+      const result = await forwardStreamRequest({
+        upstreamUrl,
+        apiKey: route.apiKey,
+        body: upstreamBody,
+      });
+
+      if (!result.ok) {
+        return reply.code(result.status).send(result.body);
+      }
+
+      const nodeStream = Readable.fromWeb(result.stream as import("node:stream/web").ReadableStream);
+
+      return reply
+        .code(result.status)
+        .headers({
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          "X-Request-Id": result.headers["X-Request-Id"] ?? "",
+        })
+        .send(nodeStream);
+    }
 
     const result = await forwardRequest({
       upstreamUrl,

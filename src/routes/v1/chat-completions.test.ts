@@ -4,6 +4,7 @@ import { chatCompletionsPlugin } from "./chat-completions.js";
 import type { AppConfig } from "../../config/index.js";
 
 const originalFetch = globalThis.fetch;
+const encoder = new TextEncoder();
 
 beforeEach(() => {
   vi.restoreAllMocks();
@@ -53,6 +54,24 @@ function mockFetchResponse(status: number, body: unknown, headers?: Record<strin
   );
 }
 
+function mockStreamingFetchResponse(chunks: string[], status = 200) {
+  const stream = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(encoder.encode(chunk));
+      }
+      controller.close();
+    },
+  });
+
+  globalThis.fetch = vi.fn().mockResolvedValue(
+    new Response(stream, {
+      status,
+      headers: { "content-type": "text/event-stream" },
+    }),
+  );
+}
+
 describe("POST /v1/chat/completions", () => {
   it("returns 400 when model is missing", async () => {
     const server = createServer();
@@ -69,7 +88,16 @@ describe("POST /v1/chat/completions", () => {
     await server.close();
   });
 
-  it("returns 400 when stream:true is sent", async () => {
+  it("proxies a streaming request with SSE", async () => {
+    const chunks = [
+      'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{"role":"assistant","content":""}}]}\n\n',
+      'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{"content":"Hello"}}]}\n\n',
+      'data: {"id":"chatcmpl-1","object":"chat.completion.chunk","choices":[{"delta":{},"finish_reason":"stop"}]}\n\n',
+      "data: [DONE]\n\n",
+    ];
+
+    mockStreamingFetchResponse(chunks);
+
     const server = createServer();
     const response = await server.inject({
       method: "POST",
@@ -81,9 +109,62 @@ describe("POST /v1/chat/completions", () => {
       },
     });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["content-type"]).toBe("text/event-stream");
+    expect(response.headers["cache-control"]).toBe("no-cache");
+    expect(response.body).toContain("data: [DONE]");
+    expect(response.body).toContain('"content":"Hello"');
+    expect(response.body).toContain('"finish_reason":"stop"');
+
+    await server.close();
+  });
+
+  it("handles streaming request with upstream error", async () => {
+    const upstreamError = {
+      error: {
+        message: "Rate limited",
+        type: "rate_limit_error",
+        code: "rate_limit_exceeded",
+      },
+    };
+
+    mockFetchResponse(429, upstreamError);
+
+    const server = createServer();
+    const response = await server.inject({
+      method: "POST",
+      url: "/v1/chat/completions",
+      payload: {
+        model: "gpt-4o",
+        messages: [{ role: "user", content: "Hi" }],
+        stream: true,
+      },
+    });
+
+    expect(response.statusCode).toBe(429);
     const json = response.json();
-    expect(json.error.code).toBe("streaming_not_supported");
+    expect(json.error.type).toBe("rate_limit_error");
+    expect(json.error.code).toBe("rate_limit_exceeded");
+
+    await server.close();
+  });
+
+  it("returns 502 when upstream is unreachable during streaming", async () => {
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
+
+    const server = createServer();
+    const response = await server.inject({
+      method: "POST",
+      url: "/v1/chat/completions",
+      payload: {
+        model: "gpt-4o",
+        messages: [{ role: "user", content: "Hi" }],
+        stream: true,
+      },
+    });
+
+    expect(response.statusCode).toBe(502);
+    expect(response.json().error.code).toBe("upstream_unreachable");
 
     await server.close();
   });
