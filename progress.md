@@ -4,6 +4,75 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 ---
 
+## Sprint Planning - 2026-04-10
+**Agent**: Sprint Agent
+**Sprint**: sprint-003 - Phase 3: Security Scanning
+
+### Requirements Received
+- Based on DESIGN.md Phase 3: Security Scanning
+- PII detection module (compromise NLP + custom regex pattern library)
+- PII redaction/restoration pipeline (request-scoped mapping, never persisted)
+- Prompt injection heuristic detection with scoring
+- Content filter rule engine with configurable rules
+
+### Features Planned
+- Total: 8 features
+- High priority: 6 (s3-feat-001 through s3-feat-006)
+- Medium priority: 2 (s3-feat-007, s3-feat-008)
+- Low priority: 0
+
+### Sprint Goal
+Implement PII detection and redaction (compromise + regex patterns), request-scoped PII mapping with restore, prompt injection heuristic detection, and a content filter rule engine — all integrated into the proxy pipeline for both streaming and non-streaming requests.
+
+### Implementation Order
+1. s3-feat-001 - PII regex pattern library (core) - medium
+2. s3-feat-004 - Prompt injection heuristic detector (core) - medium
+3. s3-feat-007 - Token counting utility (infra) - small
+4. s3-feat-002 - PII scanner with compromise NLP (core) - medium
+5. s3-feat-003 - PII redaction and restore pipeline (core) - large
+6. s3-feat-005 - Content filter rule engine (core) - medium
+7. s3-feat-006 - Security middleware integration (api) - large
+8. s3-feat-008 - Phase 3 integration tests (infra) - medium
+
+### Dependencies
+- s3-feat-002 depends on s3-feat-001
+- s3-feat-003 depends on s3-feat-002
+- s3-feat-005 depends on s3-feat-002, s3-feat-004
+- s3-feat-006 depends on s3-feat-003, s3-feat-005
+- s3-feat-008 depends on s3-feat-006, s3-feat-007
+- No blockers for: s3-feat-001, s3-feat-004, s3-feat-007 (can start in parallel)
+
+### Parallelization Opportunities
+- Batch 1: s3-feat-001 + s3-feat-004 + s3-feat-007 (no deps, different files)
+- Batch 2: s3-feat-002 (depends on 001)
+- Batch 3: s3-feat-003 + s3-feat-005 (003 depends on 002, 005 depends on 002+004 — both ready; check file conflicts: 003→pii-redact.ts, 005→content-filter-engine.ts + config/index.ts — no conflicts)
+- Batch 4: s3-feat-006 (depends on 003 + 005, modifies forwarder.ts + chat-completions.ts + index.ts)
+- Batch 5: s3-feat-008 (depends on 006 + 007)
+
+### Technical Decisions
+- PII patterns: regex-based with named types (EMAIL, PHONE, SSN, CN_ID, CREDIT_CARD, BANK_CARD, IP, DOB)
+- PII scanner: compromise NLP for person names/places/orgs + regex for structured PII
+- PII redaction: [TYPE_N] placeholder format, request-scoped Map, never persisted per DESIGN.md
+- Streaming PII: buffer partial placeholders across SSE chunks for correct restoration
+- Injection detection: weighted heuristic scoring (0.0-1.0), configurable threshold
+- Content filter: block/flag/allow decision based on combined PII + injection results
+- Token counting: js-tiktoken for accurate counts, fallback to chars/4 approximation
+- Security config: new [security] section in config.toml (injection_threshold, blocked_pii_types, flagged_pii_types)
+- SSE hook: reuse existing SSETransformOptions.onChunk from sse-parser.ts for streaming PII restore
+
+### New Dependencies
+- compromise — NLP-based PII detection
+- js-tiktoken — Token counting
+
+### Notes
+- Phase 2 (sprint-002) archived — 8/8 features completed with 194 tests
+- Core technical challenge: streaming PII restoration with partial placeholder buffering across SSE chunks
+- SSE TransformStream already has onChunk hook from Phase 1 — security scan plugs in there
+- The content filter decision (allow/block/flag) must happen before proxy forwarding
+- PII mapping lifecycle: created at request start, used for redaction before upstream, used for restore on response, GC'd when request completes
+
+---
+
 ## 996 Orchestration - 2026-04-09
 **Agent**: 996 Orchestrator
 **Sprint**: sprint-002 - Phase 2: Auth & Rate Limiting
