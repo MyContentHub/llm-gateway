@@ -22,7 +22,7 @@
       "id": "sprint-001",
       "name": "Phase 1: Core Proxy MVP",
       "goal": "Build a working OpenAI-compatible proxy that forwards chat completions (non-streaming + streaming SSE), embeddings, and models requests to upstream providers, driven by config-based routing",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-09",
       "features": [
         {
@@ -38,7 +38,7 @@
             "Directory structure matches DESIGN.md layout"
           ],
           "technical_notes": "Use pnpm 10, tsx for dev runtime, tsc for build. Fastify register pattern for route organization. Add .env.example with placeholder vars.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -62,7 +62,7 @@
             ".env.example documents all config variables"
           ],
           "technical_notes": "Use dotenv for .env loading. Define zod schema for PORT, LOG_LEVEL, PROVIDERS (JSON string or separate vars). Provider config is the foundation for routing.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s1-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -84,7 +84,7 @@
             "Given no matching provider and no default, when routing, then return a 404-style error"
           ],
           "technical_notes": "Pure function, no I/O. Config-driven: router reads from the parsed provider config. This is the backbone for all proxy routes.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s1-feat-002"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -104,7 +104,7 @@
             "Response includes correct Content-Type and timing headers"
           ],
           "technical_notes": "Use native fetch for upstream calls. This is the baseline proxy before adding streaming complexity. Keep forwarder generic — it should work for any OpenAI-compatible endpoint.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s1-feat-003"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -126,7 +126,7 @@
             "Streaming latency overhead is < 5ms compared to direct upstream connection"
           ],
           "technical_notes": "This is the core technical challenge per DESIGN.md. Use TransformStream with a line buffer. Parse with eventsource-parser. The transform hook point is where PII scanning will plug in later (Phase 3).",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s1-feat-004"],
           "estimated_complexity": "large",
           "files_affected": [
@@ -147,7 +147,7 @@
             "Response matches OpenAI /v1/models response schema (object with 'data' array of model objects)"
           ],
           "technical_notes": "Can aggregate from multiple providers or just proxy to a single default. Keep it simple for MVP — aggregate is preferred but single-provider passthrough is acceptable.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s1-feat-003"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -166,7 +166,7 @@
             "Given a model alias for embeddings, when proxied, then the model name is resolved before forwarding"
           ],
           "technical_notes": "Re-use the forwarder from s1-feat-004. Embeddings is a simpler endpoint (no streaming variant), good place to validate the generic forwarder works for multiple endpoints.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s1-feat-004"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -187,7 +187,7 @@
             "All tests pass with `pnpm test`"
           ],
           "technical_notes": "Use vitest with a mock HTTP server (e.g., Fastify instance as mock upstream). Test the full Fastify lifecycle, not individual functions in isolation. This validates the entire Phase 1 pipeline.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s1-feat-005", "s1-feat-006", "s1-feat-007"],
           "estimated_complexity": "medium",
           "files_affected": [
