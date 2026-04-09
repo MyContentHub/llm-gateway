@@ -1,28 +1,38 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import "dotenv/config";
-
-const port = Number(process.env.PORT) || 3000;
-const host = process.env.HOST || "0.0.0.0";
+import { loadConfig } from "./config/index.js";
 
 async function main() {
+  const config = loadConfig();
+
   const server = Fastify({
     logger: {
-      level: process.env.LOG_LEVEL || "info",
+      level: config.LOG_LEVEL,
     },
   });
 
   await server.register(cors, { origin: true });
 
   server.get("/health", async () => {
-    return { status: "ok" };
+    return { status: "ok", providers: config.PROVIDERS.length };
   });
 
-  await server.listen({ port, host });
+  server.decorate("config", config);
+
+  await server.listen({ port: config.PORT, host: config.HOST });
 }
 
 main().catch((err) => {
-  console.error("Failed to start server:", err);
+  if (err && typeof err === "object" && "issues" in err) {
+    const issues = (err as { issues: Array<{ path: (string | number)[]; message: string }> }).issues;
+    console.error("Configuration error:");
+    for (const issue of issues) {
+      console.error(`  ${issue.path.join(".")}: ${issue.message}`);
+    }
+  } else {
+    console.error("Failed to start server:", err);
+  }
   process.exit(1);
 });
 
