@@ -37,7 +37,7 @@ Client ──▶ [Auth] ──▶ [Rate Limit] ──▶ [PII Redact]
 
 | 层面 | 选择 | 理由 |
 |------|------|------|
-| 运行时 | Node.js 20+ (LTS) | 原生 fetch、Web Streams |
+| 运行时 | Node.js 22+ (LTS) | 原生 fetch、Web Streams |
 | 框架 | Fastify 5 | 比 Express 快 2-3x，内置 JSON Schema 验证、生命周期 Hook |
 | 语言 | TypeScript 5 (strict) | 类型安全 |
 | SSE 解析 | eventsource-parser | 零依赖，处理行碎片 |

@@ -8,7 +8,7 @@ LLM API security proxy gateway — intercepts, scans, and audits all OpenAI-comp
 
 ## Tech Stack (from design)
 
-- **Runtime**: Node.js 20+ (LTS) — relies on native `fetch` and Web Streams API
+- **Runtime**: Node.js 22+ (LTS) — relies on native `fetch` and Web Streams API
 - **Framework**: Fastify 5
 - **Language**: TypeScript 5 (strict mode)
 - **Package manager**: pnpm 10 (`packageManager` field in `package.json`)
