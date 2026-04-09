@@ -17,7 +17,189 @@
     ],
     "created_at": "2026-04-09"
   },
-  "sprints": [],
+  "sprints": [
+    {
+      "id": "sprint-001",
+      "name": "Phase 1: Core Proxy MVP",
+      "goal": "Build a working OpenAI-compatible proxy that forwards chat completions (non-streaming + streaming SSE), embeddings, and models requests to upstream providers, driven by config-based routing",
+      "status": "planning",
+      "created_at": "2026-04-09",
+      "features": [
+        {
+          "id": "s1-feat-001",
+          "category": "infra",
+          "priority": "high",
+          "title": "Project scaffold & Fastify entrypoint",
+          "description": "Initialize TypeScript project with Fastify 5, configure tsconfig (strict mode), vitest, pnpm, and create the entrypoint src/index.ts with a health-check route. Set up project directory structure per DESIGN.md.",
+          "acceptance_criteria": [
+            "Given the project is cloned, when `pnpm install && pnpm dev` is run, then Fastify starts and responds to GET /health with 200",
+            "TypeScript strict mode compiles without errors",
+            "Vitest test runner executes (even with 0 tests)",
+            "Directory structure matches DESIGN.md layout"
+          ],
+          "technical_notes": "Use pnpm 10, tsx for dev runtime, tsc for build. Fastify register pattern for route organization. Add .env.example with placeholder vars.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "package.json",
+            "tsconfig.json",
+            "vitest.config.ts",
+            "src/index.ts",
+            ".env.example"
+          ]
+        },
+        {
+          "id": "s1-feat-002",
+          "category": "infra",
+          "priority": "high",
+          "title": "Configuration system (zod + .env)",
+          "description": "Implement config parsing with zod: read .env and optional config file, validate provider definitions (name, baseUrl, apiKey, model aliases). Export typed config object for use across the app.",
+          "acceptance_criteria": [
+            "Given a valid .env with PROVIDERS config, when the app starts, then config is parsed into a typed object",
+            "Given an invalid config (missing required field), when the app starts, then it exits with a clear zod error message",
+            "Provider entries contain: name, baseUrl, apiKey, modelMappings (alias -> real model name)",
+            ".env.example documents all config variables"
+          ],
+          "technical_notes": "Use dotenv for .env loading. Define zod schema for PORT, LOG_LEVEL, PROVIDERS (JSON string or separate vars). Provider config is the foundation for routing.",
+          "status": "pending",
+          "dependencies": ["s1-feat-001"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/config/index.ts",
+            "src/config/providers.ts",
+            ".env.example"
+          ]
+        },
+        {
+          "id": "s1-feat-003",
+          "category": "api",
+          "priority": "high",
+          "title": "Model-to-provider router",
+          "description": "Implement the router that resolves a requested model name to an upstream provider (baseUrl + apiKey). Support model alias mapping from config and pass-through for unknown models to a default provider.",
+          "acceptance_criteria": [
+            "Given a request for model 'gpt-4o' which maps to provider 'openai', when routing, then the correct baseUrl and apiKey are returned",
+            "Given a request for an aliased model 'fast-chat' mapped to 'claude-3-haiku', when routing, then the resolved model name is 'claude-3-haiku' on the mapped provider",
+            "Given a model not in any mapping, when a default provider is configured, then it routes to the default provider with the original model name",
+            "Given no matching provider and no default, when routing, then return a 404-style error"
+          ],
+          "technical_notes": "Pure function, no I/O. Config-driven: router reads from the parsed provider config. This is the backbone for all proxy routes.",
+          "status": "pending",
+          "dependencies": ["s1-feat-002"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "src/proxy/router.ts"
+          ]
+        },
+        {
+          "id": "s1-feat-004",
+          "category": "api",
+          "priority": "high",
+          "title": "Non-streaming chat completions proxy",
+          "description": "Implement POST /v1/chat/completions that forwards the request body to the upstream provider determined by the router. Handle request/response transformation, error forwarding, and correct OpenAI-compatible response headers.",
+          "acceptance_criteria": [
+            "Given a valid chat completions request with stream:false, when proxied, then the upstream response is returned to the client with identical JSON structure",
+            "Given the upstream returns an error (4xx/5xx), when proxied, then the error is forwarded with correct status code and OpenAI error format",
+            "Given a request with a model alias, when proxied, then the model name is resolved before forwarding",
+            "Response includes correct Content-Type and timing headers"
+          ],
+          "technical_notes": "Use native fetch for upstream calls. This is the baseline proxy before adding streaming complexity. Keep forwarder generic — it should work for any OpenAI-compatible endpoint.",
+          "status": "pending",
+          "dependencies": ["s1-feat-003"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "src/routes/v1/chat-completions.ts",
+            "src/proxy/forwarder.ts"
+          ]
+        },
+        {
+          "id": "s1-feat-005",
+          "category": "api",
+          "priority": "high",
+          "title": "Streaming SSE chat completions proxy",
+          "description": "Extend the chat completions proxy to support stream:true. Implement SSE parsing with eventsource-parser via Web Streams TransformStream, handling partial line buffering across TCP packets and the data: [DONE] special case. Relay SSE chunks to the client in real-time.",
+          "acceptance_criteria": [
+            "Given a chat completions request with stream:true, when proxied, then SSE chunks are relayed to the client in real-time with correct content-type: text/event-stream",
+            "Given partial TCP packets, when the SSE parser buffers, then lines are correctly reassembled before processing",
+            "Given 'data: [DONE]' from upstream, when parsed, then it is forwarded as-is and the stream closes cleanly",
+            "Given an upstream error mid-stream, when it occurs, then an SSE error event is sent to the client before closing",
+            "Streaming latency overhead is < 5ms compared to direct upstream connection"
+          ],
+          "technical_notes": "This is the core technical challenge per DESIGN.md. Use TransformStream with a line buffer. Parse with eventsource-parser. The transform hook point is where PII scanning will plug in later (Phase 3).",
+          "status": "pending",
+          "dependencies": ["s1-feat-004"],
+          "estimated_complexity": "large",
+          "files_affected": [
+            "src/proxy/sse-parser.ts",
+            "src/proxy/forwarder.ts",
+            "src/routes/v1/chat-completions.ts"
+          ]
+        },
+        {
+          "id": "s1-feat-006",
+          "category": "api",
+          "priority": "medium",
+          "title": "/v1/models passthrough",
+          "description": "Implement GET /v1/models that forwards to the upstream provider. Aggregate models from all configured providers, prefixing with provider name or returning a unified list.",
+          "acceptance_criteria": [
+            "Given a GET /v1/models request, when proxied, then a list of available models is returned in OpenAI format",
+            "Given multiple providers configured, when models are listed, then models from all providers are included",
+            "Response matches OpenAI /v1/models response schema (object with 'data' array of model objects)"
+          ],
+          "technical_notes": "Can aggregate from multiple providers or just proxy to a single default. Keep it simple for MVP — aggregate is preferred but single-provider passthrough is acceptable.",
+          "status": "pending",
+          "dependencies": ["s1-feat-003"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "src/routes/v1/models.ts"
+          ]
+        },
+        {
+          "id": "s1-feat-007",
+          "category": "api",
+          "priority": "medium",
+          "title": "/v1/embeddings passthrough",
+          "description": "Implement POST /v1/embeddings that forwards embedding requests to the upstream provider. Similar pattern to non-streaming chat completions but for the embeddings endpoint.",
+          "acceptance_criteria": [
+            "Given a valid embeddings request, when proxied, then the upstream response is returned with correct embedding vectors",
+            "Given an upstream error, when proxied, then the error is forwarded with correct status",
+            "Given a model alias for embeddings, when proxied, then the model name is resolved before forwarding"
+          ],
+          "technical_notes": "Re-use the forwarder from s1-feat-004. Embeddings is a simpler endpoint (no streaming variant), good place to validate the generic forwarder works for multiple endpoints.",
+          "status": "pending",
+          "dependencies": ["s1-feat-004"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "src/routes/v1/embeddings.ts"
+          ]
+        },
+        {
+          "id": "s1-feat-008",
+          "category": "infra",
+          "priority": "medium",
+          "title": "End-to-end integration test",
+          "description": "Write vitest integration tests that spin up the gateway and a mock upstream server. Verify the full request lifecycle: non-streaming chat, streaming SSE chat, models listing, and embeddings. Include error scenarios.",
+          "acceptance_criteria": [
+            "Integration test suite starts a real Fastify instance and a mock upstream",
+            "Non-streaming chat completions are proxied correctly (request body forwarded, response returned)",
+            "Streaming SSE chat completions relay chunks in order with [DONE] termination",
+            "Error responses from upstream are forwarded with correct status codes",
+            "All tests pass with `pnpm test`"
+          ],
+          "technical_notes": "Use vitest with a mock HTTP server (e.g., Fastify instance as mock upstream). Test the full Fastify lifecycle, not individual functions in isolation. This validates the entire Phase 1 pipeline.",
+          "status": "pending",
+          "dependencies": ["s1-feat-005", "s1-feat-006", "s1-feat-007"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "tests/integration/chat-completions.test.ts",
+            "tests/integration/models.test.ts",
+            "tests/integration/embeddings.test.ts",
+            "tests/helpers/mock-upstream.ts"
+          ]
+        }
+      ]
+    }
+  ],
   "metadata": {
     "version": "1.0.0",
     "last_updated": "2026-04-09"
