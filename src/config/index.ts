@@ -5,6 +5,16 @@ import { z } from "zod";
 import { ProviderSchema } from "./providers.js";
 import type { ProviderConfig } from "./providers.js";
 
+export const SecuritySchema = z.object({
+  injection_threshold: z.number().min(0).max(1).default(0.5),
+  blocked_pii_types: z.array(z.string()).default(["SSN", "CREDIT_CARD"]),
+  flagged_pii_types: z.array(z.string()).default(["EMAIL", "PHONE", "CN_ID", "BANK_CARD", "IP_ADDRESS", "DATE_OF_BIRTH", "PERSON", "PLACE", "ORGANIZATION"]),
+});
+
+export type SecurityConfig = z.infer<typeof SecuritySchema>;
+
+export const DEFAULT_SECURITY_CONFIG: SecurityConfig = SecuritySchema.parse({});
+
 export const AppConfigSchema = z.object({
   port: z.number().int().positive().default(3000),
   host: z.string().default("0.0.0.0"),
@@ -16,6 +26,7 @@ export const AppConfigSchema = z.object({
   default_rpm: z.number().int().positive().default(60),
   default_tpm: z.number().int().positive().default(100000),
   default_rpd: z.number().int().positive().default(1000),
+  security: SecuritySchema.default(() => SecuritySchema.parse({})),
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;

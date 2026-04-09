@@ -395,7 +395,7 @@
       "id": "sprint-003",
       "name": "Phase 3 - Security Scanning",
       "goal": "Implement PII detection and redaction (compromise + regex patterns), request-scoped PII mapping with restore, prompt injection heuristic detection, and a content filter rule engine — all integrated into the proxy pipeline for both streaming and non-streaming requests",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-10",
       "features": [
         {
@@ -414,7 +414,7 @@
             "Unit tests cover all pattern types and edge cases (partial matches, false positives, mixed content)"
           ],
           "technical_notes": "Pure function module, no dependencies on compromise yet (that comes in s3-feat-002). Use named capture groups. Patterns should handle both US and Chinese formats. Bank card: 16-19 digit Luhn check optional but pattern match required. IP: IPv4 only for simplicity.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -438,7 +438,7 @@
             "Unit tests cover combined NLP+regex detection, deduplication, and edge cases"
           ],
           "technical_notes": "Use compromise npm package for NLP. compromise types: People, Places, Organizations. Merge with regex results by comparing span positions. Deduplicate: if two matches overlap, keep the one with the more specific type. Need to add compromise to dependencies. Export scanPii(text: string): PiiMatch[] function.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s3-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -463,7 +463,7 @@
             "Unit tests cover redaction, restoration, deduplication, partial placeholder buffering"
           ],
           "technical_notes": "Export createPiiContext() that returns { redact(text): { text, mapping }, restore(text, mapping): string }. The mapping is Map<string, string>. For streaming restore: buffer partial placeholders across chunks. Placeholder format: [TYPE_N] where TYPE is uppercase and N is 1-based index. Dedup: track original→placeholder to reuse.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s3-feat-002"],
           "estimated_complexity": "large",
           "files_affected": [
@@ -487,7 +487,7 @@
             "Unit tests cover injection patterns, normal queries, edge cases, threshold configuration"
           ],
           "technical_notes": "Pure function module. Scoring: weighted sum of pattern matches + structural heuristics. Export checkPromptInjection(text: string, threshold?: number): { score: number, detected: boolean, matchedPatterns: string[] }. Use regex patterns for known injection phrases (case-insensitive). Add bonus for multiple matches. Keep it simple and fast — no ML model needed.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -511,7 +511,7 @@
             "Unit tests cover all rule combinations and default behavior"
           ],
           "technical_notes": "Export createContentFilter(rules: ContentFilterConfig) returning a check(requestContent: string): ContentFilterResult. Config schema in zod: injection_threshold, blocked_pii_types, flagged_pii_types. Integrate PII scanner + injection detector results. Add [security] section to AppConfig in config/index.ts.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s3-feat-002", "s3-feat-004"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -537,7 +537,7 @@
             "Integration tests verify the full pipeline: auth → rate limit → security scan → proxy → PII restore"
           ],
           "technical_notes": "Add a preHandler hook after rate limiting that: (1) extracts text content from request body messages[].content, (2) runs content filter, (3) blocks if needed, (4) runs PII redaction on message content, (5) stores mapping in request context. Modify chat-completions.ts to pass redacted content to upstream. Modify forwarder.ts to accept an onChunk hook for streaming PII restore. The SSE onChunk hook in sse-parser.ts already supports this via SSETransformOptions. Update src/index.ts to register security middleware in the /v1 scope.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s3-feat-003", "s3-feat-005"],
           "estimated_complexity": "large",
           "files_affected": [
@@ -563,7 +563,7 @@
             "Unit tests verify counts against known examples"
           ],
           "technical_notes": "Use js-tiktoken package. Export countTokens(text: string, model?: string): number and countChatTokens(messages: {content: string}[], model?: string): number. Need to add js-tiktoken to dependencies.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -586,7 +586,7 @@
             "All Phase 3 integration tests pass alongside Phase 1 + Phase 2 tests"
           ],
           "technical_notes": "Extend tests/helpers/setup.ts. Test against mock upstream that echoes back the received content. Verify that PII never reaches the upstream in plaintext. Verify that restored responses match original PII values.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s3-feat-006", "s3-feat-007"],
           "estimated_complexity": "medium",
           "files_affected": [

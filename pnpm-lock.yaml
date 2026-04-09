@@ -14,6 +14,9 @@ importers:
       better-sqlite3:
         specifier: ^12.8.0
         version: 12.8.0
+      compromise:
+        specifier: ^14.15.0
+        version: 14.15.0
       eventsource-parser:
         specifier: ^3.0.6
         version: 3.0.6
@@ -23,6 +26,9 @@ importers:
       fastify-plugin:
         specifier: ^5.1.0
         version: 5.1.0
+      js-tiktoken:
+        specifier: ^1.0.21
+        version: 1.0.21
       smol-toml:
         specifier: ^1.6.1
         version: 1.6.1
@@ -445,6 +451,10 @@ packages:
   colorette@2.0.20:
     resolution: {integrity: sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==}
 
+  compromise@14.15.0:
+    resolution: {integrity: sha512-YEMv5JGWyqRJw5hdZqDVQF3MMlHA6TRiXreR8IYffk6xB7GA5p/8DeDzvg0Jy2tHNGpD+qJGl0+oJwA+5R/sVA==}
+    engines: {node: '>=12.0.0'}
+
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
@@ -470,6 +480,10 @@ packages:
   detect-libc@2.1.2:
     resolution: {integrity: sha512-Btj2BOOO83o3WyH59e8MgXsxEQVcarkUOpEYrubB0urwnN10yQ364rsiByU11nZlqWYZm05i/of7io4mzihBtQ==}
     engines: {node: '>=8'}
+
+  efrt@2.7.0:
+    resolution: {integrity: sha512-/RInbCy1d4P6Zdfa+TMVsf/ufZVotat5hCw3QXmWtjU+3pFEOvOQ7ibo3aIxyCJw2leIeAMjmPj+1SLJiCpdrQ==}
+    engines: {node: '>=12.0.0'}
 
   end-of-stream@1.4.5:
     resolution: {integrity: sha512-ooEGc6HP26xXq/N+GCGOT0JKCLDGrq2bQUZrQ7gyrJiZANJ/8YDTxTpQBXGMn+WbIQXNVpyWymm7KYVICQnyOg==}
@@ -557,6 +571,10 @@ packages:
   github-from-package@0.0.0:
     resolution: {integrity: sha512-SyHy3T1v2NUXn29OsWdxmK6RwHD+vkj3v8en8AOBZ1wBQ/hCAQ5bAQTD02kW4W9tUp/3Qh6J8r9EvntiyCmOOw==}
 
+  grad-school@0.0.5:
+    resolution: {integrity: sha512-rXunEHF9M9EkMydTBux7+IryYXEZinRk6g8OBOGDBzo/qWJjhTxy86i5q7lQYpCLHN8Sqv1XX3OIOc7ka2gtvQ==}
+    engines: {node: '>=8.0.0'}
+
   help-me@5.0.0:
     resolution: {integrity: sha512-7xgomUX6ADmcYzFik0HzAxh/73YlKR9bmFzf51CZwR+b6YtzU2m0u49hQCqV6SvlqIqsaxovfwdvbnsw3b/zpg==}
 
@@ -576,6 +594,9 @@ packages:
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
+
+  js-tiktoken@1.0.21:
+    resolution: {integrity: sha512-biOj/6M5qdgx5TKjDnFT1ymSpM5tbd3ylwDtrQvFQSu0Z7bBYko2dF+W/aUkXUPuk6IVpRxk/3Q2sHOzGlS36g==}
 
   json-schema-ref-resolver@3.0.0:
     resolution: {integrity: sha512-hOrZIVL5jyYFjzk7+y7n5JDzGlU8rfWDuYyHwGa2WA8/pcmMHezp2xsVwxrebD/Q9t8Nc5DboieySDpCp4WG4A==}
@@ -834,6 +855,9 @@ packages:
   strip-json-comments@5.0.3:
     resolution: {integrity: sha512-1tB5mhVo7U+ETBKNf92xT4hrQa3pm0MZ0PQvuDnWgAAGHDsfp4lPSpiS6psrSiet87wyGPh9ft6wmhOMQ0hDiw==}
     engines: {node: '>=14.16'}
+
+  suffix-thumb@5.0.2:
+    resolution: {integrity: sha512-I5PWXAFKx3FYnI9a+dQMWNqTxoRt6vdBdb0O+BJ1sxXCWtSoQCusc13E58f+9p4MYx/qCnEMkD5jac6K2j3dgA==}
 
   tar-fs@2.1.4:
     resolution: {integrity: sha512-mDAjwmZdh7LTT6pNleZ05Yt65HC3E+NiQzl672vQG38jIrehtJk/J3mNwIg+vShQPcLF/LV7CMnDW6vjj6sfYQ==}
@@ -1285,6 +1309,12 @@ snapshots:
 
   colorette@2.0.20: {}
 
+  compromise@14.15.0:
+    dependencies:
+      efrt: 2.7.0
+      grad-school: 0.0.5
+      suffix-thumb: 5.0.2
+
   convert-source-map@2.0.0: {}
 
   cookie@1.1.1: {}
@@ -1300,6 +1330,8 @@ snapshots:
   dequal@2.0.3: {}
 
   detect-libc@2.1.2: {}
+
+  efrt@2.7.0: {}
 
   end-of-stream@1.4.5:
     dependencies:
@@ -1416,6 +1448,8 @@ snapshots:
 
   github-from-package@0.0.0: {}
 
+  grad-school@0.0.5: {}
+
   help-me@5.0.0: {}
 
   ieee754@1.2.1: {}
@@ -1427,6 +1461,10 @@ snapshots:
   ipaddr.js@2.3.0: {}
 
   joycon@3.1.1: {}
+
+  js-tiktoken@1.0.21:
+    dependencies:
+      base64-js: 1.5.1
 
   json-schema-ref-resolver@3.0.0:
     dependencies:
@@ -1680,6 +1718,8 @@ snapshots:
   strip-json-comments@2.0.1: {}
 
   strip-json-comments@5.0.3: {}
+
+  suffix-thumb@5.0.2: {}
 
   tar-fs@2.1.4:
     dependencies:

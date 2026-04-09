@@ -7,12 +7,13 @@ import { KeyStore } from "../../src/db/keys.js";
 import type { RateLimits } from "../../src/db/keys.js";
 import { RateLimiter, createRateLimitMiddleware, createRateLimitResponseHook } from "../../src/middleware/rate-limit.js";
 import { createAuthMiddleware } from "../../src/middleware/auth.js";
+import { createSecurityMiddleware } from "../../src/middleware/security.js";
 import { adminKeysPlugin } from "../../src/routes/admin/keys.js";
 import { chatCompletionsPlugin } from "../../src/routes/v1/chat-completions.js";
 import { embeddingsPlugin } from "../../src/routes/v1/embeddings.js";
 import { modelsPlugin } from "../../src/routes/v1/models.js";
 import "../../src/types.js";
-import type { AppConfig } from "../../src/config/index.js";
+import type { AppConfig, SecurityConfig } from "../../src/config/index.js";
 import type { FastifyInstance } from "fastify";
 import { createMockUpstream, getServerUrl } from "./mock-upstream.js";
 
@@ -27,19 +28,27 @@ export interface TestServerOptions {
   defaultRpm?: number;
   defaultTpm?: number;
   defaultRpd?: number;
+  security?: SecurityConfig;
+  upstreamUrl?: string;
 }
 
 export interface TestServerResult {
   server: FastifyInstance;
-  upstream: FastifyInstance;
+  upstream?: FastifyInstance;
   adminToken: string;
   cleanup: () => Promise<void>;
   createKey: (name?: string, rateLimits?: RateLimits) => Promise<string>;
 }
 
 export async function createTestServer(options?: TestServerOptions): Promise<TestServerResult> {
-  const upstream = await createMockUpstream();
-  const upstreamUrl = getServerUrl(upstream);
+  let upstream: FastifyInstance | undefined;
+  let upstreamUrl: string;
+  if (options?.upstreamUrl) {
+    upstreamUrl = options.upstreamUrl;
+  } else {
+    upstream = await createMockUpstream();
+    upstreamUrl = getServerUrl(upstream);
+  }
 
   const adminToken = options?.adminToken ?? DEFAULT_ADMIN_TOKEN;
   const encryptionKey = options?.encryptionKey ?? DEFAULT_ENCRYPTION_KEY;
@@ -66,6 +75,11 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
     default_rpm: defaultRpm,
     default_tpm: defaultTpm,
     default_rpd: defaultRpd,
+    security: options?.security ?? {
+      injection_threshold: 0.5,
+      blocked_pii_types: ["SSN", "CREDIT_CARD"],
+      flagged_pii_types: ["EMAIL", "PHONE", "CN_ID", "BANK_CARD", "IP_ADDRESS", "DATE_OF_BIRTH", "PERSON", "PLACE", "ORGANIZATION"],
+    },
   };
 
   const server = Fastify({ logger: false });
@@ -89,6 +103,9 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
     v1Scope.addHook("onRequest", createAuthMiddleware(db));
     v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
     v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
+    if (options?.security) {
+      v1Scope.addHook("preHandler", createSecurityMiddleware(options.security));
+    }
     await v1Scope.register(chatCompletionsPlugin);
     await v1Scope.register(embeddingsPlugin);
     await v1Scope.register(modelsPlugin);
@@ -110,7 +127,7 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
 
   const cleanup = async () => {
     await server.close();
-    await upstream.close();
+    if (upstream) await upstream.close();
     db.close();
   };
 

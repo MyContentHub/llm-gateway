@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Fastify from "fastify";
 import { embeddingsPlugin } from "./embeddings.js";
 import type { AppConfig } from "../../config/index.js";
+import { DEFAULT_SECURITY_CONFIG } from "../../config/index.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -41,6 +42,7 @@ function createServer(): Fastify.FastifyInstance {
     default_rpm: 60,
     default_tpm: 100000,
     default_rpd: 1000,
+    security: DEFAULT_SECURITY_CONFIG,
   } satisfies AppConfig);
   server.register(embeddingsPlugin);
   return server;
@@ -187,6 +189,7 @@ describe("POST /v1/embeddings", () => {
       default_rpm: 60,
       default_tpm: 100000,
       default_rpd: 1000,
+      security: DEFAULT_SECURITY_CONFIG,
     } satisfies AppConfig);
     server.register(embeddingsPlugin);
 

@@ -7,6 +7,7 @@ import { modelsPlugin } from "./routes/v1/models.js";
 import createDbPlugin from "./db/index.js";
 import { RateLimiter, createRateLimitMiddleware, createRateLimitResponseHook } from "./middleware/rate-limit.js";
 import { createAuthMiddleware } from "./middleware/auth.js";
+import { createSecurityMiddleware } from "./middleware/security.js";
 import { adminKeysPlugin } from "./routes/admin/keys.js";
 import "./types.js";
 
@@ -40,6 +41,7 @@ async function main() {
     async (v1Scope) => {
       v1Scope.addHook("onRequest", createAuthMiddleware(server.db));
       v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
+      v1Scope.addHook("preHandler", createSecurityMiddleware(config.security));
       v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
       await v1Scope.register(chatCompletionsPlugin);
       await v1Scope.register(embeddingsPlugin);

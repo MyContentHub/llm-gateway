@@ -6,6 +6,7 @@ import { resolve } from "node:path";
 import { adminKeysPlugin } from "./keys.js";
 import "../../types.js";
 import type { AppConfig } from "../../config/index.js";
+import { DEFAULT_SECURITY_CONFIG } from "../../config/index.js";
 
 const ADMIN_TOKEN = "test-admin-token";
 
@@ -32,6 +33,7 @@ function createServer(): Fastify.FastifyInstance {
     default_rpm: 60,
     default_tpm: 100000,
     default_rpd: 1000,
+    security: DEFAULT_SECURITY_CONFIG,
   };
 
   server.decorate("config", config);

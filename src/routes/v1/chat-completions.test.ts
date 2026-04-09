@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import Fastify from "fastify";
 import { chatCompletionsPlugin } from "./chat-completions.js";
 import type { AppConfig } from "../../config/index.js";
+import { DEFAULT_SECURITY_CONFIG } from "../../config/index.js";
 
 const originalFetch = globalThis.fetch;
 const encoder = new TextEncoder();
@@ -42,6 +43,7 @@ function createServer(): Fastify.FastifyInstance {
     default_rpm: 60,
     default_tpm: 100000,
     default_rpd: 1000,
+    security: DEFAULT_SECURITY_CONFIG,
   } satisfies AppConfig);
   server.register(chatCompletionsPlugin);
   return server;
@@ -276,6 +278,7 @@ describe("POST /v1/chat/completions", () => {
       default_rpm: 60,
       default_tpm: 100000,
       default_rpd: 1000,
+      security: DEFAULT_SECURITY_CONFIG,
     } satisfies AppConfig);
     server.register(chatCompletionsPlugin);
 

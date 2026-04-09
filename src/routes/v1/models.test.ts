@@ -3,6 +3,7 @@ import Fastify from "fastify";
 import { modelsPlugin } from "./models.js";
 import "../../types.js";
 import type { ProviderConfig } from "../../config/providers.js";
+import { DEFAULT_SECURITY_CONFIG } from "../../config/index.js";
 
 const originalFetch = globalThis.fetch;
 
@@ -19,6 +20,7 @@ function createServer(providers: ProviderConfig[] = []) {
     default_rpm: 60,
     default_tpm: 100000,
     default_rpd: 1000,
+    security: DEFAULT_SECURITY_CONFIG,
   });
   server.register(modelsPlugin);
   return server;

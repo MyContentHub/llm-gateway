@@ -152,6 +152,12 @@ export async function createGateway(
     admin_token: "admin-secret-key",
     default_rpm: 60,
     default_tpm: 100000,
+    default_rpd: 1000,
+    security: {
+      injection_threshold: 0.5,
+      blocked_pii_types: ["SSN", "CREDIT_CARD"],
+      flagged_pii_types: ["EMAIL", "PHONE", "CN_ID", "BANK_CARD", "IP_ADDRESS", "DATE_OF_BIRTH", "PERSON", "PLACE", "ORGANIZATION"],
+    },
   };
 
   const gateway = Fastify({ logger: false });

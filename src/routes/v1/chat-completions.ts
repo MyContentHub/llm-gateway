@@ -3,12 +3,26 @@ import { Readable } from "node:stream";
 import "../../types.js";
 import { resolveRoute, RouteError } from "../../proxy/router.js";
 import { forwardRequest, forwardStreamRequest } from "../../proxy/forwarder.js";
+import { createPiiContext } from "../../security/pii-redact.js";
 
 interface ChatCompletionRequest {
   model: string;
   messages: unknown[];
   stream?: boolean;
   [key: string]: unknown;
+}
+
+function restorePiiDeep(obj: unknown, restore: (text: string) => string): unknown {
+  if (typeof obj === "string") return restore(obj);
+  if (Array.isArray(obj)) return obj.map((item) => restorePiiDeep(item, restore));
+  if (obj && typeof obj === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj as Record<string, unknown>)) {
+      result[key] = restorePiiDeep(value, restore);
+    }
+    return result;
+  }
+  return obj;
 }
 
 const chatCompletionsPlugin: FastifyPluginCallback = (server, _opts, done) => {
@@ -44,14 +58,39 @@ const chatCompletionsPlugin: FastifyPluginCallback = (server, _opts, done) => {
       throw err;
     }
 
-    const upstreamBody = { ...body, model: route.resolvedModel };
+    const messages = request.securityScan?.redactedMessages ?? body.messages;
+    const upstreamBody = { ...body, model: route.resolvedModel, messages };
     const upstreamUrl = `${route.baseUrl.replace(/\/+$/, "")}/chat/completions`;
 
     if (body.stream === true) {
+      const mapping = request.securityScan?.piiMapping;
+      const piiCtx = createPiiContext();
+
+      const sseOptions = mapping && mapping.size > 0
+        ? {
+            onChunk: (data: string): string => {
+              try {
+                const parsed = JSON.parse(data);
+                if (parsed.choices) {
+                  for (const choice of parsed.choices) {
+                    if (choice.delta?.content) {
+                      choice.delta.content = piiCtx.restore(choice.delta.content, mapping);
+                    }
+                  }
+                }
+                return JSON.stringify(parsed);
+              } catch {
+                return data;
+              }
+            },
+          }
+        : undefined;
+
       const result = await forwardStreamRequest({
         upstreamUrl,
         apiKey: route.apiKey,
         body: upstreamBody,
+        sseOptions,
       });
 
       if (!result.ok) {
@@ -76,6 +115,12 @@ const chatCompletionsPlugin: FastifyPluginCallback = (server, _opts, done) => {
       apiKey: route.apiKey,
       body: upstreamBody,
     });
+
+    const mapping = request.securityScan?.piiMapping;
+    if (mapping && mapping.size > 0) {
+      const piiCtx = createPiiContext();
+      result.body = restorePiiDeep(result.body, (text) => piiCtx.restore(text, mapping));
+    }
 
     const responseHeaders: Record<string, string> = {
       "Content-Type": "application/json",
