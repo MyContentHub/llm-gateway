@@ -1,0 +1,25 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway — intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 20+",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser"
+    ],
+    "created_at": "2026-04-09"
+  },
+  "sprints": [],
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2026-04-09"
+  }
+}
