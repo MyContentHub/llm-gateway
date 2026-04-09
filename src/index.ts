@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import "dotenv/config";
 import { loadConfig } from "./config/index.js";
 import { chatCompletionsPlugin } from "./routes/v1/chat-completions.js";
+import { embeddingsPlugin } from "./routes/v1/embeddings.js";
 import { modelsPlugin } from "./routes/v1/models.js";
 
 async function main() {
@@ -23,6 +24,7 @@ async function main() {
   server.decorate("config", config);
 
   await server.register(chatCompletionsPlugin);
+  await server.register(embeddingsPlugin);
 
   await server.register(modelsPlugin);
 
