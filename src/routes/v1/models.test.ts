@@ -15,6 +15,7 @@ function createServer(providers: ProviderConfig[] = []) {
     log_level: "silent",
     database_path: "./test.db",
     encryption_key: "",
+    admin_token: "admin-secret-key",
     default_rpm: 60,
     default_tpm: 100000,
   });

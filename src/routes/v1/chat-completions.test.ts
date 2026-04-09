@@ -38,6 +38,7 @@ function createServer(): Fastify.FastifyInstance {
         isDefault: false,
       },
     ],
+    admin_token: "admin-secret-key",
     default_rpm: 60,
     default_tpm: 100000,
   } satisfies AppConfig);
@@ -270,6 +271,7 @@ describe("POST /v1/chat/completions", () => {
       database_path: "./data/gateway.db",
       encryption_key: "",
       providers: [],
+      admin_token: "admin-secret-key",
       default_rpm: 60,
       default_tpm: 100000,
     } satisfies AppConfig);

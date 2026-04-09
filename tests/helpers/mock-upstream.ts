@@ -149,6 +149,7 @@ export async function createGateway(
     database_path: "./data/gateway.db",
     encryption_key: "",
     providers: providers as AppConfig["providers"],
+    admin_token: "admin-secret-key",
     default_rpm: 60,
     default_tpm: 100000,
   };
