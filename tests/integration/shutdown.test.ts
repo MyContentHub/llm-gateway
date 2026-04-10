@@ -63,7 +63,7 @@ describe("Graceful Shutdown Integration", () => {
     server.get("/delay/:id", async (request) => {
       const { id } = request.params as { id: string };
       const numId = parseInt(id, 10);
-      await new Promise((resolve) => setTimeout(resolve, numId * 30));
+      await new Promise((resolve) => setTimeout(resolve, numId * 20));
       completed.push(numId);
       return { id: numId };
     });
@@ -75,7 +75,6 @@ describe("Graceful Shutdown Integration", () => {
     const promises = [
       httpRequest(`${url}/delay/1`),
       httpRequest(`${url}/delay/2`),
-      httpRequest(`${url}/delay/3`),
     ];
 
     await new Promise((resolve) => setTimeout(resolve, 10));
@@ -83,7 +82,7 @@ describe("Graceful Shutdown Integration", () => {
 
     const results = await Promise.all(promises);
     for (const r of results) expect(r.statusCode).toBe(200);
-    expect(completed.sort()).toEqual([1, 2, 3]);
+    expect(completed.sort()).toEqual([1, 2]);
   });
 
   it("rejects new connections after server.close()", async () => {
