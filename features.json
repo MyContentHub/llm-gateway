@@ -22,7 +22,7 @@
       "id": "sprint-005",
       "name": "Phase 5 - Enhancements",
       "goal": "Implement multi-key rotation and load balancing for upstream providers, retry with exponential backoff and failover across providers, request/response lifecycle hook plugin system, and Docker deployment configuration — completing the production-ready feature set",
-      "status": "in_progress",
+      "status": "completed",
       "created_at": "2026-04-11",
       "features": [
         {
@@ -41,7 +41,7 @@
             "Unit tests cover all strategies, health tracking, backward compatibility, and edge cases"
           ],
           "technical_notes": "Extend ProviderSchema in providers.ts: add `apiKeys: z.array(z.string()).optional()` (if present, used instead of single `apiKey`). Add `keyStrategy: z.enum(['round-robin', 'random', 'least-latency']).optional().default('round-robin')`. Create src/proxy/key-selector.ts with KeySelector class. Create src/proxy/health-tracker.ts for per-key latency/error tracking. Modify router.ts to use KeySelector when multiple keys exist. Health tracker stores last N latencies and error count per key, resets on success.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "large",
           "files_affected": [
@@ -70,7 +70,7 @@
             "Unit tests cover retry logic, backoff timing, failover, non-retryable errors, and streaming retry"
           ],
           "technical_notes": "Create src/proxy/retry.ts with retryWithBackoff function. Modify forwarder.ts to wrap upstream calls with retry logic. Retry config from [retry] section in config.toml: max_retries (default 2), initial_delay_ms (default 1000), max_delay_ms (default 10000), backoff_multiplier (default 2). For failover: add `failover_provider` field to ProviderSchema. Streaming retry is complex — only retry on connection errors before stream starts, not mid-stream. Add jitter to backoff to avoid thundering herd.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "large",
           "files_affected": [
@@ -96,7 +96,7 @@
             "Unit tests cover hook registration, execution order, error tolerance, and lifecycle timing"
           ],
           "technical_notes": "Create src/hooks/index.ts with HookManager class. Lifecycle points: onRequest, preProxy, onResponse, onError. Each hook is async (request, context) => void. Context object carries data between hooks (e.g., custom headers, metadata). Hooks registered programmatically via server.hooks.register('preProxy', fn) or via config [hooks] with JS module paths. Hook execution is sequential within a lifecycle point. Fault-tolerant: wrap each hook in try/catch, log errors, continue. Integrate into existing middleware chain in index.ts.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -121,7 +121,7 @@
             "Health check is configured in both Dockerfile and docker-compose.yml"
           ],
           "technical_notes": "Multi-stage build: Stage 1 uses node:22-alpine for build (pnpm install + pnpm build), Stage 2 copies dist + node_modules to node:22-alpine-slim. Non-root user: addgroup/adduser. EXPOSE 3000. HEALTHCHECK CMD curl -f http://localhost:3000/health. docker-compose.yml: service 'gateway' with volume ./data:/app/data, env_file, healthcheck. .dockerignore: node_modules, .git, tests, *.md, .agents. Config supports env var overrides (PORT, LOG_LEVEL, DATABASE_PATH) via optional env loading in config/index.ts.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -146,7 +146,7 @@
             "Unit tests verify signal handling, in-flight request completion, and timeout behavior"
           ],
           "technical_notes": "Add signal handlers in src/index.ts main(). Use Fastify server.close() for graceful shutdown. Track in-flight requests with a counter (increment in onRequest, decrement in onResponse). Add shutdownTimeoutMs config (default 30000). Use process.on('SIGTERM', ...) and process.on('SIGINT', ...). Add process.on('uncaughtException', ...) and process.on('unhandledRejection', ...). Close better-sqlite3 connection on shutdown. Log shutdown progress with pino.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -170,7 +170,7 @@
             "All Phase 5 integration tests pass alongside Phase 1-4 tests (521+ total)"
           ],
           "technical_notes": "Create tests/integration/key-rotation.test.ts, tests/integration/retry-failover.test.ts, tests/integration/shutdown.test.ts. Use mock upstream servers that simulate errors and multiple keys. Test the full lifecycle including health tracker state changes. Verify metrics are recorded correctly for retried/failover requests.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s5-feat-001", "s5-feat-002", "s5-feat-005"],
           "estimated_complexity": "medium",
           "files_affected": [
