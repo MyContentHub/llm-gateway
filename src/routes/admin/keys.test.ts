@@ -34,6 +34,7 @@ function createServer(): Fastify.FastifyInstance {
     default_tpm: 100000,
     default_rpd: 1000,
     security: DEFAULT_SECURITY_CONFIG,
+    retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
   };
 
   server.decorate("config", config);

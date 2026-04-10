@@ -28,6 +28,7 @@ function createServer(): Fastify.FastifyInstance {
         name: "openai",
         baseUrl: "https://api.openai.com/v1",
         apiKey: "sk-openai-key",
+        keyStrategy: "round-robin",
         modelMappings: { "gpt-4o": "gpt-4o", "gpt-4o-mini": "gpt-4o-mini" },
         isDefault: true,
       },
@@ -35,6 +36,7 @@ function createServer(): Fastify.FastifyInstance {
         name: "anthropic",
         baseUrl: "https://api.anthropic.com/v1",
         apiKey: "sk-ant-key",
+        keyStrategy: "round-robin",
         modelMappings: { "fast-chat": "claude-3-haiku" },
         isDefault: false,
       },
@@ -44,6 +46,7 @@ function createServer(): Fastify.FastifyInstance {
     default_tpm: 100000,
     default_rpd: 1000,
     security: DEFAULT_SECURITY_CONFIG,
+    retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
   } satisfies AppConfig);
   server.register(chatCompletionsPlugin);
   return server;
@@ -279,6 +282,7 @@ describe("POST /v1/chat/completions", () => {
       default_tpm: 100000,
       default_rpd: 1000,
       security: DEFAULT_SECURITY_CONFIG,
+      retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
     } satisfies AppConfig);
     server.register(chatCompletionsPlugin);
 

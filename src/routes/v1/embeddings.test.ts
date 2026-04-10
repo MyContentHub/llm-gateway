@@ -27,6 +27,7 @@ function createServer(): Fastify.FastifyInstance {
         name: "openai",
         baseUrl: "https://api.openai.com/v1",
         apiKey: "sk-openai-key",
+        keyStrategy: "round-robin",
         modelMappings: { "text-embedding-3-small": "text-embedding-3-small" },
         isDefault: true,
       },
@@ -34,6 +35,7 @@ function createServer(): Fastify.FastifyInstance {
         name: "other",
         baseUrl: "https://api.other.com/v1",
         apiKey: "sk-other-key",
+        keyStrategy: "round-robin",
         modelMappings: { "embed-fast": "embed-v3-small" },
         isDefault: false,
       },
@@ -43,6 +45,7 @@ function createServer(): Fastify.FastifyInstance {
     default_tpm: 100000,
     default_rpd: 1000,
     security: DEFAULT_SECURITY_CONFIG,
+    retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
   } satisfies AppConfig);
   server.register(embeddingsPlugin);
   return server;
@@ -190,6 +193,7 @@ describe("POST /v1/embeddings", () => {
       default_tpm: 100000,
       default_rpd: 1000,
       security: DEFAULT_SECURITY_CONFIG,
+      retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
     } satisfies AppConfig);
     server.register(embeddingsPlugin);
 

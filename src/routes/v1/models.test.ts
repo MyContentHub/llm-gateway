@@ -21,6 +21,7 @@ function createServer(providers: ProviderConfig[] = []) {
     default_tpm: 100000,
     default_rpd: 1000,
     security: DEFAULT_SECURITY_CONFIG,
+    retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
   });
   server.register(modelsPlugin);
   return server;
@@ -59,7 +60,7 @@ describe("GET /v1/models", () => {
     });
 
     const server = createServer([
-      { name: "openai", baseUrl: "https://api.openai.com/v1", apiKey: "sk-test", modelMappings: {}, isDefault: true },
+      { name: "openai", baseUrl: "https://api.openai.com/v1", apiKey: "sk-test", keyStrategy: "round-robin", modelMappings: {}, isDefault: true },
     ]);
 
     const res = await server.inject({ method: "GET", url: "/v1/models" });
@@ -114,8 +115,8 @@ describe("GET /v1/models", () => {
     });
 
     const server = createServer([
-      { name: "openai", baseUrl: "https://api.openai.com/v1", apiKey: "sk-oai", modelMappings: {}, isDefault: true },
-      { name: "anthropic", baseUrl: "https://api.anthropic.com/v1", apiKey: "sk-ant", modelMappings: {}, isDefault: false },
+      { name: "openai", baseUrl: "https://api.openai.com/v1", apiKey: "sk-oai", keyStrategy: "round-robin", modelMappings: {}, isDefault: true },
+      { name: "anthropic", baseUrl: "https://api.anthropic.com/v1", apiKey: "sk-ant", keyStrategy: "round-robin", modelMappings: {}, isDefault: false },
     ]);
 
     const res = await server.inject({ method: "GET", url: "/v1/models" });
@@ -147,8 +148,8 @@ describe("GET /v1/models", () => {
     });
 
     const server = createServer([
-      { name: "bad", baseUrl: "https://bad.example.com/v1", apiKey: "sk-bad", modelMappings: {}, isDefault: false },
-      { name: "deepseek", baseUrl: "https://api.deepseek.com/v1", apiKey: "sk-ds", modelMappings: {}, isDefault: false },
+      { name: "bad", baseUrl: "https://bad.example.com/v1", apiKey: "sk-bad", keyStrategy: "round-robin", modelMappings: {}, isDefault: false },
+      { name: "deepseek", baseUrl: "https://api.deepseek.com/v1", apiKey: "sk-ds", keyStrategy: "round-robin", modelMappings: {}, isDefault: false },
     ]);
 
     const res = await server.inject({ method: "GET", url: "/v1/models" });
@@ -169,8 +170,8 @@ describe("GET /v1/models", () => {
     });
 
     const server = createServer([
-      { name: "a", baseUrl: "https://a.com/v1", apiKey: "k1", modelMappings: {}, isDefault: false },
-      { name: "b", baseUrl: "https://b.com/v1", apiKey: "k2", modelMappings: {}, isDefault: false },
+      { name: "a", baseUrl: "https://a.com/v1", apiKey: "k1", keyStrategy: "round-robin", modelMappings: {}, isDefault: false },
+      { name: "b", baseUrl: "https://b.com/v1", apiKey: "k2", keyStrategy: "round-robin", modelMappings: {}, isDefault: false },
     ]);
 
     const res = await server.inject({ method: "GET", url: "/v1/models" });
@@ -187,7 +188,7 @@ describe("GET /v1/models", () => {
     globalThis.fetch = vi.fn().mockRejectedValue(new Error("ECONNREFUSED"));
 
     const server = createServer([
-      { name: "unreachable", baseUrl: "https://unreachable.com/v1", apiKey: "sk-key", modelMappings: {}, isDefault: false },
+      { name: "unreachable", baseUrl: "https://unreachable.com/v1", apiKey: "sk-key", keyStrategy: "round-robin", modelMappings: {}, isDefault: false },
     ]);
 
     const res = await server.inject({ method: "GET", url: "/v1/models" });
@@ -209,7 +210,7 @@ describe("GET /v1/models", () => {
     });
 
     const server = createServer([
-      { name: "custom-provider", baseUrl: "https://custom.com/v1", apiKey: "key", modelMappings: {}, isDefault: false },
+      { name: "custom-provider", baseUrl: "https://custom.com/v1", apiKey: "key", keyStrategy: "round-robin", modelMappings: {}, isDefault: false },
     ]);
 
     const res = await server.inject({ method: "GET", url: "/v1/models" });

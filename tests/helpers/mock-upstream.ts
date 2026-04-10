@@ -159,6 +159,12 @@ export async function createGateway(
       blocked_pii_types: ["SSN", "CREDIT_CARD"],
       flagged_pii_types: ["EMAIL", "PHONE", "CN_ID", "BANK_CARD", "IP_ADDRESS", "DATE_OF_BIRTH", "PERSON", "PLACE", "ORGANIZATION"],
     },
+    retry: {
+      max_retries: 2,
+      initial_delay_ms: 1000,
+      max_delay_ms: 10000,
+      backoff_multiplier: 2,
+    },
   };
 
   const gateway = Fastify({ logger: false });

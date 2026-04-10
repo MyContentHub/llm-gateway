@@ -43,6 +43,7 @@ function makeConfig(): AppConfig {
       blocked_pii_types: [],
       flagged_pii_types: [],
     },
+    retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
   };
 }
 
