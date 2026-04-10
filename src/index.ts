@@ -13,6 +13,7 @@ import { createAuditLogger } from "./audit/logger.js";
 import { setupMetrics, createMetrics } from "./audit/metrics.js";
 import { adminAuditPlugin } from "./routes/admin/audit.js";
 import { HookManager } from "./hooks/index.js";
+import { setupGracefulShutdown } from "./graceful-shutdown.js";
 import "./types.js";
 
 async function main() {
@@ -75,6 +76,8 @@ async function main() {
   await server.register(adminAuditPlugin);
 
   await server.listen({ port: config.port, host: config.host });
+
+  setupGracefulShutdown(server);
 }
 
 main().catch((err) => {
