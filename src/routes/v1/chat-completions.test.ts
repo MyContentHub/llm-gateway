@@ -53,11 +53,13 @@ function createServer(): Fastify.FastifyInstance {
 }
 
 function mockFetchResponse(status: number, body: unknown, headers?: Record<string, string>) {
-  globalThis.fetch = vi.fn().mockResolvedValue(
-    new Response(JSON.stringify(body), {
-      status,
-      headers: headers ?? { "content-type": "application/json" },
-    }),
+  globalThis.fetch = vi.fn().mockImplementation(() =>
+    Promise.resolve(
+      new Response(JSON.stringify(body), {
+        status,
+        headers: headers ?? { "content-type": "application/json" },
+      }),
+    ),
   );
 }
 

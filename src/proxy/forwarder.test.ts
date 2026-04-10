@@ -16,11 +16,13 @@ function mockFetch(response: {
   headers?: Record<string, string>;
   body: unknown;
 }) {
-  globalThis.fetch = vi.fn().mockResolvedValue(
-    new Response(typeof response.body === "string" ? response.body : JSON.stringify(response.body), {
-      status: response.status,
-      headers: response.headers ?? { "content-type": "application/json" },
-    }),
+  globalThis.fetch = vi.fn().mockImplementation(() =>
+    Promise.resolve(
+      new Response(typeof response.body === "string" ? response.body : JSON.stringify(response.body), {
+        status: response.status,
+        headers: response.headers ?? { "content-type": "application/json" },
+      }),
+    ),
   );
 }
 
@@ -89,6 +91,7 @@ describe("forwardRequest", () => {
       upstreamUrl: "https://api.openai.com/v1/chat/completions",
       apiKey: "sk-test",
       body: { model: "gpt-4o", messages: [] },
+      retryConfig: { maxRetries: 0, initialDelayMs: 0, maxDelayMs: 0, backoffMultiplier: 1 },
     });
 
     expect(result.status).toBe(429);
@@ -102,6 +105,7 @@ describe("forwardRequest", () => {
       upstreamUrl: "https://api.openai.com/v1/chat/completions",
       apiKey: "sk-test",
       body: { model: "gpt-4o", messages: [] },
+      retryConfig: { maxRetries: 0, initialDelayMs: 0, maxDelayMs: 0, backoffMultiplier: 1 },
     });
 
     expect(result.status).toBe(500);
