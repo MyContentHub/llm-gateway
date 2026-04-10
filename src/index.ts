@@ -9,6 +9,9 @@ import { RateLimiter, createRateLimitMiddleware, createRateLimitResponseHook } f
 import { createAuthMiddleware } from "./middleware/auth.js";
 import { createSecurityMiddleware } from "./middleware/security.js";
 import { adminKeysPlugin } from "./routes/admin/keys.js";
+import { createAuditLogger } from "./audit/logger.js";
+import { setupMetrics, createMetrics } from "./audit/metrics.js";
+import { adminAuditPlugin } from "./routes/admin/audit.js";
 import "./types.js";
 
 async function main() {
@@ -37,12 +40,16 @@ async function main() {
   const rateLimiter = new RateLimiter({ rpm: config.default_rpm, tpm: config.default_tpm, rpd: config.default_rpd });
   server.decorate("rateLimiter", rateLimiter);
 
+  const metrics = createMetrics();
+  setupMetrics(server, metrics);
+
   await server.register(
     async (v1Scope) => {
       v1Scope.addHook("onRequest", createAuthMiddleware(server.db));
       v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
       v1Scope.addHook("preHandler", createSecurityMiddleware(config.security));
       v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
+      await v1Scope.register(createAuditLogger(server.db, config));
       await v1Scope.register(chatCompletionsPlugin);
       await v1Scope.register(embeddingsPlugin);
       await v1Scope.register(modelsPlugin);
@@ -51,6 +58,7 @@ async function main() {
   );
 
   await server.register(adminKeysPlugin);
+  await server.register(adminAuditPlugin);
 
   await server.listen({ port: config.port, host: config.host });
 }

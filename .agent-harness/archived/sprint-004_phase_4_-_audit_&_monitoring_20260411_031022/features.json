@@ -1,0 +1,188 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser"
+    ],
+    "created_at": "2026-04-09"
+  },
+  "archived_sprint": {
+    "id": "sprint-004",
+    "name": "Phase 4 - Audit & Monitoring",
+    "goal": "Implement audit logging (metadata only, no raw content, SHA-256 content hash), token usage cost calculation, Prometheus metrics export via prom-client, and admin audit log query API \u2014 completing the observability layer of the gateway",
+    "status": "completed",
+    "created_at": "2026-04-11",
+    "features": [
+      {
+        "id": "s4-feat-001",
+        "category": "infra",
+        "priority": "high",
+        "title": "Cost calculation utility",
+        "description": "Implement a cost calculation module that maps model names to per-token pricing (input + output) and calculates cost from token counts. Support configurable pricing overrides via config.toml. Include a built-in pricing table for common OpenAI, Anthropic, and other popular models.",
+        "acceptance_criteria": [
+          "Given model 'gpt-4o' with 1000 prompt_tokens and 500 completion_tokens, when cost is calculated, then the correct USD amount is returned based on known pricing",
+          "Given model 'gpt-3.5-turbo' with token counts, when cost is calculated, then pricing matches the known rate",
+          "Given an unknown model, when cost is calculated, then a fallback rate or 0 is returned",
+          "Given a custom pricing override in config for model 'my-custom-model', when cost is calculated, then the override rate is used instead of the built-in rate",
+          "Unit tests cover all built-in models, unknown models, custom overrides, and edge cases (zero tokens, missing fields)"
+        ],
+        "technical_notes": "Export calculateCost(model: string, promptTokens: number, completionTokens: number, overrides?: Record<string, ModelPricing>): number. Pricing stored as cost per 1M tokens. Built-in table covers gpt-4o, gpt-4-turbo, gpt-4, gpt-3.5-turbo, claude-3-opus, claude-3-sonnet, claude-3-haiku, text-embedding-ada-002, text-embedding-3-small. Returns USD as a number (e.g., 0.00234). Config override via [pricing] section in config.toml.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/utils/cost.ts",
+          "src/utils/cost.test.ts"
+        ]
+      },
+      {
+        "id": "s4-feat-002",
+        "category": "data",
+        "priority": "high",
+        "title": "Audit log storage layer",
+        "description": "Implement the data access layer for audit logs in SQLite. Insert audit records after each proxied request with fields: request_id, timestamp, api_key_id, model, endpoint, prompt_tokens, completion_tokens, cost_usd, latency_ms, status, pii_detected, pii_types_found, prompt_injection_score, content_hash_sha256. Support querying with filters (date range, model, api_key_id, endpoint, status) and pagination.",
+        "acceptance_criteria": [
+          "Given a completed request with all metadata fields, when insertAuditLog() is called, then the record is persisted to the audit_logs table",
+          "Given multiple audit records exist, when queryAuditLogs({ startDate, endDate }) is called, then only records in the date range are returned",
+          "Given filters for model, api_key_id, endpoint, and status, when queryAuditLogs() is called with filters, then results match all filter criteria",
+          "Given query with limit and offset, when called, then paginated results are returned with total count",
+          "Given a request_id, when getAuditLogById() is called, then the full audit record is returned",
+          "Unit tests cover CRUD operations, filtering, pagination, and edge cases with in-memory SQLite"
+        ],
+        "technical_notes": "Use better-sqlite3 prepared statements. Export insertAuditLog(entry: AuditLogEntry): void and queryAuditLogs(filters: AuditLogFilters): { rows: AuditLogRow[], total: number }. The audit_logs table already exists in 001-init.sql. Use request_id (UUID) as the unique identifier. content_hash_sha256 is SHA-256 of request body (for dedup/analytics, not storing content).",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/db/audit-store.ts",
+          "src/db/audit-store.test.ts"
+        ]
+      },
+      {
+        "id": "s4-feat-003",
+        "category": "infra",
+        "priority": "high",
+        "title": "Audit logger middleware",
+        "description": "Implement an audit logging hook that captures request metadata after each proxied request completes. Extracts: request_id (UUID), model, endpoint, token counts from response usage, latency, status code, PII detection results from request.securityScan, injection score, and computes SHA-256 content hash of the request body. Writes to audit_logs via the storage layer. Must work for both streaming and non-streaming responses.",
+        "acceptance_criteria": [
+          "Given a successful non-streaming chat completions request, when the response is sent, then an audit log record is written with correct model, tokens, cost, latency, and status",
+          "Given a streaming chat completions request, when the stream completes, then an audit log record is written with token counts estimated from input only",
+          "Given a request blocked by content filter, when the 400 response is sent, then an audit log is written with status='blocked' and the injection score",
+          "Given a request that fails upstream (502), when the error response is sent, then an audit log is written with status='error'",
+          "Given a request with PII detected, when audited, then pii_detected=true and pii_types_found contains the detected types",
+          "Given a request body, when audited, then content_hash_sha256 is the SHA-256 hex digest of the request body JSON",
+          "Audit logging does not block or slow down the response (fire-and-forget write to SQLite is acceptable since better-sqlite3 is synchronous and fast)",
+          "Unit tests verify audit records for success, blocked, error, and streaming scenarios"
+        ],
+        "technical_notes": "Use Fastify onResponse hook to capture response data after the response is sent. Generate request_id via crypto.randomUUID(). Extract token counts from response body usage field (non-streaming) or estimate from request (streaming). Use countTokens from tokenizer.ts for prompt token estimation. Calculate cost using cost.ts. SHA-256 of request body JSON via Node.js crypto.createHash. Store security scan results from request.securityScan. Register as a Fastify plugin in src/index.ts.",
+        "status": "completed",
+        "dependencies": [
+          "s4-feat-001",
+          "s4-feat-002"
+        ],
+        "estimated_complexity": "large",
+        "files_affected": [
+          "src/audit/logger.ts",
+          "src/audit/logger.test.ts",
+          "src/index.ts",
+          "src/types.ts"
+        ]
+      },
+      {
+        "id": "s4-feat-004",
+        "category": "infra",
+        "priority": "high",
+        "title": "Prometheus metrics export",
+        "description": "Implement Prometheus metrics using prom-client. Export standard HTTP metrics (request duration histogram, request count) plus custom LLM gateway metrics: llm_request_total (counter by model, status, endpoint), llm_tokens_total (counter by type: prompt/completion, model), llm_request_cost_usd (histogram by model), llm_request_duration_seconds (histogram by model, endpoint). Expose /metrics endpoint for Prometheus scraping.",
+        "acceptance_criteria": [
+          "Given the server is running, when GET /metrics is called, then a Prometheus-compatible text metrics response is returned",
+          "Given a successful chat completions request, when metrics are checked, then llm_request_total{model, status='success', endpoint} is incremented",
+          "Given a request with 100 prompt tokens and 50 completion tokens, when metrics are checked, then llm_tokens_total{type='prompt', model} += 100 and llm_tokens_total{type='completion', model} += 50",
+          "Given a request costing $0.05, when metrics are checked, then llm_request_cost_usd histogram observes 0.05",
+          "Given 5 requests to /v1/chat/completions, when llm_request_duration_seconds is checked, then 5 observations are recorded with correct labels",
+          "Default Fastify metrics (request duration, request count) are also included",
+          "Unit tests verify metric registration, incrementing, and histogram observation"
+        ],
+        "technical_notes": "Use prom-client npm package. Register metrics in a shared registry. Export setupMetrics(server: FastifyInstance): void function that registers metrics collection hooks and the /metrics GET endpoint. Use Fastify onResponse hook to record metrics after each request. Counter for request total, histogram for duration and cost, counter for tokens. Need to add prom-client to dependencies (it's already listed in AGENTS.md tech stack). Register in src/index.ts.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/audit/metrics.ts",
+          "src/audit/metrics.test.ts",
+          "src/index.ts"
+        ]
+      },
+      {
+        "id": "s4-feat-005",
+        "category": "api",
+        "priority": "high",
+        "title": "Admin audit log query API",
+        "description": "Implement admin endpoints for querying audit logs. Endpoints: GET /admin/audit/logs (list with filters and pagination), GET /admin/audit/logs/:requestId (get single audit record), GET /admin/audit/stats (aggregate statistics: total requests, total tokens, total cost, requests by model, requests by status, average latency, PII detection rate). Admin endpoints protected by the existing admin auth middleware.",
+        "acceptance_criteria": [
+          "Given a valid admin token, when GET /admin/audit/logs is called, then a paginated list of audit records is returned sorted by timestamp descending",
+          "Given query params startDate, endDate, model, endpoint, status, api_key_id, when GET /admin/audit/logs?startDate=...&model=gpt-4o is called, then filtered results are returned",
+          "Given a valid admin token, when GET /admin/audit/logs/:requestId is called, then the full audit record is returned",
+          "Given a valid admin token, when GET /admin/audit/stats is called, then aggregate statistics are returned: { totalRequests, totalTokens, totalCostUsd, byModel: {...}, byStatus: {...}, avgLatencyMs, piiDetectionRate }",
+          "Given query params for stats (startDate, endDate), when GET /admin/audit/stats is called, then stats are computed for the given date range",
+          "Given an invalid or missing admin token, when any /admin/audit/* endpoint is called, then 401 is returned",
+          "All endpoints have integration tests"
+        ],
+        "technical_notes": "Register under /admin/audit prefix. Reuse admin auth middleware from src/middleware/admin-auth.ts. Use zod for query param validation. GET /admin/audit/logs supports query params: startDate, endDate, model, endpoint, status, api_key_id, limit (default 50), offset (default 0). GET /admin/audit/stats supports startDate, endDate. Use the audit-store.ts query functions. Stats are computed via SQL aggregation (SUM, AVG, COUNT with GROUP BY) for performance.",
+        "status": "completed",
+        "dependencies": [
+          "s4-feat-002"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/routes/admin/audit.ts",
+          "src/routes/admin/audit.test.ts"
+        ]
+      },
+      {
+        "id": "s4-feat-006",
+        "category": "infra",
+        "priority": "medium",
+        "title": "Phase 4 integration tests",
+        "description": "Write end-to-end integration tests for the audit & monitoring pipeline. Test that audit records are written for successful requests, blocked requests, and error requests. Verify audit log query API returns correct data. Verify Prometheus metrics endpoint returns expected metrics after requests. Test cost calculation accuracy. Test the full pipeline: auth \u2192 rate limit \u2192 security \u2192 proxy \u2192 audit \u2192 metrics.",
+        "acceptance_criteria": [
+          "Given a successful proxied request, when the response is sent, then an audit record appears in the database with correct fields",
+          "Given a blocked request (injection), when the response is sent, then an audit record with status='blocked' exists",
+          "Given a failed request (502), when the response is sent, then an audit record with status='error' exists",
+          "Given admin token, when GET /admin/audit/logs is called, then all audit records are returned",
+          "Given admin token, when GET /admin/audit/stats is called, then accurate aggregate statistics are returned",
+          "Given proxied requests, when GET /metrics is called, then Prometheus metrics include llm_request_total, llm_tokens_total, llm_request_cost_usd, llm_request_duration_seconds",
+          "All Phase 4 integration tests pass alongside Phase 1-3 tests (395+ total)"
+        ],
+        "technical_notes": "Extend tests/helpers/setup.ts with audit/metrics support. Use in-memory SQLite for test isolation. Verify audit records directly from DB after requests. Verify metrics endpoint returns expected metric names and values. Test cost calculation against known model pricing.",
+        "status": "completed",
+        "dependencies": [
+          "s4-feat-003",
+          "s4-feat-004",
+          "s4-feat-005"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "tests/integration/audit.test.ts",
+          "tests/integration/metrics.test.ts",
+          "tests/helpers/setup.ts"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-11 03:10:22",
+    "original_sprint_id": "sprint-004"
+  }
+}

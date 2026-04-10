@@ -9,6 +9,9 @@ import { RateLimiter, createRateLimitMiddleware, createRateLimitResponseHook } f
 import { createAuthMiddleware } from "../../src/middleware/auth.js";
 import { createSecurityMiddleware } from "../../src/middleware/security.js";
 import { adminKeysPlugin } from "../../src/routes/admin/keys.js";
+import { adminAuditPlugin } from "../../src/routes/admin/audit.js";
+import { createAuditLogger } from "../../src/audit/logger.js";
+import { setupMetrics } from "../../src/audit/metrics.js";
 import { chatCompletionsPlugin } from "../../src/routes/v1/chat-completions.js";
 import { embeddingsPlugin } from "../../src/routes/v1/embeddings.js";
 import { modelsPlugin } from "../../src/routes/v1/models.js";
@@ -106,12 +109,15 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
     if (options?.security) {
       v1Scope.addHook("preHandler", createSecurityMiddleware(options.security));
     }
+    await v1Scope.register(createAuditLogger(db, config));
     await v1Scope.register(chatCompletionsPlugin);
     await v1Scope.register(embeddingsPlugin);
     await v1Scope.register(modelsPlugin);
   });
 
   await server.register(adminKeysPlugin);
+  await server.register(adminAuditPlugin);
+  setupMetrics(server);
 
   await server.ready();
 

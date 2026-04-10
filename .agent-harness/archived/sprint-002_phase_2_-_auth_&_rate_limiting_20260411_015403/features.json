@@ -1,0 +1,239 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser"
+    ],
+    "created_at": "2026-04-09"
+  },
+  "archived_sprint": {
+    "id": "sprint-002",
+    "name": "Phase 2 - Auth & Rate Limiting",
+    "goal": "Add virtual API Key authentication with argon2 hashing, SQLite persistence, in-memory sliding window rate limiting (RPM/TPM), and admin CRUD endpoints for key management",
+    "status": "completed",
+    "created_at": "2026-04-09",
+    "features": [
+      {
+        "id": "s2-feat-001",
+        "category": "infra",
+        "priority": "high",
+        "title": "SQLite database initialization + migration",
+        "description": "Initialize better-sqlite3 as the database layer. Create the 001-init.sql migration with tables for virtual keys (id, name, key_hash, rate_limits, created_at, revoked_at), upstream providers (id, name, encrypted_api_key, base_url, created_at), and audit_logs (id, request_id, timestamp, api_key_id, model, endpoint, prompt_tokens, completion_tokens, cost_usd, latency_ms, status, pii_detected, pii_types_found, prompt_injection_score, content_hash_sha256). Implement db connection lifecycle managed by Fastify plugins.",
+        "acceptance_criteria": [
+          "Given the app starts, when db initializes, then all tables from 001-init.sql are created in the configured SQLite file path",
+          "Given the db is already initialized, when the app restarts, then migrations are not re-run (idempotent)",
+          "Given an invalid migration SQL, when the app starts, then it exits with a clear error message",
+          "Unit tests verify table creation and basic CRUD operations work"
+        ],
+        "technical_notes": "Use better-sqlite3 synchronous API (single-threaded, fits Node.js event loop). Register as a Fastify plugin with onClose hook to close the db connection. Migration table tracks applied migrations. Config for db path (default: ./data/gateway.db). Need to add better-sqlite3 and @types/better-sqlite3 to dependencies.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/db/index.ts",
+          "src/db/migrations.ts",
+          "migrations/001-init.sql",
+          "src/types.ts"
+        ]
+      },
+      {
+        "id": "s2-feat-002",
+        "category": "infra",
+        "priority": "high",
+        "title": "Crypto utilities (AES-256-GCM + argon2)",
+        "description": "Implement encryption utilities for two purposes: (1) AES-256-GCM encryption/decryption for upstream provider API keys stored in DB, using a master encryption key from config; (2) Argon2id hashing for virtual API keys (client-facing) with proper salt generation. Also implement constant-time key comparison to prevent timing attacks.",
+        "acceptance_criteria": [
+          "Given a plaintext API key and a master key, when encrypt() is called, then the result is a deterministic-format string containing IV + authTag + ciphertext",
+          "Given an encrypted API key, when decrypt() is called with the same master key, then the original plaintext is recovered",
+          "Given a plaintext virtual key, when hash() is called, then an argon2id hash is produced with a random salt",
+          "Given a plaintext key and a stored hash, when verify() is called, then it returns true if they match and false otherwise, using constant-time comparison",
+          "All crypto operations have unit tests including edge cases (empty strings, very long keys)"
+        ],
+        "technical_notes": "Use Node.js built-in crypto for AES-256-GCM. Use argon2 npm package for hashing (native bindings, faster than pure JS). Master encryption key comes from config.toml [security] section. Export encrypt/decrypt/hash/verify functions. Need to add argon2 to dependencies.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/utils/crypto.ts",
+          "src/utils/crypto.test.ts"
+        ]
+      },
+      {
+        "id": "s2-feat-003",
+        "category": "data",
+        "priority": "high",
+        "title": "Virtual API Key storage layer",
+        "description": "Implement the data access layer for virtual API keys in SQLite. CRUD operations: createKey (generate random key, hash with argon2, store hash + metadata), getKeyById, listKeys (pagination), revokeKey (soft delete with revoked_at timestamp), updateRateLimits. Include upstream provider key storage with AES-256-GCM encryption. Add an in-memory LRU cache for key lookups by ID to avoid hitting SQLite on every request.",
+        "acceptance_criteria": [
+          "Given a new key request with name and rate limits, when createKey() is called, then a virtual key (gwk_...) is generated, its argon2 hash is stored in DB, and the plaintext is returned once",
+          "Given a key ID, when getKeyById() is called, then key metadata (id, name, rate_limits, created_at, revoked) is returned from cache or DB",
+          "Given a revoked key ID, when getKeyById() is called, then the key is returned with revoked=true and revoked_at timestamp",
+          "Given multiple keys exist, when listKeys() is called with offset/limit, then paginated results are returned",
+          "Given an upstream provider with plaintext API key, when stored, then the key is encrypted with AES-256-GCM before writing to DB",
+          "Unit tests cover all CRUD operations with an in-memory SQLite database"
+        ],
+        "technical_notes": "Use better-sqlite3 prepared statements for performance. Key format: 'gwk_' + 32 random hex chars. LRU cache with TTL (5 min default) for hot key lookups. Cache invalidation on revoke/update. In-memory SQLite (:memory:) for tests.",
+        "status": "completed",
+        "dependencies": [
+          "s2-feat-001",
+          "s2-feat-002"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/db/keys.ts",
+          "src/db/keys.test.ts"
+        ]
+      },
+      {
+        "id": "s2-feat-004",
+        "category": "auth",
+        "priority": "high",
+        "title": "Request authentication middleware",
+        "description": "Implement Fastify authentication middleware that: extracts Bearer token from Authorization header, verifies the virtual key against stored hashes (argon2), attaches key metadata (id, name, rate limits) to the request context, and returns proper OpenAI-compatible error responses (401 for invalid/expired keys, missing header). Integrate with the key LRU cache for fast lookups on subsequent requests.",
+        "acceptance_criteria": [
+          "Given a valid Bearer token in Authorization header, when the auth middleware runs, then request.apiKey is populated with { id, name, rateLimits }",
+          "Given an invalid or expired Bearer token, when the auth middleware runs, then a 401 response is returned with OpenAI error format: { error: { message, type: 'invalid_request_error', code: 'invalid_api_key' } }",
+          "Given a missing Authorization header, when the auth middleware runs, then a 401 response is returned",
+          "Given a revoked key, when the auth middleware runs, then a 401 response is returned with message indicating the key has been revoked",
+          "Given the same valid key on repeated requests, when the cache is warm, then argon2 verification is skipped and cached metadata is used",
+          "Auth middleware applies to /v1/* routes but NOT to /admin/* routes (admin has its own auth via config)",
+          "Unit tests with mock key store verify all auth scenarios"
+        ],
+        "technical_notes": "Use Fastify onRequest hook. Cache stores { id, name, rateLimits } after successful verification. Cache entry invalidated on revoke. argon2 verify is intentionally slow (~100ms) \u2014 cache is critical for performance. Admin routes use a separate static admin token from config.",
+        "status": "completed",
+        "dependencies": [
+          "s2-feat-003"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/middleware/auth.ts",
+          "src/middleware/auth.test.ts"
+        ]
+      },
+      {
+        "id": "s2-feat-005",
+        "category": "auth",
+        "priority": "high",
+        "title": "In-memory sliding window rate limiter",
+        "description": "Implement a sliding window rate limiter supporting RPM (requests per minute), TPM (tokens per minute), and RPD (requests per day) limits per virtual key. Use an in-memory data structure (Map of sorted arrays or circular buffers) with automatic cleanup of expired windows. Configurable default limits and per-key overrides.",
+        "acceptance_criteria": [
+          "Given a key with RPM=60, when 60 requests arrive within 1 minute, then the 61st request returns a rate limit check result of { allowed: false, retryAfterMs: <remaining ms> }",
+          "Given a key with TPM=100000, when 100000 tokens are consumed within 1 minute, then the next request exceeding the limit is rejected",
+          "Given a key with RPD=1000, when 1000 requests arrive within 24 hours, then the 1001st is rejected",
+          "Given requests from 2 minutes ago, when the sliding window check runs, then those old requests are excluded from the count",
+          "Given a key with no per-key limits, when the check runs, then global default limits from config are applied",
+          "Given rate limit rejection, when the response is formed, then retryAfterMs is a positive integer indicating when to retry",
+          "Memory usage grows bounded \u2014 old entries are cleaned up automatically",
+          "Unit tests verify all window types and edge cases (burst requests, exactly-at-limit)"
+        ],
+        "technical_notes": "Use a Map<string, RateLimitState> where each entry stores timestamped request counts. Sliding window: count requests in [now - windowSize, now]. Cleanup: periodically prune entries older than the largest window (24h). No Redis needed \u2014 single-node in-memory. Export checkRateLimit(keyId, tokenCount) function.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/middleware/rate-limit.ts",
+          "src/middleware/rate-limit.test.ts"
+        ]
+      },
+      {
+        "id": "s2-feat-006",
+        "category": "auth",
+        "priority": "high",
+        "title": "Rate limit middleware integration",
+        "description": "Integrate the rate limiter into the Fastify request pipeline as a middleware that runs after auth but before proxy forwarding. On rate limit exceeded, return HTTP 429 with OpenAI-compatible error format and standard rate limit headers (X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset). Also return these headers on successful requests.",
+        "acceptance_criteria": [
+          "Given a request that passes auth, when the rate limit check passes, then the request proceeds to proxy forwarding and response includes X-RateLimit-* headers",
+          "Given a request that passes auth, when RPM is exceeded, then a 429 response is returned with { error: { message, type: 'rate_limit_error', code: 'rate_limit_exceeded' } } and Retry-After header",
+          "Given a streaming request, when TPM is tracked, then token count from the response is counted toward the rate limit (best-effort: count from response usage field)",
+          "Given a successful non-streaming response, when it includes usage.prompt_tokens + usage.completion_tokens, then those tokens are counted toward TPM",
+          "Rate limit headers appear on all successful /v1/* responses",
+          "Integration test with mocked upstream verifies the full auth -> rate limit -> proxy pipeline"
+        ],
+        "technical_notes": "Use Fastify preHandler hook, runs after auth onRequest hook. Token counting for TPM: non-streaming reads from response.usage; streaming estimates from input tokens only (output unknown until complete). Add rate limit state to request context for downstream use.",
+        "status": "completed",
+        "dependencies": [
+          "s2-feat-004",
+          "s2-feat-005"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/middleware/rate-limit.ts",
+          "src/index.ts",
+          "src/types.ts"
+        ]
+      },
+      {
+        "id": "s2-feat-007",
+        "category": "api",
+        "priority": "high",
+        "title": "Admin API - Virtual Key CRUD",
+        "description": "Implement admin endpoints for virtual API key management. Endpoints: POST /admin/keys (create key with name + optional rate limits), GET /admin/keys (list all keys with pagination), GET /admin/keys/:id (get key details), DELETE /admin/keys/:id (revoke key), PATCH /admin/keys/:id (update key name/rate limits). Admin endpoints are protected by a static admin token from config (separate from virtual keys).",
+        "acceptance_criteria": [
+          "Given a valid admin token, when POST /admin/keys with { name: 'test', rateLimits: { rpm: 60, tpm: 100000, rpd: 1000 } }, then a new key is created and { id, name, key: 'gwk_...', createdAt } is returned (key shown only once)",
+          "Given a valid admin token, when GET /admin/keys is called, then a paginated list of key metadata (without hashes) is returned",
+          "Given a valid admin token, when GET /admin/keys/:id is called, then key details are returned",
+          "Given a valid admin token, when DELETE /admin/keys/:id is called, then the key is soft-deleted (revoked_at set) and 200 is returned",
+          "Given a valid admin token, when PATCH /admin/keys/:id with { rateLimits: { rpm: 120 } }, then rate limits are updated",
+          "Given an invalid or missing admin token, when any /admin/* endpoint is called, then 401 is returned",
+          "Given a request to create a key without a name, when POST /admin/keys is called, then 400 is returned with validation error",
+          "All endpoints have integration tests using an in-memory SQLite database"
+        ],
+        "technical_notes": "Use a separate admin auth middleware checking against config [admin] token. Fastify route registration under /admin prefix. Zod schema for request body validation. The plaintext key is returned ONLY on POST create \u2014 never stored, never retrievable again. Use Fastify schema validation for request/response.",
+        "status": "completed",
+        "dependencies": [
+          "s2-feat-003"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/routes/admin/keys.ts",
+          "src/routes/admin/keys.test.ts",
+          "src/middleware/admin-auth.ts",
+          "src/config/index.ts"
+        ]
+      },
+      {
+        "id": "s2-feat-008",
+        "category": "infra",
+        "priority": "medium",
+        "title": "Phase 2 integration tests",
+        "description": "Write end-to-end integration tests covering the full Phase 2 pipeline: key creation via admin API, authenticated requests with valid/invalid/revoked keys, rate limit enforcement (RPM/TPM), 429 responses with correct headers, and the complete request lifecycle from auth through rate limit through proxy forwarding.",
+        "acceptance_criteria": [
+          "Given a created virtual key, when a /v1/chat/completions request is made with that key, then the request is proxied successfully",
+          "Given a valid key that has exceeded RPM, when a request is made, then 429 is returned with Retry-After header",
+          "Given a revoked key, when a request is made, then 401 is returned",
+          "Given an admin token, when admin CRUD operations are performed, then they work correctly",
+          "Given rate limit headers on a successful response, when checked, then X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset are present",
+          "All Phase 2 integration tests pass alongside Phase 1 tests with `pnpm test`"
+        ],
+        "technical_notes": "Extend the existing test helpers (mock-upstream.ts) to support auth headers. Use an in-memory SQLite database for test isolation. Test the full Fastify lifecycle including middleware chain. Verify that Phase 1 routes still work without auth (backward compatibility) if auth is not configured.",
+        "status": "completed",
+        "dependencies": [
+          "s2-feat-006",
+          "s2-feat-007"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "tests/integration/auth.test.ts",
+          "tests/integration/rate-limit.test.ts",
+          "tests/integration/admin-keys.test.ts",
+          "tests/helpers/setup.ts"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-11 01:54:03",
+    "original_sprint_id": "sprint-002"
+  }
+}
