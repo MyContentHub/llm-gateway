@@ -70,6 +70,7 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
         name: "test-provider",
         baseUrl: upstreamUrl,
         apiKey: "sk-test-key",
+        keyStrategy: "round-robin",
         modelMappings: { "gpt-4o": "gpt-4o", "gpt-4o-mini": "gpt-4o-mini" },
         isDefault: true,
       },

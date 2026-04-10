@@ -75,6 +75,7 @@ describe("resolveModel", () => {
     name: "openai",
     baseUrl: "https://api.openai.com/v1",
     apiKey: "sk-test",
+    keyStrategy: "round-robin" as const,
     modelMappings: { gpt4: "gpt-4o", mini: "gpt-4o-mini" },
     isDefault: false,
   };

@@ -6,6 +6,7 @@ const openai: ProviderConfig = {
   name: "openai",
   baseUrl: "https://api.openai.com/v1",
   apiKey: "sk-openai-key",
+  keyStrategy: "round-robin",
   modelMappings: { "gpt-4o": "gpt-4o", "gpt-4o-mini": "gpt-4o-mini" },
   isDefault: false,
 };
@@ -14,6 +15,7 @@ const anthropic: ProviderConfig = {
   name: "anthropic",
   baseUrl: "https://api.anthropic.com/v1",
   apiKey: "sk-ant-key",
+  keyStrategy: "round-robin",
   modelMappings: { "fast-chat": "claude-3-haiku", "smart-chat": "claude-3-opus" },
   isDefault: false,
 };
@@ -22,6 +24,7 @@ const fallback: ProviderConfig = {
   name: "fallback",
   baseUrl: "https://fallback.example.com/v1",
   apiKey: "sk-fallback-key",
+  keyStrategy: "round-robin",
   modelMappings: {},
   isDefault: true,
 };
@@ -65,6 +68,7 @@ describe("resolveRoute", () => {
       name: "first",
       baseUrl: "https://first.example.com/v1",
       apiKey: "sk-first",
+      keyStrategy: "round-robin",
       modelMappings: {},
       isDefault: false,
     };
@@ -93,6 +97,7 @@ describe("resolveRoute", () => {
       name: "bare",
       baseUrl: "https://bare.example.com/v1",
       apiKey: "sk-bare",
+      keyStrategy: "round-robin",
       modelMappings: undefined as unknown as Record<string, string>,
       isDefault: true,
     };

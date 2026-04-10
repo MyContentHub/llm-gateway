@@ -22,7 +22,7 @@
       "id": "sprint-005",
       "name": "Phase 5 - Enhancements",
       "goal": "Implement multi-key rotation and load balancing for upstream providers, retry with exponential backoff and failover across providers, request/response lifecycle hook plugin system, and Docker deployment configuration — completing the production-ready feature set",
-      "status": "planning",
+      "status": "in_progress",
       "created_at": "2026-04-11",
       "features": [
         {

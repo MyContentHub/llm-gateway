@@ -12,6 +12,7 @@ import { adminKeysPlugin } from "./routes/admin/keys.js";
 import { createAuditLogger } from "./audit/logger.js";
 import { setupMetrics, createMetrics } from "./audit/metrics.js";
 import { adminAuditPlugin } from "./routes/admin/audit.js";
+import { HookManager } from "./hooks/index.js";
 import "./types.js";
 
 async function main() {
@@ -43,12 +44,25 @@ async function main() {
   const metrics = createMetrics();
   setupMetrics(server, metrics);
 
+  const hookManager = new HookManager();
+  server.decorate("hooks", hookManager);
+
   await server.register(
     async (v1Scope) => {
       v1Scope.addHook("onRequest", createAuthMiddleware(server.db));
       v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
       v1Scope.addHook("preHandler", createSecurityMiddleware(config.security));
       v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
+      v1Scope.addHook("onRequest", async (request, reply) => {
+        await hookManager.execute("onRequest", { request, reply });
+      });
+      v1Scope.addHook("onSend", async (request, reply, payload) => {
+        await hookManager.execute("onResponse", { request, reply, body: payload, status: reply.statusCode });
+        return payload;
+      });
+      v1Scope.addHook("onError", async (request, reply, error) => {
+        await hookManager.execute("onError", { request, reply, error: error as Error });
+      });
       await v1Scope.register(createAuditLogger(server.db, config));
       await v1Scope.register(chatCompletionsPlugin);
       await v1Scope.register(embeddingsPlugin);

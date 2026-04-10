@@ -136,6 +136,7 @@ export async function createGateway(
       name: "test-provider",
       baseUrl: upstreamUrl,
       apiKey: "sk-test-key",
+      keyStrategy: "round-robin" as const,
       modelMappings: options?.modelMappings ?? { "gpt-4o": "gpt-4o", "fast-chat": "gpt-4o-mini" },
       isDefault: true,
     },

@@ -1,4 +1,5 @@
 import type { ProviderConfig } from "../config/providers.js";
+import type { KeySelector } from "./key-selector.js";
 
 export interface RouteResult {
   providerName: string;
@@ -17,14 +18,20 @@ export class RouteError extends Error {
   }
 }
 
-export function resolveRoute(model: string, providers: ProviderConfig[]): RouteResult {
+export function resolveRoute(
+  model: string,
+  providers: ProviderConfig[],
+  keySelector?: KeySelector,
+): RouteResult {
   for (const provider of providers) {
     const mappings = provider.modelMappings ?? {};
     if (model in mappings) {
       return {
         providerName: provider.name,
         baseUrl: provider.baseUrl,
-        apiKey: provider.apiKey,
+        apiKey: keySelector
+          ? keySelector.selectKey(provider)
+          : provider.apiKey,
         resolvedModel: mappings[model],
       };
     }
@@ -35,7 +42,9 @@ export function resolveRoute(model: string, providers: ProviderConfig[]): RouteR
     return {
       providerName: defaultProvider.name,
       baseUrl: defaultProvider.baseUrl,
-      apiKey: defaultProvider.apiKey,
+      apiKey: keySelector
+        ? keySelector.selectKey(defaultProvider)
+        : defaultProvider.apiKey,
       resolvedModel: model,
     };
   }
