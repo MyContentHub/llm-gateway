@@ -33,7 +33,22 @@ async function main() {
   await server.register(cors, { origin: true });
   await server.register(openapiPlugin);
 
-  server.get("/health", async () => {
+  server.get("/health", {
+    schema: {
+      summary: "Health check",
+      description: "Returns the gateway health status and number of configured providers",
+      tags: ["Health"],
+      response: {
+        200: {
+          type: "object",
+          properties: {
+            status: { type: "string", example: "ok" },
+            providers: { type: "number", description: "Number of configured providers" },
+          },
+        },
+      },
+    },
+  }, async () => {
     return { status: "ok", providers: config.providers.length };
   });
 
