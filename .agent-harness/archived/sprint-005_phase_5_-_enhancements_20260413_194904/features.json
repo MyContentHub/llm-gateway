@@ -1,0 +1,192 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser"
+    ],
+    "created_at": "2026-04-09"
+  },
+  "archived_sprint": {
+    "id": "sprint-005",
+    "name": "Phase 5 - Enhancements",
+    "goal": "Implement multi-key rotation and load balancing for upstream providers, retry with exponential backoff and failover across providers, request/response lifecycle hook plugin system, and Docker deployment configuration \u2014 completing the production-ready feature set",
+    "status": "completed",
+    "created_at": "2026-04-11",
+    "features": [
+      {
+        "id": "s5-feat-001",
+        "category": "core",
+        "priority": "high",
+        "title": "Multi-key rotation and load balancing",
+        "description": "Implement support for multiple API keys per provider with rotation strategies (round-robin, random, least-latency). The router currently resolves to a single apiKey per provider \u2014 extend it to support an array of keys and select one based on the configured strategy. Add a provider health tracker that tracks recent latency and error rates per key, enabling least-latency and error-aware routing.",
+        "acceptance_criteria": [
+          "Given a provider config with multiple apiKeys ['key-a', 'key-b', 'key-c'], when a request is routed, then keys are selected via the configured strategy (round-robin cycles through keys)",
+          "Given round-robin strategy, when 3 requests are made, then each key is used once in order",
+          "Given random strategy, when many requests are made, then keys are distributed approximately evenly",
+          "Given least-latency strategy, when key-b has the lowest average latency, then key-b is preferred for new requests",
+          "Given a key that has returned 3 consecutive errors, when routing, then that key is temporarily deprioritized",
+          "Given a single apiKey (backward compat), when routing, then that key is used as before",
+          "Unit tests cover all strategies, health tracking, backward compatibility, and edge cases"
+        ],
+        "technical_notes": "Extend ProviderSchema in providers.ts: add `apiKeys: z.array(z.string()).optional()` (if present, used instead of single `apiKey`). Add `keyStrategy: z.enum(['round-robin', 'random', 'least-latency']).optional().default('round-robin')`. Create src/proxy/key-selector.ts with KeySelector class. Create src/proxy/health-tracker.ts for per-key latency/error tracking. Modify router.ts to use KeySelector when multiple keys exist. Health tracker stores last N latencies and error count per key, resets on success.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "large",
+        "files_affected": [
+          "src/proxy/key-selector.ts",
+          "src/proxy/health-tracker.ts",
+          "src/proxy/router.ts",
+          "src/config/providers.ts",
+          "src/proxy/key-selector.test.ts",
+          "src/proxy/health-tracker.test.ts"
+        ]
+      },
+      {
+        "id": "s5-feat-002",
+        "category": "core",
+        "priority": "high",
+        "title": "Retry with exponential backoff and failover",
+        "description": "Implement retry logic in the forwarder with configurable exponential backoff for transient upstream errors (429 rate limit, 500, 502, 503). Support failover to an alternate provider when the primary fails after max retries. Retry is transparent to the client \u2014 only the final response (or error) is returned.",
+        "acceptance_criteria": [
+          "Given a 429 response from upstream, when the forwarder retries, then it waits with exponential backoff (1s, 2s, 4s) and retries up to maxRetries",
+          "Given a 502 response followed by a 200 response, when the forwarder retries, then the client receives the 200 response",
+          "Given maxRetries=3 and all retries fail, when the forwarder exhausts retries, then the client receives the last error response",
+          "Given a 400 or 401 response (client error), when the forwarder sees it, then NO retry is attempted (only retry on 429, 500, 502, 503, 504)",
+          "Given failover is configured with a second provider for the same model, when the primary provider fails after retries, then the request is forwarded to the failover provider",
+          "Given retry is disabled (maxRetries=0), when an error occurs, then no retry is attempted",
+          "Configurable retry settings: maxRetries, initialDelayMs, maxDelayMs, backoffMultiplier",
+          "Unit tests cover retry logic, backoff timing, failover, non-retryable errors, and streaming retry"
+        ],
+        "technical_notes": "Create src/proxy/retry.ts with retryWithBackoff function. Modify forwarder.ts to wrap upstream calls with retry logic. Retry config from [retry] section in config.toml: max_retries (default 2), initial_delay_ms (default 1000), max_delay_ms (default 10000), backoff_multiplier (default 2). For failover: add `failover_provider` field to ProviderSchema. Streaming retry is complex \u2014 only retry on connection errors before stream starts, not mid-stream. Add jitter to backoff to avoid thundering herd.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "large",
+        "files_affected": [
+          "src/proxy/retry.ts",
+          "src/proxy/retry.test.ts",
+          "src/proxy/forwarder.ts",
+          "src/config/index.ts"
+        ]
+      },
+      {
+        "id": "s5-feat-003",
+        "category": "core",
+        "priority": "medium",
+        "title": "Request/response lifecycle hook system",
+        "description": "Implement a plugin hook system that allows registering custom functions at key lifecycle points: onRequest (before auth), preProxy (before forwarding), onResponse (after receiving upstream response), onError (on any error). Hooks can modify request/response data and are registered via config or programmatically. This enables extensibility without modifying core proxy code.",
+        "acceptance_criteria": [
+          "Given a registered preProxy hook that adds a custom header, when a request is forwarded, then the header is present in the upstream request",
+          "Given a registered onResponse hook that transforms the response body, when a response is received, then the transformed body is returned to the client",
+          "Given a registered onError hook, when an upstream error occurs, then the hook is called with the error details",
+          "Given multiple hooks registered at the same lifecycle point, when executed, then they run in registration order",
+          "Given a hook that throws an error, when executed, then the error is logged and the next hook continues (hooks are fault-tolerant)",
+          "Given hooks registered via config.toml [hooks] section, when the server starts, then hooks are loaded and registered",
+          "Unit tests cover hook registration, execution order, error tolerance, and lifecycle timing"
+        ],
+        "technical_notes": "Create src/hooks/index.ts with HookManager class. Lifecycle points: onRequest, preProxy, onResponse, onError. Each hook is async (request, context) => void. Context object carries data between hooks (e.g., custom headers, metadata). Hooks registered programmatically via server.hooks.register('preProxy', fn) or via config [hooks] with JS module paths. Hook execution is sequential within a lifecycle point. Fault-tolerant: wrap each hook in try/catch, log errors, continue. Integrate into existing middleware chain in index.ts.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/hooks/index.ts",
+          "src/hooks/index.test.ts",
+          "src/index.ts"
+        ]
+      },
+      {
+        "id": "s5-feat-004",
+        "category": "infra",
+        "priority": "medium",
+        "title": "Docker deployment configuration",
+        "description": "Create production-ready Docker configuration including a multi-stage Dockerfile (build stage with Node.js, runtime stage with minimal image), docker-compose.yml for local development with the gateway and a SQLite volume mount, .dockerignore, and a health check configuration. The Docker image should be small, secure (non-root user, minimal dependencies), and configurable via environment variables.",
+        "acceptance_criteria": [
+          "Given the Dockerfile, when `docker build .` is run, then a working image is produced that starts the gateway with `pnpm start`",
+          "Given docker-compose.yml, when `docker compose up` is run, then the gateway starts and responds to GET /health",
+          "Given the Dockerfile, when the image is inspected, then it uses a non-root user and the image size is under 200MB",
+          "Given environment variables (PORT, LOG_LEVEL), when the container starts, then config overrides are applied",
+          "The .dockerignore excludes node_modules, .git, tests, and development files",
+          "SQLite data directory is mounted as a Docker volume for persistence",
+          "Health check is configured in both Dockerfile and docker-compose.yml"
+        ],
+        "technical_notes": "Multi-stage build: Stage 1 uses node:22-alpine for build (pnpm install + pnpm build), Stage 2 copies dist + node_modules to node:22-alpine-slim. Non-root user: addgroup/adduser. EXPOSE 3000. HEALTHCHECK CMD curl -f http://localhost:3000/health. docker-compose.yml: service 'gateway' with volume ./data:/app/data, env_file, healthcheck. .dockerignore: node_modules, .git, tests, *.md, .agents. Config supports env var overrides (PORT, LOG_LEVEL, DATABASE_PATH) via optional env loading in config/index.ts.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "Dockerfile",
+          "docker-compose.yml",
+          ".dockerignore"
+        ]
+      },
+      {
+        "id": "s5-feat-005",
+        "category": "infra",
+        "priority": "medium",
+        "title": "Graceful shutdown and signal handling",
+        "description": "Implement graceful shutdown that handles SIGTERM and SIGINT signals. On signal: stop accepting new requests, wait for in-flight requests to complete (with a configurable timeout), close database connections, flush metrics, and then exit. Also handle process uncaught exceptions and unhandled promise rejections with proper logging before exiting.",
+        "acceptance_criteria": [
+          "Given the server is running, when SIGTERM is received, then the server stops accepting new connections and waits for in-flight requests to complete",
+          "Given in-flight requests exist, when graceful shutdown starts, then they are given up to shutdownTimeoutMs to complete",
+          "Given shutdownTimeoutMs is exceeded, when in-flight requests are still running, then they are forcefully terminated and the process exits",
+          "Given an uncaught exception, when it occurs, then the error is logged and the server shuts down gracefully",
+          "Given an unhandled promise rejection, when it occurs, then the error is logged and the server shuts down gracefully",
+          "Given the database connection, when shutdown occurs, then it is properly closed",
+          "Unit tests verify signal handling, in-flight request completion, and timeout behavior"
+        ],
+        "technical_notes": "Add signal handlers in src/index.ts main(). Use Fastify server.close() for graceful shutdown. Track in-flight requests with a counter (increment in onRequest, decrement in onResponse). Add shutdownTimeoutMs config (default 30000). Use process.on('SIGTERM', ...) and process.on('SIGINT', ...). Add process.on('uncaughtException', ...) and process.on('unhandledRejection', ...). Close better-sqlite3 connection on shutdown. Log shutdown progress with pino.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/index.ts",
+          "src/graceful-shutdown.ts",
+          "src/graceful-shutdown.test.ts"
+        ]
+      },
+      {
+        "id": "s5-feat-006",
+        "category": "infra",
+        "priority": "medium",
+        "title": "Phase 5 integration tests and final verification",
+        "description": "Write integration tests for Phase 5 features: multi-key rotation behavior, retry with backoff, failover to alternate provider, and graceful shutdown. Run full test suite to verify all 5 phases work together. Final verification that the complete gateway pipeline works end-to-end.",
+        "acceptance_criteria": [
+          "Given a provider with 3 API keys and round-robin strategy, when 3 requests are made, then each key is used once",
+          "Given a provider that returns 502 then 200, when a request is made with retry enabled, then the client receives the 200 response",
+          "Given a primary provider that fails and a failover provider, when the primary fails, then the request is served by the failover",
+          "Given the server is running with in-flight requests, when SIGTERM is sent, then requests complete before shutdown",
+          "Given the complete pipeline (auth \u2192 rate limit \u2192 security \u2192 proxy \u2192 audit \u2192 metrics), when a normal request is made, then everything works end-to-end across all 5 phases",
+          "All Phase 5 integration tests pass alongside Phase 1-4 tests (521+ total)"
+        ],
+        "technical_notes": "Create tests/integration/key-rotation.test.ts, tests/integration/retry-failover.test.ts, tests/integration/shutdown.test.ts. Use mock upstream servers that simulate errors and multiple keys. Test the full lifecycle including health tracker state changes. Verify metrics are recorded correctly for retried/failover requests.",
+        "status": "completed",
+        "dependencies": [
+          "s5-feat-001",
+          "s5-feat-002",
+          "s5-feat-005"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "tests/integration/key-rotation.test.ts",
+          "tests/integration/retry-failover.test.ts",
+          "tests/integration/shutdown.test.ts",
+          "tests/helpers/setup.ts"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-13 19:49:04",
+    "original_sprint_id": "sprint-005"
+  }
+}
