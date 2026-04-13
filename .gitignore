@@ -409,3 +409,9 @@ $RECYCLE.BIN/
 # End of https://www.toptal.com/developers/gitignore/api/macos,windows,linux,visualstudiocode,node,python
 
 ptemp.json
+
+# Database files
+data/
+*.db
+*.sqlite
+*.sqlite3

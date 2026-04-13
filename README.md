@@ -79,6 +79,9 @@ database_path = "./data/gateway.db"
 # Encryption key for storing upstream API keys (32 hex chars = 128-bit)
 encryption_key = "your-32-char-hex-key"
 
+# Admin API token (required, use a strong random string)
+admin_token = "your-secure-admin-token"
+
 # Rate limits
 default_rpm = 60
 default_tpm = 100000
@@ -188,8 +191,7 @@ docker compose up -d
 ```bash
 curl -X POST http://localhost:3000/admin/keys \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer admin-secret-key" \
-  -d '{"name": "my-app", "rateLimits": {"rpm": 60, "tpm": 100000, "rpd": 1000}}'
+  -H "Authorization: Bearer <your-admin-token>" \
 ```
 
 返回：
@@ -203,7 +205,7 @@ curl -X POST http://localhost:3000/admin/keys \
 }
 ```
 
-> `key` 仅在创建时返回一次，请妥善保存。`admin-secret-key` 为 `config.toml` 中的 `admin_token`。
+> `key` 仅在创建时返回一次，请妥善保存。将 `<your-admin-token>` 替换为你在 `config.toml` 中配置的 `admin_token`。
 
 ### 2. 使用虚拟 Key 调用 API
 
@@ -289,7 +291,7 @@ curl http://localhost:3000/v1/models \
 
 ```bash
 curl "http://localhost:3000/admin/audit/logs?limit=10" \
-  -H "Authorization: Bearer admin-secret-key"
+  -H "Authorization: Bearer <your-admin-token>"
 ```
 
 ### 7. 查看 Prometheus 指标
@@ -311,7 +313,7 @@ curl http://localhost:3000/metrics
 | `log_level` | `"info"` | 日志级别：`fatal` / `error` / `warn` / `info` / `debug` / `trace` / `silent` |
 | `database_path` | `"./data/gateway.db"` | SQLite 数据库路径 |
 | `encryption_key` | `""` | 用于加密存储上游 API Key 的密钥（32 位十六进制） |
-| `admin_token` | `"admin-secret-key"` | 管理 API 认证令牌 |
+| `admin_token` | — (必填) | 管理 API 认证令牌，请使用强随机字符串 |
 | `default_rpm` | `60` | 默认每分钟请求限制 |
 | `default_tpm` | `100000` | 默认每分钟 Token 限制 |
 | `default_rpd` | `1000` | 默认每日请求限制 |

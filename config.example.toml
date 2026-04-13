@@ -9,6 +9,9 @@ database_path = "./data/gateway.db"
 # Encryption key for storing upstream API keys (32 hex chars = 128-bit)
 encryption_key = ""
 
+# Admin API token (required, use a strong random string)
+admin_token = "CHANGE-ME-to-a-secure-random-token"
+
 # Rate limits
 default_rpm = 60
 default_tpm = 100000

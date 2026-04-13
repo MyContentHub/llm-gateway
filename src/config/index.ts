@@ -33,7 +33,7 @@ export const AppConfigSchema = z.object({
   database_path: z.string().default("./data/gateway.db"),
   encryption_key: z.string().optional().default(""),
   providers: z.array(ProviderSchema).default([]),
-  admin_token: z.string().min(1).default("admin-secret-key"),
+  admin_token: z.string().min(1),
   default_rpm: z.number().int().positive().default(60),
   default_tpm: z.number().int().positive().default(100000),
   default_rpd: z.number().int().positive().default(1000),

@@ -29,16 +29,8 @@ describe("loadConfig", () => {
     expect(config.default_tpm).toBe(100000);
   });
 
-  it("applies default values when config file is missing", async () => {
-    const config = await loadConfig("nonexistent.toml");
-
-    expect(config.port).toBe(3000);
-    expect(config.host).toBe("0.0.0.0");
-    expect(config.log_level).toBe("info");
-    expect(config.database_path).toBe("./data/gateway.db");
-    expect(config.providers).toEqual([]);
-    expect(config.default_rpm).toBe(60);
-    expect(config.default_tpm).toBe(100000);
+  it("throws when config file is missing admin_token", async () => {
+    await expect(loadConfig("nonexistent.toml")).rejects.toThrow();
   });
 
   it("parses provider model mappings correctly", async () => {
@@ -50,7 +42,7 @@ describe("loadConfig", () => {
 
 describe("getDefaultProvider", () => {
   it("returns the provider marked isDefault", () => {
-    const config = AppConfigSchema.parse({ providers: validProviders });
+    const config = AppConfigSchema.parse({ admin_token: "test", providers: validProviders });
     const provider = getDefaultProvider(config);
     expect(provider?.name).toBe("openai");
   });
@@ -60,12 +52,12 @@ describe("getDefaultProvider", () => {
       { name: "a", baseUrl: "https://a.com/v1", apiKey: "k1" },
       { name: "b", baseUrl: "https://b.com/v1", apiKey: "k2", isDefault: true },
     ];
-    const config = AppConfigSchema.parse({ providers });
+    const config = AppConfigSchema.parse({ admin_token: "test", providers });
     expect(getDefaultProvider(config)?.name).toBe("b");
   });
 
   it("returns undefined when no providers configured", () => {
-    const config = AppConfigSchema.parse({});
+    const config = AppConfigSchema.parse({ admin_token: "test" });
     expect(getDefaultProvider(config)).toBeUndefined();
   });
 });
@@ -92,6 +84,7 @@ describe("resolveModel", () => {
 describe("AppConfigSchema type inference", () => {
   it("infers correct types from schema", () => {
     const parsed = AppConfigSchema.parse({
+      admin_token: "test",
       port: 3000,
       providers: [
         { name: "test", baseUrl: "https://test.com/v1", apiKey: "key" },
@@ -124,7 +117,7 @@ describe("AppConfigSchema type inference", () => {
   });
 
   it("allows empty providers array", () => {
-    const config = AppConfigSchema.parse({ providers: [] });
+    const config = AppConfigSchema.parse({ admin_token: "test", providers: [] });
     expect(config.providers).toEqual([]);
   });
 });

@@ -76,6 +76,7 @@ describe("Models Integration", () => {
     );
     const { AppConfigSchema } = await import("../../src/config/index.js");
     const config = AppConfigSchema.parse({
+      admin_token: "test",
       PORT: "3000",
       LOG_LEVEL: "silent",
       PROVIDERS: "[]",
