@@ -1,0 +1,228 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser",
+      "@fastify/swagger",
+      "@fastify/swagger-ui",
+      "zod-to-json-schema"
+    ],
+    "created_at": "2026-04-09"
+  },
+  "archived_sprint": {
+    "id": "sprint-006",
+    "name": "Phase 6 - OpenAPI Integration",
+    "goal": "Add OpenAPI specification generation and interactive Swagger UI documentation for all API endpoints (v1 proxy routes + admin routes), using @fastify/swagger with zod-to-json-schema for admin schemas and hand-crafted JSON Schema for OpenAI-compatible v1 routes",
+    "status": "completed",
+    "created_at": "2026-04-13",
+    "features": [
+      {
+        "id": "s6-feat-001",
+        "category": "infra",
+        "priority": "high",
+        "title": "Install dependencies and create OpenAPI plugin",
+        "description": "Install @fastify/swagger, @fastify/swagger-ui, and zod-to-json-schema. Create src/plugins/openapi.ts that registers both plugins with proper configuration: API metadata (title, version, description), two Bearer security schemes (VirtualKey for /v1/*, AdminToken for /admin/*), and Swagger UI at /docs. Register the plugin in src/index.ts after CORS and before route registration.",
+        "acceptance_criteria": [
+          "Given pnpm install completes, when package.json is inspected, then @fastify/swagger, @fastify/swagger-ui, and zod-to-json-schema are listed as dependencies",
+          "Given the server starts, when GET /docs is requested, then Swagger UI is served",
+          "Given the server starts, when GET /reference/json is requested, then a valid OpenAPI 3.0 JSON spec is returned with info.title, info.version, and security schemes defined",
+          "Given the OpenAPI JSON spec, when security schemes are inspected, then two schemes exist: VirtualKey (http/bearer) and AdminToken (http/bearer)",
+          "Given the existing test suite, when pnpm test runs, then all 646 tests still pass with the new plugin registered"
+        ],
+        "technical_notes": "Use @fastify/swagger v9+ (Fastify 5 compatible). Configure with openapi: { openapi: '3.0.0', info: { title: 'LLM Gateway API', version: '1.0.0', description: '...' }, components: { securitySchemes: { VirtualKey: { type: 'http', scheme: 'bearer', description: 'Virtual API key' }, AdminToken: { type: 'http', scheme: 'bearer', description: 'Admin token' } } } }. Swagger UI at routePrefix: '/docs'. Register in index.ts after cors and health endpoint, before v1/admin routes.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "package.json",
+          "src/plugins/openapi.ts",
+          "src/index.ts"
+        ]
+      },
+      {
+        "id": "s6-feat-002",
+        "category": "api",
+        "priority": "high",
+        "title": "Create shared schema definitions",
+        "description": "Create src/schemas/common.ts with shared JSON Schema definitions: error response schema ({ error: { message, type, code } }), pagination query parameters, and two security scheme references. Export reusable schema components that all route schemas can reference via $ref or direct import.",
+        "acceptance_criteria": [
+          "Given common.ts is imported, when errorResponseSchema is used in a route schema, then validation rejects non-conforming error responses at compile time",
+          "Given the shared schemas, when they are referenced by route schemas, then they produce valid OpenAPI spec output",
+          "Given the error schema, when rendered in Swagger UI, then it shows the error object structure with message, type, and code fields"
+        ],
+        "technical_notes": "Define const errorResponseSchema = { type: 'object', properties: { error: { type: 'object', properties: { message: { type: 'string' }, type: { type: 'string' }, code: { type: 'string' } }, required: ['message', 'type', 'code'] } }, required: ['error'] }. Export shared 400/401/404/500 response schemas. Export security references for VirtualKey and AdminToken. All schemas are plain JSON Schema objects (not Fastify-specific) for reuse across routes.",
+        "status": "completed",
+        "dependencies": [
+          "s6-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "src/schemas/common.ts"
+        ]
+      },
+      {
+        "id": "s6-feat-003",
+        "category": "api",
+        "priority": "high",
+        "title": "Add full OpenAI-compatible schemas for v1 routes",
+        "description": "Create src/schemas/v1/chat-completions.ts, src/schemas/v1/embeddings.ts, and src/schemas/v1/models.ts with full OpenAI-compatible JSON Schema definitions for request bodies and response shapes. The chat completions schema must include all 25+ fields from the OpenAI spec (model, messages with role-based variants, stream, temperature, tools, response_format, etc.). Embeddings schema includes model, input, encoding_format, dimensions, user. Models schema defines the list response with model objects.",
+        "acceptance_criteria": [
+          "Given the chat completions request schema, when rendered in Swagger UI, then all 25+ fields are documented with types, descriptions, and defaults",
+          "Given the chat completions schema, when messages array is inspected, then it shows system/developer/user/assistant/tool role variants with content structure",
+          "Given the embeddings request schema, when rendered in Swagger UI, then model (required), input (required), encoding_format, dimensions, user fields are documented",
+          "Given the models response schema, when rendered in Swagger UI, then the list structure with id/object/created/owned_by fields is shown",
+          "Given the non-streaming chat completion response schema, when rendered, then the full response structure with choices, usage, and finish_reason is documented"
+        ],
+        "technical_notes": "chat-completions.ts: Define ChatCompletionRequestSchema with all fields from OPENAI_API_REFERENCE.md section 2.1. Message types: system {role, content}, developer {role, content}, user {role, content (string or array of content parts)}, assistant {role, content, tool_calls}, tool {role, content, tool_call_id}. Response: ChatCompletionResponseSchema with id, object, created, model, choices[{index, message, logprobs, finish_reason}], usage. Embeddings: EmbeddingsRequestSchema {model, input (string|array), encoding_format, dimensions, user}, EmbeddingsResponseSchema {object, data[{object, embedding, index}], model, usage}. Models: ModelsListResponseSchema {object: 'list', data[{id, object, created, owned_by}]}. Keep schemas as plain objects for Fastify route schema property.",
+        "status": "completed",
+        "dependencies": [
+          "s6-feat-002"
+        ],
+        "estimated_complexity": "large",
+        "files_affected": [
+          "src/schemas/v1/chat-completions.ts",
+          "src/schemas/v1/embeddings.ts",
+          "src/schemas/v1/models.ts"
+        ]
+      },
+      {
+        "id": "s6-feat-004",
+        "category": "api",
+        "priority": "high",
+        "title": "Add zod-to-json-schema for admin route schemas",
+        "description": "Create src/schemas/admin/keys.ts and src/schemas/admin/audit.ts that convert the existing Zod schemas (CreateKeyBodySchema, UpdateKeyBodySchema, ListKeysQuerySchema, ListAuditLogsQuerySchema, AuditStatsQuerySchema) to JSON Schema using zod-to-json-schema. Also define response schemas for each admin endpoint based on the actual response shapes from the route handlers.",
+        "acceptance_criteria": [
+          "Given the CreateKeyBodySchema converted to JSON Schema, when rendered in Swagger UI, then it shows name (required string) and optional rateLimits object with rpm/tpm/rpd fields",
+          "Given the UpdateKeyBodySchema converted to JSON Schema, when rendered, then all fields are optional with correct types",
+          "Given the ListAuditLogsQuerySchema converted, when rendered, then it shows all filter parameters with defaults",
+          "Given the admin key response schema, when rendered, then it shows the key object with id, name, key (prefix), rateLimits, status, createdAt fields"
+        ],
+        "technical_notes": "Use zodToJsonSchema() from 'zod-to-json-schema' to convert existing Zod schemas. Import schemas from admin route files (they may need to be exported if not already). Define response schemas manually: KeyResponse {id, name, key, rateLimits{rpm,tpm,rpd}, status, createdAt, revokedAt}, KeyListResponse {keys[], total, offset, limit}, AuditLogListResponse {logs[], total, limit, offset}, AuditStatsResponse {totalRequests, totalTokens, totalCostUsd, avgLatencyMs, byModel, byStatus, piiDetectionRate}. For the Zod schemas that already exist in keys.ts and audit.ts, import and convert them.",
+        "status": "completed",
+        "dependencies": [
+          "s6-feat-002"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/schemas/admin/keys.ts",
+          "src/schemas/admin/audit.ts",
+          "src/routes/admin/keys.ts",
+          "src/routes/admin/audit.ts"
+        ]
+      },
+      {
+        "id": "s6-feat-005",
+        "category": "api",
+        "priority": "high",
+        "title": "Apply schemas to all v1 route definitions",
+        "description": "Modify src/routes/v1/chat-completions.ts, embeddings.ts, and models.ts to add Fastify route schema objects. Each route gets: body schema (for POST), response schemas (200/400/401/404/429/500), security: [{VirtualKey:[]}], summary, description, and tags: ['V1 - OpenAI Compatible']. Streaming responses are excluded from response validation (response 200 with text/event-stream uses additionalProperties: true).",
+        "acceptance_criteria": [
+          "Given GET /v1/models has a schema, when the OpenAPI spec is generated, then the endpoint appears with description, response schema, and VirtualKey security",
+          "Given POST /v1/chat/completions has a schema, when Swagger UI is loaded, then the Try It Out feature shows all request fields with descriptions",
+          "Given POST /v1/embeddings has a schema, when the OpenAPI spec is fetched, then the request body schema matches the OpenAI embeddings format",
+          "Given all v1 routes have security: [{VirtualKey:[]}], when the spec is generated, then all v1 endpoints show the padlock icon in Swagger UI",
+          "Given the existing test suite, when pnpm test runs, then all 646 tests still pass (schemas only add documentation/validation, no behavior change)"
+        ],
+        "technical_notes": "Add schema property as the second argument to server.post/get: server.post('/v1/chat/completions', { schema: { ... }, ... }, handler). V1 routes are under /v1 prefix scope \u2014 schema paths should NOT include /v1 (Fastify scopes the prefix). For streaming chat completions: use response: { 200: {} } (empty to skip validation) or add consumes: ['application/json'], produces: ['text/event-stream']. Tags: ['V1 - OpenAI Compatible']. Add summary and description strings. Import schemas from src/schemas/v1/*.ts. The route handler logic stays unchanged \u2014 only the schema config object is added.",
+        "status": "completed",
+        "dependencies": [
+          "s6-feat-003"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/routes/v1/chat-completions.ts",
+          "src/routes/v1/embeddings.ts",
+          "src/routes/v1/models.ts"
+        ]
+      },
+      {
+        "id": "s6-feat-006",
+        "category": "api",
+        "priority": "high",
+        "title": "Apply schemas to all admin route definitions",
+        "description": "Modify src/routes/admin/keys.ts and src/routes/admin/audit.ts to add Fastify route schema objects. Each route gets: body/query schema, params schema, response schemas, security: [{AdminToken:[]}], summary, description, and tags: ['Admin - Key Management'] or ['Admin - Audit'].",
+        "acceptance_criteria": [
+          "Given POST /admin/keys has a schema, when Swagger UI is loaded, then the request body shows name and optional rateLimits fields",
+          "Given GET /admin/keys has a schema, when the OpenAPI spec is generated, then query parameters offset and limit appear with defaults",
+          "Given GET /admin/audit/logs has a schema, when rendered, then all filter query parameters (startDate, endDate, model, endpoint, status, api_key_id, limit, offset) are shown",
+          "Given GET /admin/audit/stats has a schema, when rendered, then the response shows totalRequests, totalTokens, byModel, byStatus fields",
+          "Given all admin routes have security: [{AdminToken:[]}], when the spec is generated, then all admin endpoints show the padlock icon",
+          "Given the existing test suite, when pnpm test runs, then all 646 tests still pass"
+        ],
+        "technical_notes": "Admin routes are registered at top level (no prefix scope), so paths include /admin/... fully. Tags: 'Admin - Key Management' for keys.ts routes, 'Admin - Audit' for audit.ts routes. Import schemas from src/schemas/admin/*.ts. Add security: [{ AdminToken: [] }] to each route. For routes with params (e.g., /admin/keys/:id), add params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }.",
+        "status": "completed",
+        "dependencies": [
+          "s6-feat-004"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/routes/admin/keys.ts",
+          "src/routes/admin/audit.ts"
+        ]
+      },
+      {
+        "id": "s6-feat-007",
+        "category": "api",
+        "priority": "medium",
+        "title": "Add schema to health endpoint and finalize spec",
+        "description": "Add a response schema to the GET /health endpoint defined in src/index.ts. Verify the complete OpenAPI spec is valid and all 11 endpoints are documented. Ensure the Swagger UI renders correctly with all endpoints grouped by tags, proper error responses, and security schemes.",
+        "acceptance_criteria": [
+          "Given GET /health has a schema, when the OpenAPI spec is fetched, then the health endpoint shows response { status: string, providers: number }",
+          "Given all schemas are applied, when GET /reference/json is fetched, then the spec contains all 11 endpoints across 4 tags",
+          "Given the complete spec, when validated against OpenAPI 3.0 schema, then it passes validation",
+          "Given Swagger UI at /docs, when loaded in a browser, then all endpoints are listed with correct descriptions, parameters, and response schemas"
+        ],
+        "technical_notes": "Health endpoint schema: { response: { 200: { type: 'object', properties: { status: { type: 'string', example: 'ok' }, providers: { type: 'number', description: 'Number of configured providers' } } } } }, tags: ['Health'] }. After all schemas are applied, do a final review of the generated spec to ensure consistency and completeness.",
+        "status": "completed",
+        "dependencies": [
+          "s6-feat-005",
+          "s6-feat-006"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "src/index.ts"
+        ]
+      },
+      {
+        "id": "s6-feat-008",
+        "category": "infra",
+        "priority": "medium",
+        "title": "OpenAPI integration tests and verification",
+        "description": "Write tests to verify the OpenAPI spec is correctly generated and all endpoints are documented. Test that the spec contains expected endpoints, schemas, security schemes, and tags. Verify Swagger UI is accessible. Run full test suite to confirm no regressions.",
+        "acceptance_criteria": [
+          "Given the server is running, when GET /reference/json is requested, then the response is valid JSON with openapi: '3.0.0'",
+          "Given the spec, when paths are inspected, then all 11 endpoints exist: POST /v1/chat/completions, POST /v1/embeddings, GET /v1/models, POST/GET /admin/keys, GET/DELETE/PATCH /admin/keys/{id}, GET /admin/audit/logs, GET /admin/audit/logs/{requestId}, GET /admin/audit/stats, GET /health",
+          "Given the spec, when components.securitySchemes is inspected, then VirtualKey and AdminToken are defined as http/bearer schemes",
+          "Given the spec, when /v1/chat/completions is inspected, then the requestBody schema has model (required), messages (required), and stream fields",
+          "Given the spec, when /admin/keys POST is inspected, then security contains AdminToken",
+          "Given GET /docs, when requested, then HTML is returned (Swagger UI)",
+          "Given the full test suite, when pnpm typecheck && pnpm test runs, then everything passes"
+        ],
+        "technical_notes": "Create tests/integration/openapi.test.ts. Use createTestServer() helper. Inject GET /reference/json and parse the response. Assert spec structure: paths count, schema properties, security definitions. Inject GET /docs and assert HTML response. This is a new integration test file \u2014 it tests the OpenAPI infrastructure, not route behavior.",
+        "status": "completed",
+        "dependencies": [
+          "s6-feat-007"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "tests/integration/openapi.test.ts"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-13 22:20:50",
+    "original_sprint_id": "sprint-006"
+  }
+}
