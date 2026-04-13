@@ -3,6 +3,7 @@ import type Database from "better-sqlite3";
 import type { RateLimiter } from "./middleware/rate-limit.js";
 import type { SecurityScanResult } from "./middleware/security.js";
 import type { HookManager } from "./hooks/index.js";
+import type { KeyHealthTracker } from "./proxy/health-tracker.js";
 
 declare module "fastify" {
   interface FastifyInstance {
@@ -10,6 +11,7 @@ declare module "fastify" {
     db: Database.Database;
     rateLimiter: RateLimiter;
     hooks: HookManager;
+    healthTracker: KeyHealthTracker;
   }
 
   interface FastifyRequest {

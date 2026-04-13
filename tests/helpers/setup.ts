@@ -10,6 +10,8 @@ import { createAuthMiddleware } from "../../src/middleware/auth.js";
 import { createSecurityMiddleware } from "../../src/middleware/security.js";
 import { adminKeysPlugin } from "../../src/routes/admin/keys.js";
 import { adminAuditPlugin } from "../../src/routes/admin/audit.js";
+import { adminConfigPlugin } from "../../src/routes/admin/config.js";
+import { KeyHealthTracker } from "../../src/proxy/health-tracker.js";
 import { createAuditLogger } from "../../src/audit/logger.js";
 import { setupMetrics } from "../../src/audit/metrics.js";
 import { chatCompletionsPlugin } from "../../src/routes/v1/chat-completions.js";
@@ -125,8 +127,11 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
     await v1Scope.register(modelsPlugin);
   });
 
+  server.decorate("healthTracker", new KeyHealthTracker());
+
   await server.register(adminKeysPlugin);
   await server.register(adminAuditPlugin);
+  await server.register(adminConfigPlugin);
   setupMetrics(server);
 
   await server.ready();

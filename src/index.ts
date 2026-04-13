@@ -12,9 +12,12 @@ import { adminKeysPlugin } from "./routes/admin/keys.js";
 import { createAuditLogger } from "./audit/logger.js";
 import { setupMetrics, createMetrics } from "./audit/metrics.js";
 import { adminAuditPlugin } from "./routes/admin/audit.js";
+import { adminConfigPlugin } from "./routes/admin/config.js";
 import { HookManager } from "./hooks/index.js";
+import { KeyHealthTracker } from "./proxy/health-tracker.js";
 import { setupGracefulShutdown } from "./graceful-shutdown.js";
 import { openapiPlugin } from "./plugins/openapi.js";
+import { serveAdminPlugin } from "./plugins/serve-admin.js";
 import "./types.js";
 
 async function main() {
@@ -65,6 +68,9 @@ async function main() {
   const hookManager = new HookManager();
   server.decorate("hooks", hookManager);
 
+  const healthTracker = new KeyHealthTracker();
+  server.decorate("healthTracker", healthTracker);
+
   await server.register(
     async (v1Scope) => {
       v1Scope.addHook("onRequest", createAuthMiddleware(server.db));
@@ -91,6 +97,8 @@ async function main() {
 
   await server.register(adminKeysPlugin);
   await server.register(adminAuditPlugin);
+  await server.register(adminConfigPlugin);
+  await server.register(serveAdminPlugin);
 
   await server.listen({ port: config.port, host: config.host });
 

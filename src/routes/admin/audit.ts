@@ -5,6 +5,7 @@ import { adminTokenSecurity, error400, error401, error404 } from "../../schemas/
 import {
   listAuditLogsQuerySchema,
   auditStatsQuerySchema,
+  securityStatsQuerySchema,
 } from "../../schemas/admin/audit.js";
 import "../../types.js";
 
@@ -20,6 +21,11 @@ const ListAuditLogsQuerySchema = z.object({
 });
 
 const AuditStatsQuerySchema = z.object({
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
+});
+
+const SecurityStatsQuerySchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
 });
@@ -219,6 +225,36 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
       byStatus,
       piiDetectionRate,
     });
+  });
+
+  server.get("/admin/audit/security", {
+    validatorCompiler: () => () => true,
+    schema: {
+      summary: "Get security statistics",
+      description: "Returns aggregated security statistics including blocked requests, PII detections, injection attempts, and content filter breakdown",
+      tags: ["Admin - Audit"],
+      security: adminTokenSecurity,
+      querystring: securityStatsQuerySchema,
+      response: {
+        200: {},
+        ...error400,
+        ...error401,
+      },
+    },
+  }, async (request, reply) => {
+    const parsed = SecurityStatsQuerySchema.safeParse(request.query);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: {
+          message: parsed.error.issues.map((i) => i.message).join(", "),
+          type: "invalid_request_error",
+          code: "invalid_request",
+        },
+      });
+    }
+
+    const result = auditStore.querySecurityStats(parsed.data);
+    return reply.send(result);
   });
 
   done();

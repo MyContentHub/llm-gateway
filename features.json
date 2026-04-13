@@ -33,7 +33,7 @@
       "id": "sprint-007",
       "name": "Phase 7 - Admin Dashboard",
       "goal": "Build a complete admin dashboard with React + shadcn/ui dark theme, serving as the management UI for LLM Gateway. Includes backend API expansion (config, providers, health, security endpoints), frontend scaffold (Vite + React 18 + Tailwind + shadcn/ui), 7 pages (Login, Overview, Keys, Audit, Security, Providers, Settings), authentication flow, and production deployment via @fastify/static.",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-13",
       "features": [
         {
@@ -48,7 +48,7 @@
             "Given pnpm typecheck runs, then no type errors"
           ],
           "technical_notes": "Follow existing pattern for server.rateLimiter and server.config decorations. The KeyHealthTracker is already instantiated in the proxy layer — extract and mount as decoration. Add 'healthTracker' to FastifyInstance via module augmentation in src/types.ts.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -71,8 +71,10 @@
             "Given pnpm typecheck && pnpm test runs, then all existing tests pass"
           ],
           "technical_notes": "Create new file src/routes/admin/config.ts. Use FastifyPluginCallback pattern matching existing admin routes. Add admin token auth hook (same as keys.ts/audit.ts). For /admin/config: read from server.config, construct sanitized response. For /admin/providers: read server.config.providers, map to safe shape with keyCount. For /admin/providers/health: need to iterate providers and call server.healthTracker.getHealth() for each key. The health tracker currently uses the raw API key string as the map key — need to add a method that returns all tracked data or iterate by provider config. Register plugin in src/index.ts. Add OpenAPI schema definitions in src/schemas/admin/config.ts.",
-          "status": "pending",
-          "dependencies": ["s7-feat-001"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-001"
+          ],
           "estimated_complexity": "medium",
           "files_affected": [
             "src/routes/admin/config.ts",
@@ -94,7 +96,7 @@
             "Given pnpm typecheck && pnpm test runs, then all tests pass"
           ],
           "technical_notes": "The pii_types_found field stores JSON string like '[\"EMAIL\",\"PHONE\"]' — parse with JSON.parse() and aggregate. For scoreDistribution, use CASE WHEN SQL to bucket prompt_injection_score values. Content filter logic: allowed = success AND no PII AND no injection score; flagged = success AND (PII OR injection); blocked = status='blocked'. Add unit tests for the new AuditStore method. Add OpenAPI schema in src/schemas/admin/audit.ts.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -118,7 +120,7 @@
             "Given admin/tsconfig.json, when pnpm build runs, then TypeScript compiles without errors"
           ],
           "technical_notes": "Use pnpm create vite with React + TypeScript template, then customize. Tailwind v3 with shadcn/ui init: npx shadcn-ui@latest init (select: dark theme, CSS variables, default style). Key deps from design spec: react@^18.3, react-dom@^18.3, react-router-dom@^6.28, @tanstack/react-query@^5.62, @tanstack/react-table@^8.20, recharts@^2.15, lucide-react@^0.460, date-fns@^3.6, class-variance-authority@^0.7, clsx@^2.1, tailwind-merge@^2.6. DevDeps: @vitejs/plugin-react@^4.3, tailwindcss@^3.4, postcss@^8.4, autoprefixer@^10.4, typescript@^5.6, vite@^5.4. Configure path alias @/ -> src/ in both tsconfig and vite config.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -147,8 +149,10 @@
             "Given use-auth hook is used in a component, when logout() is called, then token is cleared and user navigates to /login"
           ],
           "technical_notes": "api-client.ts: Export a singleton object with get/post/patch/del methods. Each method wraps fetch with: baseURL prefix, JSON headers, Authorization header from auth.ts, response intercept for 401. baseURL defaults to '' (same-origin). auth.ts: Simple get/set/clear for localStorage. use-auth.ts: Create AuthContext with token, isAuthenticated, login(token), logout(). Provider wraps App. Login calls GET /admin/config to verify token before storing.",
-          "status": "pending",
-          "dependencies": ["s7-feat-004"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-004"
+          ],
           "estimated_complexity": "small",
           "files_affected": [
             "admin/src/lib/api-client.ts",
@@ -172,8 +176,10 @@
             "Given the app on mobile (<768px), when sidebar toggle is clicked, then sidebar appears as an overlay"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Design spec: dark theme (zinc-950 bg, zinc-800 borders, indigo-500 accent). Sidebar: fixed left, 240px expanded / 64px collapsed, collapsible via button. Items: Home (LayoutDashboard icon), Keys (Key icon), Audit (ScrollText icon), Security (Shield icon), Providers (Server icon), Settings (Settings icon). Navbar: fixed top, h-16, floating style, right side has logout button. AuthGuard: wrapper component that checks auth context, redirects to /login if no token. Use shadcn/ui Sheet for mobile sidebar overlay. React Router v6 with Outlet for nested layout.",
-          "status": "pending",
-          "dependencies": ["s7-feat-005"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-005"
+          ],
           "estimated_complexity": "medium",
           "files_affected": [
             "admin/src/App.tsx",
@@ -197,8 +203,10 @@
             "Given the submit button, when request is in flight, then loading state is shown and button is disabled"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Design: dark bg, centered card (max-w-sm), Input with password toggle (Eye/EyeOff icons), Submit button with loading spinner. Use shadcn/ui Card, Input, Button, Label components. Call apiClient.get('/admin/config') for validation. Store token via auth context login() on success. Use react-router useNavigate for redirect.",
-          "status": "pending",
-          "dependencies": ["s7-feat-006"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-006"
+          ],
           "estimated_complexity": "small",
           "files_affected": [
             "admin/src/pages/login.tsx"
@@ -219,8 +227,11 @@
             "Given piiDetectionRate from stats, when donut renders, then percentage is displayed with color-coded progress"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create TanStack Query hooks in admin/src/hooks/use-audit-logs.ts and use-audit-stats.ts (or reuse a single use-config.ts). KPI Cards: shadcn/ui Card with Lucide icon, formatted number (utils.formatNumber), delta badge (green arrow-up / red arrow-down). Charts: recharts BarChart, PieChart, custom Donut. Use design system colors: indigo-500 accent, green-500 success, red-500 error, orange-500 blocked. Delta: call stats twice (current period vs previous period) and compute diff. Responsive: 4 cards -> 2x2 grid on tablet, stacked on mobile.",
-          "status": "pending",
-          "dependencies": ["s7-feat-006", "s7-feat-002"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-006",
+            "s7-feat-002"
+          ],
           "estimated_complexity": "large",
           "files_affected": [
             "admin/src/pages/overview.tsx",
@@ -247,8 +258,10 @@
             "Given a key with revoked_at !== null, when displayed, then Status Badge shows 'Revoked' in red"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Use TanStack Table v8 wrapped in shadcn/ui Table. Create admin/src/hooks/use-keys.ts with useQuery for list, useMutation for create/edit/revoke. DataTable component: admin/src/components/data-table.tsx — reusable with column definitions. Status Badge: Active (green), Revoked (red). Create dialog: shadcn/ui Dialog + Form inputs. Edit: shadcn/ui Sheet (side panel). Revoke: shadcn/ui AlertDialog. Post-creation: Dialog with monospace key text + Copy button (navigator.clipboard). Pagination: server-side via offset/limit params. Table columns: Name (string), ID (truncated with copy), Key Prefix (monospace), Rate Limits (RPM/TPM/RPD badges), Created (relative date), Status (badge).",
-          "status": "pending",
-          "dependencies": ["s7-feat-006"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-006"
+          ],
           "estimated_complexity": "large",
           "files_affected": [
             "admin/src/pages/keys.tsx",
@@ -274,8 +287,10 @@
             "Given CSV export button is clicked, when data is exported, then a CSV file downloads with all visible columns"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Filter bar: shadcn/ui Select + Popover + Calendar for date range. Model/key options from /admin/audit/stats.byModel and /admin/keys. Table columns: Time (formatted with date-fns), Request ID (truncated, monospace), Key (key_prefix), Model, Tokens (prompt+completion), Cost (USD formatted), Latency (ms), Status (badge: green/red/orange), PII (badge+tooltip). Injection Score: custom progress bar component with green->orange->red gradient based on score. Detail Sheet: shadcn/ui Sheet with all log fields including content_hash_sha256. CSV export: admin/src/pages/audit/export.ts — fetch all pages, generate CSV client-side, trigger download via Blob URL.",
-          "status": "pending",
-          "dependencies": ["s7-feat-006"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-006"
+          ],
           "estimated_complexity": "large",
           "files_affected": [
             "admin/src/pages/audit.tsx",
@@ -298,8 +313,11 @@
             "Given injectionAttempts.scoreDistribution data, when histogram renders, then 5 score buckets are shown as bars"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create admin/src/hooks/use-audit-security.ts with TanStack Query. KPI cards: same pattern as Overview but security-specific. Threat Feed: reuse DataTable component with status=blocked filter. PII Type chart: recharts horizontal BarChart with labels. Score Distribution: custom histogram with 5 bins. Content Filter KPI: show three numbers (allowed/flagged/blocked) in a single card with colored indicators. Trend: two calls to /admin/audit/security with different date ranges.",
-          "status": "pending",
-          "dependencies": ["s7-feat-006", "s7-feat-003"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-006",
+            "s7-feat-003"
+          ],
           "estimated_complexity": "medium",
           "files_affected": [
             "admin/src/pages/security.tsx",
@@ -321,8 +339,11 @@
             "Given the topology view, when rendered, then an SVG diagram shows Provider -> Model -> Key health status flow"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create admin/src/hooks/use-providers.ts with TanStack Query for both /admin/providers and /admin/providers/health. Provider Card: shadcn/ui Card with health indicator dot (green=all healthy, yellow=some unhealthy, red=all unhealthy), keyStrategy badge, keyCount, avg latency. Model Mappings: simple table within card. Key Usage: horizontal bars showing avgLatency per key, colored by health. Topology: admin/src/pages/providers/topology.tsx — SVG-based flow diagram with nodes for providers, model mappings, and keys, edges showing relationships, node colors based on health status.",
-          "status": "pending",
-          "dependencies": ["s7-feat-006", "s7-feat-002"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-006",
+            "s7-feat-002"
+          ],
           "estimated_complexity": "medium",
           "files_affected": [
             "admin/src/pages/providers.tsx",
@@ -343,8 +364,11 @@
             "Given the TOML preview, when rendered, then a code block shows the config formatted as TOML text with monospace font and syntax highlighting"
           ],
           "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create admin/src/hooks/use-config.ts with TanStack Query for GET /admin/config. Each section: shadcn/ui Card with DescriptionList (label-value pairs). Security rules: badges for PII types (red for blocked, amber for flagged). TOML Preview: CodeBlock component with JetBrains Mono font, dark background, formatted TOML generated from JSON data (write a simple JSON-to-TOML formatter or just display key-value pairs in TOML-like format). Provider section: reuse provider cards or show as nested config.",
-          "status": "pending",
-          "dependencies": ["s7-feat-006", "s7-feat-002"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-006",
+            "s7-feat-002"
+          ],
           "estimated_complexity": "small",
           "files_affected": [
             "admin/src/pages/settings.tsx",
@@ -366,8 +390,11 @@
             "Given the server serves admin static files, when GET /admin/config is requested, then the API endpoint responds (not static file)"
           ],
           "technical_notes": "Install @fastify/static in main project. Create src/plugins/serve-admin.ts: check if admin/dist/ directory exists (fs.existsSync), if yes register @fastify/static with root: resolve('admin/dist'), prefix: '/admin', serve: true, decorateReply: false. Add a wildcard GET /admin/* route AFTER static registration that serves index.html for SPA fallback — but BEFORE the admin API routes (or use a constraint to only serve static for non-API paths). The admin API routes (/admin/keys, /admin/audit/*, /admin/config, /admin/providers) must take precedence over static serving. Strategy: register static plugin AFTER all admin API routes, with a wildcard route that checks if the request is for a static file, and falls back to index.html. Register in src/index.ts.",
-          "status": "pending",
-          "dependencies": ["s7-feat-002", "s7-feat-004"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-002",
+            "s7-feat-004"
+          ],
           "estimated_complexity": "medium",
           "files_affected": [
             "src/plugins/serve-admin.ts",
@@ -391,8 +418,12 @@
             "Given admin/ pnpm build runs, then dist/ is produced without errors"
           ],
           "technical_notes": "Create tests/integration/admin-config.test.ts (or add to existing admin test files). Use createTestServer() helper. Test each new endpoint: happy path with valid token, 401 without token, response structure validation. For /admin/audit/security: seed test data in audit_logs and verify aggregation. For /admin/providers/health: the healthTracker may have no data in tests — verify it returns empty arrays. Add backend unit tests for AuditStore.querySecurityStats(). Verify admin/ builds: cd admin && pnpm build.",
-          "status": "pending",
-          "dependencies": ["s7-feat-002", "s7-feat-003", "s7-feat-014"],
+          "status": "completed",
+          "dependencies": [
+            "s7-feat-002",
+            "s7-feat-003",
+            "s7-feat-014"
+          ],
           "estimated_complexity": "medium",
           "files_affected": [
             "tests/integration/admin-config.test.ts",

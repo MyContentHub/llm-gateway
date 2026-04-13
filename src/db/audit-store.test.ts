@@ -309,4 +309,151 @@ describe("AuditStore", () => {
       expect(result.total).toBe(5);
     });
   });
+
+  describe("querySecurityStats", () => {
+    beforeEach(() => {
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-1",
+        timestamp: "2026-04-01T10:00:00.000Z",
+        status: "success",
+        pii_detected: false,
+        pii_types_found: null,
+        prompt_injection_score: 0,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-2",
+        timestamp: "2026-04-02T10:00:00.000Z",
+        status: "blocked",
+        pii_detected: false,
+        pii_types_found: null,
+        prompt_injection_score: 0,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-3",
+        timestamp: "2026-04-03T10:00:00.000Z",
+        status: "success",
+        pii_detected: true,
+        pii_types_found: JSON.stringify(["EMAIL", "PHONE"]),
+        prompt_injection_score: 0,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-4",
+        timestamp: "2026-04-04T10:00:00.000Z",
+        status: "success",
+        pii_detected: true,
+        pii_types_found: JSON.stringify(["EMAIL"]),
+        prompt_injection_score: 0.1,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-5",
+        timestamp: "2026-04-05T10:00:00.000Z",
+        status: "success",
+        pii_detected: false,
+        pii_types_found: null,
+        prompt_injection_score: 0.3,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-6",
+        timestamp: "2026-04-06T10:00:00.000Z",
+        status: "success",
+        pii_detected: false,
+        pii_types_found: null,
+        prompt_injection_score: 0.5,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-7",
+        timestamp: "2026-04-07T10:00:00.000Z",
+        status: "success",
+        pii_detected: false,
+        pii_types_found: null,
+        prompt_injection_score: 0.7,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-8",
+        timestamp: "2026-04-08T10:00:00.000Z",
+        status: "success",
+        pii_detected: false,
+        pii_types_found: null,
+        prompt_injection_score: 0.9,
+      }));
+      store.insertAuditLog(makeEntry({
+        request_id: "sec-9",
+        timestamp: "2026-04-09T10:00:00.000Z",
+        status: "blocked",
+        pii_detected: true,
+        pii_types_found: JSON.stringify(["SSN"]),
+        prompt_injection_score: 0.95,
+      }));
+    });
+
+    it("returns correct blockedRequests count", () => {
+      const result = store.querySecurityStats();
+      expect(result.blockedRequests).toBe(2);
+    });
+
+    it("returns correct piiDetections total and byType breakdown", () => {
+      const result = store.querySecurityStats();
+      expect(result.piiDetections.total).toBe(3);
+      expect(result.piiDetections.byType).toEqual({
+        EMAIL: 2,
+        PHONE: 1,
+        SSN: 1,
+      });
+    });
+
+    it("returns correct injectionAttempts total, avgScore, and scoreDistribution", () => {
+      const result = store.querySecurityStats();
+      expect(result.injectionAttempts.total).toBe(6);
+      expect(result.injectionAttempts.avgScore).toBeCloseTo(0.575, 3);
+      expect(result.injectionAttempts.scoreDistribution).toEqual({
+        "0-0.2": 1,
+        "0.2-0.4": 1,
+        "0.4-0.6": 1,
+        "0.6-0.8": 1,
+        "0.8-1.0": 2,
+      });
+    });
+
+    it("returns correct contentFilter allowed/flagged/blocked counts", () => {
+      const result = store.querySecurityStats();
+      expect(result.contentFilter.allowed).toBe(1);
+      expect(result.contentFilter.flagged).toBe(6);
+      expect(result.contentFilter.blocked).toBe(2);
+    });
+
+    it("filters by date range", () => {
+      const result = store.querySecurityStats({
+        startDate: "2026-04-03T00:00:00.000Z",
+        endDate: "2026-04-07T23:59:59.000Z",
+      });
+      expect(result.blockedRequests).toBe(0);
+      expect(result.piiDetections.total).toBe(2);
+      expect(result.injectionAttempts.total).toBe(4);
+    });
+
+    it("returns zeros for empty database", () => {
+      const emptyDb = new Database(":memory:");
+      emptyDb.exec(SCHEMA);
+      const emptyStore = new AuditStore(emptyDb);
+
+      const result = emptyStore.querySecurityStats();
+      expect(result.blockedRequests).toBe(0);
+      expect(result.piiDetections.total).toBe(0);
+      expect(result.piiDetections.byType).toEqual({});
+      expect(result.injectionAttempts.total).toBe(0);
+      expect(result.injectionAttempts.avgScore).toBe(0);
+      expect(result.injectionAttempts.scoreDistribution).toEqual({
+        "0-0.2": 0,
+        "0.2-0.4": 0,
+        "0.4-0.6": 0,
+        "0.6-0.8": 0,
+        "0.8-1.0": 0,
+      });
+      expect(result.contentFilter.allowed).toBe(0);
+      expect(result.contentFilter.flagged).toBe(0);
+      expect(result.contentFilter.blocked).toBe(0);
+
+      emptyDb.close();
+    });
+  });
 });

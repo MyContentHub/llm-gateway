@@ -20,6 +20,14 @@ export const auditStatsQuerySchema = {
   },
 };
 
+export const securityStatsQuerySchema = {
+  type: "object",
+  properties: {
+    startDate: { type: "string" },
+    endDate: { type: "string" },
+  },
+};
+
 export const auditLogResponseSchema = {
   type: "object",
   properties: {
