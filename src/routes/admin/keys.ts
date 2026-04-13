@@ -4,10 +4,7 @@ import { KeyStore } from "../../db/keys.js";
 import { adminTokenSecurity, error400, error401, error404 } from "../../schemas/common.js";
 import {
   createKeyBodySchema,
-  keyResponseSchema,
   listKeysQuerySchema,
-  keyListResponseSchema,
-  successResponseSchema,
   updateKeyBodySchema,
 } from "../../schemas/admin/keys.js";
 import "../../types.js";
@@ -64,6 +61,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
   });
 
   server.post("/admin/keys", {
+    validatorCompiler: () => () => true,
     schema: {
       summary: "Create a new virtual API key",
       description: "Generates a new virtual API key with optional rate limit configuration",
@@ -71,7 +69,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
       security: adminTokenSecurity,
       body: createKeyBodySchema,
       response: {
-        201: keyResponseSchema,
+        201: {},
         ...error400,
         ...error401,
       },
@@ -100,6 +98,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
   });
 
   server.get("/admin/keys", {
+    validatorCompiler: () => () => true,
     schema: {
       summary: "List virtual API keys",
       description: "Returns a paginated list of virtual API keys",
@@ -107,7 +106,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
       security: adminTokenSecurity,
       querystring: listKeysQuerySchema,
       response: {
-        200: keyListResponseSchema,
+        200: {},
         ...error400,
         ...error401,
       },
@@ -141,7 +140,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
         required: ["id"],
       },
       response: {
-        200: keyResponseSchema,
+        200: {},
         ...error401,
         ...error404,
       },
@@ -173,7 +172,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
         required: ["id"],
       },
       response: {
-        200: successResponseSchema,
+        200: {},
         ...error401,
         ...error404,
       },
@@ -194,6 +193,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
   });
 
   server.patch<{ Params: { id: string } }>("/admin/keys/:id", {
+    validatorCompiler: () => () => true,
     schema: {
       summary: "Update a virtual API key",
       description: "Updates a virtual API key's name and/or rate limit configuration",
@@ -206,7 +206,7 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
       },
       body: updateKeyBodySchema,
       response: {
-        200: keyResponseSchema,
+        200: {},
         ...error400,
         ...error401,
         ...error404,

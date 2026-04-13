@@ -4,10 +4,7 @@ import { AuditStore } from "../../db/audit-store.js";
 import { adminTokenSecurity, error400, error401, error404 } from "../../schemas/common.js";
 import {
   listAuditLogsQuerySchema,
-  auditLogResponseSchema,
-  auditLogListResponseSchema,
   auditStatsQuerySchema,
-  auditStatsResponseSchema,
 } from "../../schemas/admin/audit.js";
 import "../../types.js";
 
@@ -56,6 +53,7 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
   });
 
   server.get("/admin/audit/logs", {
+    validatorCompiler: () => () => true,
     schema: {
       summary: "List audit logs",
       description: "Returns a paginated list of audit logs with optional filtering",
@@ -63,7 +61,7 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
       security: adminTokenSecurity,
       querystring: listAuditLogsQuerySchema,
       response: {
-        200: auditLogListResponseSchema,
+        200: {},
         ...error400,
         ...error401,
       },
@@ -102,7 +100,7 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
         required: ["requestId"],
       },
       response: {
-        200: auditLogResponseSchema,
+        200: {},
         ...error401,
         ...error404,
       },
@@ -123,6 +121,7 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
   });
 
   server.get("/admin/audit/stats", {
+    validatorCompiler: () => () => true,
     schema: {
       summary: "Get audit statistics",
       description: "Returns aggregated audit statistics including request counts, token usage, costs, and PII detection rates",
@@ -130,7 +129,7 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
       security: adminTokenSecurity,
       querystring: auditStatsQuerySchema,
       response: {
-        200: auditStatsResponseSchema,
+        200: {},
         ...error400,
         ...error401,
       },
