@@ -17,7 +17,7 @@ import { HookManager } from "./hooks/index.js";
 import { KeyHealthTracker } from "./proxy/health-tracker.js";
 import { setupGracefulShutdown } from "./graceful-shutdown.js";
 import { openapiPlugin } from "./plugins/openapi.js";
-import { serveAdminPlugin } from "./plugins/serve-admin.js";
+import serveAdminPlugin from "./plugins/serve-admin.js";
 import "./types.js";
 
 async function main() {
@@ -95,10 +95,10 @@ async function main() {
     { prefix: "/v1" },
   );
 
+  await server.register(serveAdminPlugin);
   await server.register(adminKeysPlugin);
   await server.register(adminAuditPlugin);
   await server.register(adminConfigPlugin);
-  await server.register(serveAdminPlugin);
 
   await server.listen({ port: config.port, host: config.host });
 
