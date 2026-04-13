@@ -14,6 +14,7 @@ import { setupMetrics, createMetrics } from "./audit/metrics.js";
 import { adminAuditPlugin } from "./routes/admin/audit.js";
 import { HookManager } from "./hooks/index.js";
 import { setupGracefulShutdown } from "./graceful-shutdown.js";
+import { openapiPlugin } from "./plugins/openapi.js";
 import "./types.js";
 
 async function main() {
@@ -30,6 +31,7 @@ async function main() {
   });
 
   await server.register(cors, { origin: true });
+  await server.register(openapiPlugin);
 
   server.get("/health", async () => {
     return { status: "ok", providers: config.providers.length };
