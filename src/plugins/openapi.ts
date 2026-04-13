@@ -1,4 +1,5 @@
 import type { FastifyPluginCallback } from "fastify";
+import fp from "fastify-plugin";
 import fastifySwagger from "@fastify/swagger";
 import fastifySwaggerUi from "@fastify/swagger-ui";
 
@@ -39,5 +40,5 @@ const openapiPlugin: FastifyPluginCallback = async (server, _opts) => {
   });
 };
 
-export default openapiPlugin;
+export default fp(openapiPlugin);
 export { openapiPlugin };

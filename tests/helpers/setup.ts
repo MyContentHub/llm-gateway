@@ -15,6 +15,7 @@ import { setupMetrics } from "../../src/audit/metrics.js";
 import { chatCompletionsPlugin } from "../../src/routes/v1/chat-completions.js";
 import { embeddingsPlugin } from "../../src/routes/v1/embeddings.js";
 import { modelsPlugin } from "../../src/routes/v1/models.js";
+import { openapiPlugin } from "../../src/plugins/openapi.js";
 import "../../src/types.js";
 import type { AppConfig, SecurityConfig } from "../../src/config/index.js";
 import type { FastifyInstance } from "fastify";
@@ -104,6 +105,8 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
 
   const rateLimiter = new RateLimiter({ rpm: defaultRpm, tpm: defaultTpm, rpd: defaultRpd });
   server.decorate("rateLimiter", rateLimiter);
+
+  await server.register(openapiPlugin);
 
   server.get("/health", async () => {
     return { status: "ok", providers: config.providers.length };
