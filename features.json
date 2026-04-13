@@ -25,7 +25,7 @@
       "id": "sprint-006",
       "name": "Phase 6 - OpenAPI Integration",
       "goal": "Add OpenAPI specification generation and interactive Swagger UI documentation for all API endpoints (v1 proxy routes + admin routes), using @fastify/swagger with zod-to-json-schema for admin schemas and hand-crafted JSON Schema for OpenAI-compatible v1 routes",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-13",
       "features": [
         {
@@ -42,7 +42,7 @@
             "Given the existing test suite, when pnpm test runs, then all 646 tests still pass with the new plugin registered"
           ],
           "technical_notes": "Use @fastify/swagger v9+ (Fastify 5 compatible). Configure with openapi: { openapi: '3.0.0', info: { title: 'LLM Gateway API', version: '1.0.0', description: '...' }, components: { securitySchemes: { VirtualKey: { type: 'http', scheme: 'bearer', description: 'Virtual API key' }, AdminToken: { type: 'http', scheme: 'bearer', description: 'Admin token' } } } }. Swagger UI at routePrefix: '/docs'. Register in index.ts after cors and health endpoint, before v1/admin routes.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -63,7 +63,7 @@
             "Given the error schema, when rendered in Swagger UI, then it shows the error object structure with message, type, and code fields"
           ],
           "technical_notes": "Define const errorResponseSchema = { type: 'object', properties: { error: { type: 'object', properties: { message: { type: 'string' }, type: { type: 'string' }, code: { type: 'string' } }, required: ['message', 'type', 'code'] } }, required: ['error'] }. Export shared 400/401/404/500 response schemas. Export security references for VirtualKey and AdminToken. All schemas are plain JSON Schema objects (not Fastify-specific) for reuse across routes.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s6-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -84,7 +84,7 @@
             "Given the non-streaming chat completion response schema, when rendered, then the full response structure with choices, usage, and finish_reason is documented"
           ],
           "technical_notes": "chat-completions.ts: Define ChatCompletionRequestSchema with all fields from OPENAI_API_REFERENCE.md section 2.1. Message types: system {role, content}, developer {role, content}, user {role, content (string or array of content parts)}, assistant {role, content, tool_calls}, tool {role, content, tool_call_id}. Response: ChatCompletionResponseSchema with id, object, created, model, choices[{index, message, logprobs, finish_reason}], usage. Embeddings: EmbeddingsRequestSchema {model, input (string|array), encoding_format, dimensions, user}, EmbeddingsResponseSchema {object, data[{object, embedding, index}], model, usage}. Models: ModelsListResponseSchema {object: 'list', data[{id, object, created, owned_by}]}. Keep schemas as plain objects for Fastify route schema property.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s6-feat-002"],
           "estimated_complexity": "large",
           "files_affected": [
@@ -106,7 +106,7 @@
             "Given the admin key response schema, when rendered, then it shows the key object with id, name, key (prefix), rateLimits, status, createdAt fields"
           ],
           "technical_notes": "Use zodToJsonSchema() from 'zod-to-json-schema' to convert existing Zod schemas. Import schemas from admin route files (they may need to be exported if not already). Define response schemas manually: KeyResponse {id, name, key, rateLimits{rpm,tpm,rpd}, status, createdAt, revokedAt}, KeyListResponse {keys[], total, offset, limit}, AuditLogListResponse {logs[], total, limit, offset}, AuditStatsResponse {totalRequests, totalTokens, totalCostUsd, avgLatencyMs, byModel, byStatus, piiDetectionRate}. For the Zod schemas that already exist in keys.ts and audit.ts, import and convert them.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s6-feat-002"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -130,7 +130,7 @@
             "Given the existing test suite, when pnpm test runs, then all 646 tests still pass (schemas only add documentation/validation, no behavior change)"
           ],
           "technical_notes": "Add schema property as the second argument to server.post/get: server.post('/v1/chat/completions', { schema: { ... }, ... }, handler). V1 routes are under /v1 prefix scope — schema paths should NOT include /v1 (Fastify scopes the prefix). For streaming chat completions: use response: { 200: {} } (empty to skip validation) or add consumes: ['application/json'], produces: ['text/event-stream']. Tags: ['V1 - OpenAI Compatible']. Add summary and description strings. Import schemas from src/schemas/v1/*.ts. The route handler logic stays unchanged — only the schema config object is added.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s6-feat-003"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -154,7 +154,7 @@
             "Given the existing test suite, when pnpm test runs, then all 646 tests still pass"
           ],
           "technical_notes": "Admin routes are registered at top level (no prefix scope), so paths include /admin/... fully. Tags: 'Admin - Key Management' for keys.ts routes, 'Admin - Audit' for audit.ts routes. Import schemas from src/schemas/admin/*.ts. Add security: [{ AdminToken: [] }] to each route. For routes with params (e.g., /admin/keys/:id), add params: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] }.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s6-feat-004"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -175,7 +175,7 @@
             "Given Swagger UI at /docs, when loaded in a browser, then all endpoints are listed with correct descriptions, parameters, and response schemas"
           ],
           "technical_notes": "Health endpoint schema: { response: { 200: { type: 'object', properties: { status: { type: 'string', example: 'ok' }, providers: { type: 'number', description: 'Number of configured providers' } } } } }, tags: ['Health'] }. After all schemas are applied, do a final review of the generated spec to ensure consistency and completeness.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s6-feat-005", "s6-feat-006"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -198,7 +198,7 @@
             "Given the full test suite, when pnpm typecheck && pnpm test runs, then everything passes"
           ],
           "technical_notes": "Create tests/integration/openapi.test.ts. Use createTestServer() helper. Inject GET /reference/json and parse the response. Assert spec structure: paths count, schema properties, security definitions. Inject GET /docs and assert HTML response. This is a new integration test file — it tests the OpenAPI infrastructure, not route behavior.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s6-feat-007"],
           "estimated_complexity": "medium",
           "files_affected": [
