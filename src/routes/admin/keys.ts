@@ -1,6 +1,15 @@
 import { z } from "zod";
 import type { FastifyPluginCallback } from "fastify";
 import { KeyStore } from "../../db/keys.js";
+import { adminTokenSecurity, error400, error401, error404 } from "../../schemas/common.js";
+import {
+  createKeyBodySchema,
+  keyResponseSchema,
+  listKeysQuerySchema,
+  keyListResponseSchema,
+  successResponseSchema,
+  updateKeyBodySchema,
+} from "../../schemas/admin/keys.js";
 import "../../types.js";
 
 const CreateKeyBodySchema = z.object({
@@ -54,7 +63,20 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
     }
   });
 
-  server.post("/admin/keys", async (request, reply) => {
+  server.post("/admin/keys", {
+    schema: {
+      summary: "Create a new virtual API key",
+      description: "Generates a new virtual API key with optional rate limit configuration",
+      tags: ["Admin - Key Management"],
+      security: adminTokenSecurity,
+      body: createKeyBodySchema,
+      response: {
+        201: keyResponseSchema,
+        ...error400,
+        ...error401,
+      },
+    },
+  }, async (request, reply) => {
     const parsed = CreateKeyBodySchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -77,7 +99,20 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
     return reply.code(201).send(result);
   });
 
-  server.get("/admin/keys", async (request, reply) => {
+  server.get("/admin/keys", {
+    schema: {
+      summary: "List virtual API keys",
+      description: "Returns a paginated list of virtual API keys",
+      tags: ["Admin - Key Management"],
+      security: adminTokenSecurity,
+      querystring: listKeysQuerySchema,
+      response: {
+        200: keyListResponseSchema,
+        ...error400,
+        ...error401,
+      },
+    },
+  }, async (request, reply) => {
     const parsed = ListKeysQuerySchema.safeParse(request.query);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -94,7 +129,24 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
     return reply.send(result);
   });
 
-  server.get<{ Params: { id: string } }>("/admin/keys/:id", async (request, reply) => {
+  server.get<{ Params: { id: string } }>("/admin/keys/:id", {
+    schema: {
+      summary: "Get a virtual API key",
+      description: "Retrieves a single virtual API key by its ID",
+      tags: ["Admin - Key Management"],
+      security: adminTokenSecurity,
+      params: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      response: {
+        200: keyResponseSchema,
+        ...error401,
+        ...error404,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params;
     const key = keyStore.getKeyById(id);
     if (!key) {
@@ -109,7 +161,24 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
     return reply.send(key);
   });
 
-  server.delete<{ Params: { id: string } }>("/admin/keys/:id", async (request, reply) => {
+  server.delete<{ Params: { id: string } }>("/admin/keys/:id", {
+    schema: {
+      summary: "Revoke a virtual API key",
+      description: "Revokes a virtual API key by its ID, making it unusable",
+      tags: ["Admin - Key Management"],
+      security: adminTokenSecurity,
+      params: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      response: {
+        200: successResponseSchema,
+        ...error401,
+        ...error404,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params;
     const success = keyStore.revokeKey(id);
     if (!success) {
@@ -124,7 +193,26 @@ export const adminKeysPlugin: FastifyPluginCallback = (server, _opts, done) => {
     return reply.send({ success: true });
   });
 
-  server.patch<{ Params: { id: string } }>("/admin/keys/:id", async (request, reply) => {
+  server.patch<{ Params: { id: string } }>("/admin/keys/:id", {
+    schema: {
+      summary: "Update a virtual API key",
+      description: "Updates a virtual API key's name and/or rate limit configuration",
+      tags: ["Admin - Key Management"],
+      security: adminTokenSecurity,
+      params: {
+        type: "object",
+        properties: { id: { type: "string" } },
+        required: ["id"],
+      },
+      body: updateKeyBodySchema,
+      response: {
+        200: keyResponseSchema,
+        ...error400,
+        ...error401,
+        ...error404,
+      },
+    },
+  }, async (request, reply) => {
     const { id } = request.params;
     const parsed = UpdateKeyBodySchema.safeParse(request.body);
     if (!parsed.success) {

@@ -1,6 +1,14 @@
 import { z } from "zod";
 import type { FastifyPluginCallback } from "fastify";
 import { AuditStore } from "../../db/audit-store.js";
+import { adminTokenSecurity, error400, error401, error404 } from "../../schemas/common.js";
+import {
+  listAuditLogsQuerySchema,
+  auditLogResponseSchema,
+  auditLogListResponseSchema,
+  auditStatsQuerySchema,
+  auditStatsResponseSchema,
+} from "../../schemas/admin/audit.js";
 import "../../types.js";
 
 const ListAuditLogsQuerySchema = z.object({
@@ -47,7 +55,20 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
     }
   });
 
-  server.get("/admin/audit/logs", async (request, reply) => {
+  server.get("/admin/audit/logs", {
+    schema: {
+      summary: "List audit logs",
+      description: "Returns a paginated list of audit logs with optional filtering",
+      tags: ["Admin - Audit"],
+      security: adminTokenSecurity,
+      querystring: listAuditLogsQuerySchema,
+      response: {
+        200: auditLogListResponseSchema,
+        ...error400,
+        ...error401,
+      },
+    },
+  }, async (request, reply) => {
     const parsed = ListAuditLogsQuerySchema.safeParse(request.query);
     if (!parsed.success) {
       return reply.code(400).send({
@@ -69,7 +90,24 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
     });
   });
 
-  server.get<{ Params: { requestId: string } }>("/admin/audit/logs/:requestId", async (request, reply) => {
+  server.get<{ Params: { requestId: string } }>("/admin/audit/logs/:requestId", {
+    schema: {
+      summary: "Get an audit log",
+      description: "Retrieves a single audit log entry by its request ID",
+      tags: ["Admin - Audit"],
+      security: adminTokenSecurity,
+      params: {
+        type: "object",
+        properties: { requestId: { type: "string" } },
+        required: ["requestId"],
+      },
+      response: {
+        200: auditLogResponseSchema,
+        ...error401,
+        ...error404,
+      },
+    },
+  }, async (request, reply) => {
     const { requestId } = request.params;
     const row = auditStore.getAuditLogById(requestId);
     if (!row) {
@@ -84,7 +122,20 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
     return reply.send(row);
   });
 
-  server.get("/admin/audit/stats", async (request, reply) => {
+  server.get("/admin/audit/stats", {
+    schema: {
+      summary: "Get audit statistics",
+      description: "Returns aggregated audit statistics including request counts, token usage, costs, and PII detection rates",
+      tags: ["Admin - Audit"],
+      security: adminTokenSecurity,
+      querystring: auditStatsQuerySchema,
+      response: {
+        200: auditStatsResponseSchema,
+        ...error400,
+        ...error401,
+      },
+    },
+  }, async (request, reply) => {
     const parsed = AuditStatsQuerySchema.safeParse(request.query);
     if (!parsed.success) {
       return reply.code(400).send({
