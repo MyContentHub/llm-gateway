@@ -1,6 +1,8 @@
 import type { FastifyPluginCallback } from "fastify";
 import "../../types.js";
 import type { ProviderConfig } from "../../config/providers.js";
+import { ModelsListResponseSchema } from "../../schemas/v1/models.js";
+import { error401, error429, error500, virtualKeySecurity } from "../../schemas/common.js";
 
 interface UpstreamModel {
   id: string;
@@ -36,7 +38,20 @@ async function fetchProviderModels(
 }
 
 const modelsPlugin: FastifyPluginCallback = (server, _opts, done) => {
-  server.get("/v1/models", async (_request, reply) => {
+  server.get("/v1/models", {
+    schema: {
+      summary: "List models",
+      description: "Lists the currently available models from all configured providers.",
+      tags: ["V1 - OpenAI Compatible"],
+      security: virtualKeySecurity,
+      response: {
+        200: ModelsListResponseSchema,
+        ...error401,
+        ...error429,
+        ...error500,
+      },
+    },
+  }, async (_request, reply) => {
     const config = server.config;
     const providers = config.providers;
 

@@ -2,6 +2,8 @@ import type { FastifyPluginCallback } from "fastify";
 import "../../types.js";
 import { resolveRoute, RouteError } from "../../proxy/router.js";
 import { forwardRequest } from "../../proxy/forwarder.js";
+import { EmbeddingsRequestSchema } from "../../schemas/v1/embeddings.js";
+import { error400, error401, error429, error500, virtualKeySecurity } from "../../schemas/common.js";
 
 interface EmbeddingsRequest {
   model: string;
@@ -12,7 +14,23 @@ interface EmbeddingsRequest {
 const embeddingsPlugin: FastifyPluginCallback = (server, _opts, done) => {
   server.post<{
     Body: EmbeddingsRequest;
-  }>("/v1/embeddings", async (request, reply) => {
+  }>("/v1/embeddings", {
+    validatorCompiler: () => () => true,
+    schema: {
+      summary: "Create embeddings",
+      description: "Creates an embedding vector representing the input text.",
+      tags: ["V1 - OpenAI Compatible"],
+      security: virtualKeySecurity,
+      body: EmbeddingsRequestSchema,
+      response: {
+        200: {},
+        ...error400,
+        ...error401,
+        ...error429,
+        ...error500,
+      },
+    },
+  }, async (request, reply) => {
     const config = server.config;
     const body = request.body;
 

@@ -4,6 +4,8 @@ import "../../types.js";
 import { resolveRoute, RouteError } from "../../proxy/router.js";
 import { forwardRequest, forwardStreamRequest } from "../../proxy/forwarder.js";
 import { createPiiContext } from "../../security/pii-redact.js";
+import { ChatCompletionRequestSchema } from "../../schemas/v1/chat-completions.js";
+import { error400, error401, error429, error500, virtualKeySecurity } from "../../schemas/common.js";
 
 interface ChatCompletionRequest {
   model: string;
@@ -28,7 +30,23 @@ function restorePiiDeep(obj: unknown, restore: (text: string) => string): unknow
 const chatCompletionsPlugin: FastifyPluginCallback = (server, _opts, done) => {
   server.post<{
     Body: ChatCompletionRequest;
-  }>("/v1/chat/completions", async (request, reply) => {
+  }>("/v1/chat/completions", {
+    validatorCompiler: () => () => true,
+    schema: {
+      summary: "Create chat completion",
+      description: "Creates a model response for the given conversation. Supports both streaming and non-streaming responses.",
+      tags: ["V1 - OpenAI Compatible"],
+      security: virtualKeySecurity,
+      body: ChatCompletionRequestSchema,
+      response: {
+        200: {},
+        ...error400,
+        ...error401,
+        ...error429,
+        ...error500,
+      },
+    },
+  }, async (request, reply) => {
     const config = server.config;
     const body = request.body;
 
