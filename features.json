@@ -24,410 +24,280 @@
       "@tanstack/react-query v5",
       "@tanstack/react-table v8",
       "recharts 2",
-      "react-router-dom v6"
+      "react-router-dom v6",
+      "@playwright/test"
     ],
     "created_at": "2026-04-09"
   },
   "sprints": [
     {
-      "id": "sprint-007",
-      "name": "Phase 7 - Admin Dashboard",
-      "goal": "Build a complete admin dashboard with React + shadcn/ui dark theme, serving as the management UI for LLM Gateway. Includes backend API expansion (config, providers, health, security endpoints), frontend scaffold (Vite + React 18 + Tailwind + shadcn/ui), 7 pages (Login, Overview, Keys, Audit, Security, Providers, Settings), authentication flow, and production deployment via @fastify/static.",
-      "status": "completed",
-      "created_at": "2026-04-13",
+      "id": "sprint-008",
+      "name": "Phase 8 - Admin Playwright E2E Testing & Bug Audit",
+      "goal": "Implement comprehensive Playwright E2E test suite for the admin dashboard (8 spec files, ~46 tests) using a real backend server, and generate a structured bug list (BUGS.md) documenting all discovered functional, accessibility, and code quality issues.",
+      "status": "planning",
+      "created_at": "2026-04-14",
       "features": [
         {
-          "id": "s7-feat-001",
+          "id": "s8-feat-001",
           "category": "infra",
           "priority": "high",
-          "title": "Add healthTracker server decoration and type declaration",
-          "description": "Mount KeyHealthTracker instance as a Fastify server decoration (server.healthTracker) so admin routes can read provider key health data. Add type declaration in src/types.ts. Instantiate in src/index.ts after the health tracker is created in the proxy layer.",
+          "title": "Install Playwright and create test configuration",
+          "description": "Install @playwright/test as a devDependency in admin/package.json. Create admin/playwright.config.ts with Chromium browser, baseURL pointing to http://localhost:3000, webServer configuration to start the backend, test match pattern admin/e2e/**/*.spec.ts, and screenshot/video artifacts output. Add test:e2e and test:e2e:ui scripts to admin/package.json. Install Playwright browsers via npx playwright install chromium.",
           "acceptance_criteria": [
-            "Given src/types.ts is updated, when server.healthTracker is accessed in a route handler, then TypeScript compiles without error",
-            "Given the server starts, when server.healthTracker is inspected, then it is a KeyHealthTracker instance",
-            "Given pnpm typecheck runs, then no type errors"
+            "Given @playwright/test is installed, when npx playwright test --config admin/playwright.config.ts runs, then the test runner starts without errors",
+            "Given playwright.config.ts webServer config, when tests run, then the backend server starts automatically",
+            "Given admin/package.json, when pnpm test:e2e is called, then it invokes playwright test with the correct config"
           ],
-          "technical_notes": "Follow existing pattern for server.rateLimiter and server.config decorations. The KeyHealthTracker is already instantiated in the proxy layer — extract and mount as decoration. Add 'healthTracker' to FastifyInstance via module augmentation in src/types.ts.",
-          "status": "completed",
+          "technical_notes": "Playwright config should set baseURL to http://localhost:3000/admin/ since the admin SPA is served at /admin. Use webServer.command to start the backend with a test config. Set timeout to 30s for E2E tests. Use { channel: 'chromium' } for browser. Set use.screenshot to 'only-on-failure', use.video to 'retain-on-failure'. Artifacts output to admin/e2e/results/.",
+          "status": "pending",
           "dependencies": [],
           "estimated_complexity": "small",
-          "files_affected": [
-            "src/types.ts",
-            "src/index.ts"
-          ]
-        },
-        {
-          "id": "s7-feat-002",
-          "category": "api",
-          "priority": "high",
-          "title": "Create admin config and providers API endpoints",
-          "description": "Create src/routes/admin/config.ts with three endpoints: GET /admin/config (returns sanitized runtime config — no encryption_key, admin_token, or provider API keys), GET /admin/providers (lists all providers with keyCount instead of actual keys), GET /admin/providers/health (returns key health from server.healthTracker, grouped by provider, using key-N id format). All endpoints reuse the existing admin token auth hook pattern.",
-          "acceptance_criteria": [
-            "Given GET /admin/config is called with valid admin token, then response contains port, host, log_level, default_rpm/tpm/rpd, security, retry fields",
-            "Given GET /admin/config response, when inspected, then encryption_key, admin_token, and provider apiKey/apiKeys are NOT present",
-            "Given GET /admin/providers is called, then response contains providers array with name, baseUrl, keyStrategy, keyCount, modelMappings, isDefault",
-            "Given GET /admin/providers/health is called, then response contains providers with keys array showing id (key-N), avgLatency, consecutiveErrors, isHealthy",
-            "Given any admin endpoint is called without auth, then 401 is returned",
-            "Given pnpm typecheck && pnpm test runs, then all existing tests pass"
-          ],
-          "technical_notes": "Create new file src/routes/admin/config.ts. Use FastifyPluginCallback pattern matching existing admin routes. Add admin token auth hook (same as keys.ts/audit.ts). For /admin/config: read from server.config, construct sanitized response. For /admin/providers: read server.config.providers, map to safe shape with keyCount. For /admin/providers/health: need to iterate providers and call server.healthTracker.getHealth() for each key. The health tracker currently uses the raw API key string as the map key — need to add a method that returns all tracked data or iterate by provider config. Register plugin in src/index.ts. Add OpenAPI schema definitions in src/schemas/admin/config.ts.",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-001"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "src/routes/admin/config.ts",
-            "src/schemas/admin/config.ts",
-            "src/index.ts"
-          ]
-        },
-        {
-          "id": "s7-feat-003",
-          "category": "api",
-          "priority": "high",
-          "title": "Add security stats aggregation to AuditStore and endpoint",
-          "description": "Add querySecurityStats(startDate?, endDate?) method to src/db/audit-store.ts that computes: blockedRequests count, piiDetections with byType breakdown (parsing pii_types_found JSON field), injectionAttempts with avgScore and scoreDistribution (0.2 intervals), contentFilter with allowed/flagged/blocked counts. Add GET /admin/audit/security endpoint in src/routes/admin/audit.ts that exposes this data.",
-          "acceptance_criteria": [
-            "Given GET /admin/audit/security is called, then response contains blockedRequests, piiDetections {total, byType}, injectionAttempts {total, avgScore, scoreDistribution}, contentFilter {allowed, flagged, blocked}",
-            "Given GET /admin/audit/security?startDate=2026-04-01&endDate=2026-04-13, then only logs within the date range are aggregated",
-            "Given audit_logs with pii_types_found='[\"EMAIL\",\"PHONE\"]', when byType is computed, then EMAIL and PHONE are each incremented",
-            "Given audit_logs with prompt_injection_score values, when scoreDistribution is computed, then values are bucketed into 5 intervals (0-0.2, 0.2-0.4, 0.4-0.6, 0.6-0.8, 0.8-1.0)",
-            "Given pnpm typecheck && pnpm test runs, then all tests pass"
-          ],
-          "technical_notes": "The pii_types_found field stores JSON string like '[\"EMAIL\",\"PHONE\"]' — parse with JSON.parse() and aggregate. For scoreDistribution, use CASE WHEN SQL to bucket prompt_injection_score values. Content filter logic: allowed = success AND no PII AND no injection score; flagged = success AND (PII OR injection); blocked = status='blocked'. Add unit tests for the new AuditStore method. Add OpenAPI schema in src/schemas/admin/audit.ts.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "src/db/audit-store.ts",
-            "src/db/audit-store.test.ts",
-            "src/routes/admin/audit.ts",
-            "src/schemas/admin/audit.ts"
-          ]
-        },
-        {
-          "id": "s7-feat-004",
-          "category": "infra",
-          "priority": "high",
-          "title": "Scaffold Vite + React 18 + Tailwind + shadcn/ui admin project",
-          "description": "Create admin/ directory as an independent Vite project with: package.json (react 18, react-dom, react-router-dom v6, tailwindcss v3, @tanstack/react-query v5, recharts, lucide-react, date-fns, shadcn/ui deps), tsconfig.json (strict, JSX, paths), vite.config.ts (dev proxy to localhost:3000), tailwind.config.ts (dark theme config matching design system), postcss.config.js, index.html, src/main.tsx entry point. Initialize shadcn/ui with dark theme.",
-          "acceptance_criteria": [
-            "Given admin/ directory, when pnpm install && pnpm dev runs, then Vite dev server starts on port 5173 without errors",
-            "Given the Vite config, when /admin/* requests are made during dev, then they are proxied to http://localhost:3000",
-            "Given tailwind.config.ts, when dark theme CSS variables are used, then they render correctly",
-            "Given shadcn/ui is initialized, when a Button component is imported, then it renders with dark theme styling",
-            "Given admin/tsconfig.json, when pnpm build runs, then TypeScript compiles without errors"
-          ],
-          "technical_notes": "Use pnpm create vite with React + TypeScript template, then customize. Tailwind v3 with shadcn/ui init: npx shadcn-ui@latest init (select: dark theme, CSS variables, default style). Key deps from design spec: react@^18.3, react-dom@^18.3, react-router-dom@^6.28, @tanstack/react-query@^5.62, @tanstack/react-table@^8.20, recharts@^2.15, lucide-react@^0.460, date-fns@^3.6, class-variance-authority@^0.7, clsx@^2.1, tailwind-merge@^2.6. DevDeps: @vitejs/plugin-react@^4.3, tailwindcss@^3.4, postcss@^8.4, autoprefixer@^10.4, typescript@^5.6, vite@^5.4. Configure path alias @/ -> src/ in both tsconfig and vite config.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "medium",
           "files_affected": [
             "admin/package.json",
-            "admin/tsconfig.json",
-            "admin/vite.config.ts",
-            "admin/tailwind.config.ts",
-            "admin/postcss.config.js",
-            "admin/index.html",
-            "admin/src/main.tsx",
-            "admin/components.json"
+            "admin/playwright.config.ts"
           ]
         },
         {
-          "id": "s7-feat-005",
+          "id": "s8-feat-002",
           "category": "infra",
           "priority": "high",
-          "title": "Implement API client, auth module, and core utilities",
-          "description": "Create admin/src/lib/api-client.ts (fetch wrapper with auto Bearer token, 401 auto-redirect, baseURL from VITE_API_BASE), admin/src/lib/auth.ts (token get/set/clear with localStorage key 'llm-gw-admin-token'), admin/src/lib/utils.ts (number abbreviation, USD formatting, ms formatting, date formatting helpers using date-fns), and admin/src/hooks/use-auth.ts (React context for auth state).",
+          "title": "Create E2E test fixtures with real backend server",
+          "description": "Create admin/e2e/fixtures/admin-server.ts that starts a real Fastify server with in-memory SQLite, a known admin_token (e.g. 'test-admin-token'), a test provider config, and helper methods to create test keys, seed audit logs, and get the authenticated browser state. Create admin/e2e/fixtures/index.ts extending Playwright's base test with custom fixtures (authenticatedPage, adminToken, createKey, seedAuditLog). Create admin/e2e/global-setup.ts to build the admin frontend before tests.",
           "acceptance_criteria": [
-            "Given api-client is used, when a request is made, then Authorization: Bearer <token> header is automatically added",
-            "Given api-client receives a 401 response, when the response is processed, then token is cleared and user is redirected to /login",
-            "Given auth.ts stores a token, when getToken() is called, then it returns the stored value",
-            "Given utils formatNumber(1500000), when called, then it returns '1.5M'",
-            "Given utils formatUsd(0.0423), when called, then it returns '$0.0423'",
-            "Given use-auth hook is used in a component, when logout() is called, then token is cleared and user navigates to /login"
+            "Given the fixture, when tests use the 'authenticatedPage' fixture, then the browser has a valid admin token in localStorage and is logged in",
+            "Given the server fixture, when it starts, then a Fastify instance with in-memory SQLite and test config is running on a dynamic port",
+            "Given createKey helper, when called, then a test API key is created via the real backend and the key data is returned",
+            "Given seedAuditLog helper, when called with log data, then an audit log entry is inserted into the test database"
           ],
-          "technical_notes": "api-client.ts: Export a singleton object with get/post/patch/del methods. Each method wraps fetch with: baseURL prefix, JSON headers, Authorization header from auth.ts, response intercept for 401. baseURL defaults to '' (same-origin). auth.ts: Simple get/set/clear for localStorage. use-auth.ts: Create AuthContext with token, isAuthenticated, login(token), logout(). Provider wraps App. Login calls GET /admin/config to verify token before storing.",
-          "status": "completed",
+          "technical_notes": "Reuse the pattern from tests/helpers/setup.ts (createTestServer) but adapt for Playwright. The fixture should: (1) Build admin/dist if not exists (global-setup), (2) Start Fastify server on port 3000 with config.admin_token='test-admin-token', in-memory SQLite, and a mock provider, (3) Provide authenticatedPage fixture that navigates to /admin/ and sets localStorage token, (4) Provide createKey() that calls POST /admin/keys, (5) Provide seedAuditLog() that directly inserts into the DB. Server lifecycle: start in fixture setup, stop in teardown.",
+          "status": "pending",
           "dependencies": [
-            "s7-feat-004"
+            "s8-feat-001"
+          ],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "admin/e2e/fixtures/admin-server.ts",
+            "admin/e2e/fixtures/index.ts",
+            "admin/e2e/global-setup.ts"
+          ]
+        },
+        {
+          "id": "s8-feat-003",
+          "category": "auth",
+          "priority": "high",
+          "title": "E2E tests for Login page (~8 tests)",
+          "description": "Create admin/e2e/login.spec.ts with ~8 tests covering the login page: renders login form with title and token input, shows/hide password toggle works, login with valid admin token redirects to overview page, login with invalid token shows error message, submitting empty token shows validation error, already-authenticated user visiting /login gets redirected to overview, auth guard redirects unauthenticated users to /login, logout clears token and redirects to login.",
+          "acceptance_criteria": [
+            "Given /admin/login page, when rendered, then card with 'LLM Gateway Admin' title and password input is visible",
+            "Given the password input, when Eye/EyeOff toggle is clicked, then input type switches between password and text",
+            "Given valid admin token entered, when form is submitted, then page redirects to /admin/ overview",
+            "Given invalid token entered, when form is submitted, then error message is displayed",
+            "Given no token entered, when form is submitted, then validation prevents submission",
+            "Given authenticated user, when navigating to /admin/login, then redirect to /admin/ occurs",
+            "Given unauthenticated user, when accessing /admin/keys, then redirect to /admin/login occurs",
+            "Given authenticated user, when clicking Logout, then token is cleared and redirect to /admin/login occurs"
+          ],
+          "technical_notes": "Use authenticatedPage fixture from s8-feat-002 for tests that need logged-in state. For invalid token tests, use a fresh page without token. Selectors: input[type='password'] or placeholder text, Eye/EyeOff button, submit button, error message text. Verify redirect via page.url(). Test the auth guard by navigating to a protected route and checking the final URL.",
+          "status": "pending",
+          "dependencies": [
+            "s8-feat-002"
           ],
           "estimated_complexity": "small",
           "files_affected": [
-            "admin/src/lib/api-client.ts",
-            "admin/src/lib/auth.ts",
-            "admin/src/lib/utils.ts",
-            "admin/src/hooks/use-auth.ts"
+            "admin/e2e/login.spec.ts"
           ]
         },
         {
-          "id": "s7-feat-006",
+          "id": "s8-feat-004",
           "category": "ui",
           "priority": "high",
-          "title": "Build layout shell: Sidebar, Navbar, AuthGuard, routing",
-          "description": "Create the app layout skeleton with: admin/src/App.tsx (react-router v6 routes), admin/src/components/layout/sidebar.tsx (collapsible sidebar with navigation items matching design — Home, Keys, Audit, Security, Providers, Settings), admin/src/components/layout/navbar.tsx (floating top bar with logo, health indicator, logout button), admin/src/components/layout/page-header.tsx (page title + breadcrumb), admin/src/components/layout/auth-guard.tsx (redirects to /login if no token). Must use ui-ux-pro-max skill for all component implementation.",
+          "title": "E2E tests for Navigation and layout (~5 tests)",
+          "description": "Create admin/e2e/navigation.spec.ts with ~5 tests: sidebar navigation links work (each link navigates to correct page), sidebar collapse/expand toggle works on desktop, mobile hamburger menu opens sidebar overlay, active nav item is highlighted, page header displays correct title for each route.",
           "acceptance_criteria": [
-            "Given the app loads without a token, when any protected route is accessed, then user is redirected to /login",
-            "Given the sidebar, when toggle button is clicked, then it collapses to 64px icon-only mode",
-            "Given the sidebar, when a nav item is clicked, then the corresponding route is navigated and the item shows active state highlight",
-            "Given the navbar, when rendered, then it shows 'LLM Gateway' logo on the left and logout button on the right",
-            "Given a protected page renders, when page-header is shown, then it displays the page title and breadcrumb",
-            "Given the app on mobile (<768px), when sidebar toggle is clicked, then sidebar appears as an overlay"
+            "Given the sidebar, when Home/Keys/Audit/Security/Providers/Settings links are clicked, then correct page loads",
+            "Given the sidebar toggle button, when clicked, then sidebar collapses to icon-only mode (64px width)",
+            "Given the sidebar collapsed, when toggle is clicked again, then sidebar expands back to full width (240px)",
+            "Given viewport < 768px, when hamburger menu is clicked, then sidebar appears as overlay",
+            "Given current route is /admin/keys, when sidebar renders, then the Keys link shows active/highlighted state"
           ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Design spec: dark theme (zinc-950 bg, zinc-800 borders, indigo-500 accent). Sidebar: fixed left, 240px expanded / 64px collapsed, collapsible via button. Items: Home (LayoutDashboard icon), Keys (Key icon), Audit (ScrollText icon), Security (Shield icon), Providers (Server icon), Settings (Settings icon). Navbar: fixed top, h-16, floating style, right side has logout button. AuthGuard: wrapper component that checks auth context, redirects to /login if no token. Use shadcn/ui Sheet for mobile sidebar overlay. React Router v6 with Outlet for nested layout.",
-          "status": "completed",
+          "technical_notes": "Use authenticatedPage fixture. Test each sidebar link by clicking and verifying URL change and page content. For collapse test, check element width or class changes. For mobile test, use page.setViewportSize({width: 375, height: 667}). Active state can be verified by checking for an active CSS class or aria-current attribute.",
+          "status": "pending",
           "dependencies": [
-            "s7-feat-005"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "admin/src/App.tsx",
-            "admin/src/components/layout/sidebar.tsx",
-            "admin/src/components/layout/navbar.tsx",
-            "admin/src/components/layout/page-header.tsx",
-            "admin/src/components/layout/auth-guard.tsx"
-          ]
-        },
-        {
-          "id": "s7-feat-007",
-          "category": "ui",
-          "priority": "high",
-          "title": "Build Login page",
-          "description": "Create admin/src/pages/login.tsx — a centered card layout with a single admin token input field. On submit, calls GET /admin/config to validate the token. On success, stores token and redirects to /. On 401, shows 'Token invalid' error. If already authenticated, redirects to /. Must use ui-ux-pro-max skill for implementation.",
-          "acceptance_criteria": [
-            "Given the login page, when rendered, then a centered card with 'LLM Gateway Admin' title and token input is shown",
-            "Given a valid token is entered, when submitted, then GET /admin/config is called and on 200 user is redirected to /",
-            "Given an invalid token, when submitted, then 'Token invalid' error message is displayed",
-            "Given the user is already authenticated, when visiting /login, then they are redirected to /",
-            "Given the submit button, when request is in flight, then loading state is shown and button is disabled"
-          ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Design: dark bg, centered card (max-w-sm), Input with password toggle (Eye/EyeOff icons), Submit button with loading spinner. Use shadcn/ui Card, Input, Button, Label components. Call apiClient.get('/admin/config') for validation. Store token via auth context login() on success. Use react-router useNavigate for redirect.",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-006"
+            "s8-feat-002"
           ],
           "estimated_complexity": "small",
           "files_affected": [
-            "admin/src/pages/login.tsx"
+            "admin/e2e/navigation.spec.ts"
           ]
         },
         {
-          "id": "s7-feat-008",
+          "id": "s8-feat-005",
           "category": "ui",
           "priority": "high",
-          "title": "Build Overview Dashboard page",
-          "description": "Create admin/src/pages/overview.tsx with: 4 KPI cards (Total Requests, Token Usage, Total Cost, Avg Latency) with delta change indicators, By Model bar chart, By Status pie chart, Recent Activity table (5 rows), PII Detection Rate donut progress. Data from GET /admin/audit/stats + GET /admin/audit/logs?limit=5. Must use ui-ux-pro-max skill for all component and chart implementation.",
+          "title": "E2E tests for Overview Dashboard page (~5 tests)",
+          "description": "Create admin/e2e/overview.spec.ts with ~5 tests: page loads and displays 4 KPI cards (Total Requests, Token Usage, Total Cost, Avg Latency), bar chart for Requests by Model renders, pie chart for Requests by Status renders, recent activity table shows rows, donut chart for PII Detection Rate renders. Seed test audit data before running tests.",
           "acceptance_criteria": [
-            "Given the overview page loads, when data is fetched, then 4 KPI cards display correct values with delta indicators",
-            "Given KPI delta change, when compared with previous period, then up/down arrows with green/red colors are shown",
-            "Given audit stats contain byModel data, when the bar chart renders, then each model appears as a labeled bar",
-            "Given audit stats contain byStatus data, when the pie chart renders, then success/error/blocked segments with correct colors (green/red/orange) are shown",
-            "Given recent activity data, when the table renders, then 5 most recent rows show time, model, tokens, cost, status",
-            "Given piiDetectionRate from stats, when donut renders, then percentage is displayed with color-coded progress"
+            "Given seeded audit data, when overview page loads, then 4 KPI cards display correct formatted values",
+            "Given audit stats with byModel data, when bar chart renders, then chart container is visible with axis labels",
+            "Given audit stats with byStatus data, when pie chart renders, then chart container is visible with legend",
+            "Given seeded recent logs, when recent activity table renders, then table rows with model, tokens, cost, status are visible",
+            "Given piiDetectionRate from stats, when donut chart renders, then percentage text is displayed"
           ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create TanStack Query hooks in admin/src/hooks/use-audit-logs.ts and use-audit-stats.ts (or reuse a single use-config.ts). KPI Cards: shadcn/ui Card with Lucide icon, formatted number (utils.formatNumber), delta badge (green arrow-up / red arrow-down). Charts: recharts BarChart, PieChart, custom Donut. Use design system colors: indigo-500 accent, green-500 success, red-500 error, orange-500 blocked. Delta: call stats twice (current period vs previous period) and compute diff. Responsive: 4 cards -> 2x2 grid on tablet, stacked on mobile.",
-          "status": "completed",
+          "technical_notes": "Seed audit logs using seedAuditLog helper with varied data (different models, statuses, PII scores). KPI card selectors: look for formatted numbers in card elements. Chart verification: check that recharts SVG containers exist and have rendered content (not just empty). Table verification: check row count matches seeded data (limited to 5). Use page.waitForSelector for chart SVG elements since they render asynchronously.",
+          "status": "pending",
           "dependencies": [
-            "s7-feat-006",
-            "s7-feat-002"
-          ],
-          "estimated_complexity": "large",
-          "files_affected": [
-            "admin/src/pages/overview.tsx",
-            "admin/src/hooks/use-audit-logs.ts",
-            "admin/src/hooks/use-audit-stats.ts",
-            "admin/src/components/charts/bar-chart.tsx",
-            "admin/src/components/charts/pie-chart.tsx",
-            "admin/src/components/charts/donut-chart.tsx"
-          ]
-        },
-        {
-          "id": "s7-feat-009",
-          "category": "ui",
-          "priority": "high",
-          "title": "Build API Key Management page",
-          "description": "Create admin/src/pages/keys.tsx with: paginated DataTable of keys (Name, ID, Key Prefix, Rate Limits, Created, Status), Create Key dialog with form, Edit Key side Sheet, Revoke confirmation AlertDialog, post-creation key display dialog (shows key once with copy button). Must use ui-ux-pro-max skill for all component implementation.",
-          "acceptance_criteria": [
-            "Given the keys page loads, when data is fetched from GET /admin/keys, then a paginated table displays all keys",
-            "Given the table, when sorted by a column header, then data re-sorts accordingly",
-            "Given 'Create Key' button is clicked, when dialog opens, then name (required) and optional rate limits fields are shown",
-            "Given a key is created, when response returns, then a dialog shows the raw key value with a copy button and a warning that it won't be shown again",
-            "Given a key row, when edit is clicked, then a Sheet slides in from the right with editable name and rate limits",
-            "Given a key row, when revoke is clicked, then AlertDialog asks for confirmation before DELETE request",
-            "Given a key with revoked_at !== null, when displayed, then Status Badge shows 'Revoked' in red"
-          ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Use TanStack Table v8 wrapped in shadcn/ui Table. Create admin/src/hooks/use-keys.ts with useQuery for list, useMutation for create/edit/revoke. DataTable component: admin/src/components/data-table.tsx — reusable with column definitions. Status Badge: Active (green), Revoked (red). Create dialog: shadcn/ui Dialog + Form inputs. Edit: shadcn/ui Sheet (side panel). Revoke: shadcn/ui AlertDialog. Post-creation: Dialog with monospace key text + Copy button (navigator.clipboard). Pagination: server-side via offset/limit params. Table columns: Name (string), ID (truncated with copy), Key Prefix (monospace), Rate Limits (RPM/TPM/RPD badges), Created (relative date), Status (badge).",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-006"
-          ],
-          "estimated_complexity": "large",
-          "files_affected": [
-            "admin/src/pages/keys.tsx",
-            "admin/src/pages/keys/create-dialog.tsx",
-            "admin/src/pages/keys/edit-sheet.tsx",
-            "admin/src/hooks/use-keys.ts",
-            "admin/src/components/data-table.tsx"
-          ]
-        },
-        {
-          "id": "s7-feat-010",
-          "category": "ui",
-          "priority": "high",
-          "title": "Build Audit Log Browser page",
-          "description": "Create admin/src/pages/audit.tsx with: filter bar (date range, model select, endpoint select, status select, key select), paginated DataTable of logs, Status Badge (success/error/blocked), PII Indicator badge with tooltip, Injection Score progress bar with color gradient, detail Sheet drawer on row click, CSV export button. Must use ui-ux-pro-max skill for all component implementation.",
-          "acceptance_criteria": [
-            "Given the audit page loads, when data is fetched, then a paginated log table renders with all columns",
-            "Given filter bar inputs, when date range is set, then only matching logs are shown",
-            "Given filter bar, when model/status/endpoint/key dropdown is selected, then table filters accordingly",
-            "Given a log row with pii_detected=true, when rendered, then PII badge shows with tooltip listing detected types",
-            "Given a log row with prompt_injection_score=0.8, when rendered, then a red progress bar shows 80%",
-            "Given a log row is clicked, when detail Sheet opens, then full log data is displayed",
-            "Given CSV export button is clicked, when data is exported, then a CSV file downloads with all visible columns"
-          ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Filter bar: shadcn/ui Select + Popover + Calendar for date range. Model/key options from /admin/audit/stats.byModel and /admin/keys. Table columns: Time (formatted with date-fns), Request ID (truncated, monospace), Key (key_prefix), Model, Tokens (prompt+completion), Cost (USD formatted), Latency (ms), Status (badge: green/red/orange), PII (badge+tooltip). Injection Score: custom progress bar component with green->orange->red gradient based on score. Detail Sheet: shadcn/ui Sheet with all log fields including content_hash_sha256. CSV export: admin/src/pages/audit/export.ts — fetch all pages, generate CSV client-side, trigger download via Blob URL.",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-006"
-          ],
-          "estimated_complexity": "large",
-          "files_affected": [
-            "admin/src/pages/audit.tsx",
-            "admin/src/pages/audit/detail-drawer.tsx",
-            "admin/src/pages/audit/export.ts",
-            "admin/src/hooks/use-audit-logs.ts"
-          ]
-        },
-        {
-          "id": "s7-feat-011",
-          "category": "ui",
-          "priority": "medium",
-          "title": "Build Security Monitor page",
-          "description": "Create admin/src/pages/security.tsx with: 4 Security KPI cards (Blocked Requests, PII Detections, Injection Attempts, Content Filter breakdown), Threat Feed table (filtered audit logs showing blocked/security events), PII Type horizontal bar chart, Injection Score distribution histogram. Data from GET /admin/audit/security + GET /admin/audit/logs?status=blocked. Must use ui-ux-pro-max skill for all component and chart implementation.",
-          "acceptance_criteria": [
-            "Given the security page loads, when data is fetched, then 4 KPI cards display blockedRequests, piiDetections.total, injectionAttempts.total, and contentFilter totals",
-            "Given KPI cards have trend data, when compared with previous period, then delta indicators are shown",
-            "Given the threat feed table, when blocked events are fetched, then they display in a table with time, model, status, PII info",
-            "Given piiDetections.byType data, when horizontal bar chart renders, then each PII type appears as a labeled bar",
-            "Given injectionAttempts.scoreDistribution data, when histogram renders, then 5 score buckets are shown as bars"
-          ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create admin/src/hooks/use-audit-security.ts with TanStack Query. KPI cards: same pattern as Overview but security-specific. Threat Feed: reuse DataTable component with status=blocked filter. PII Type chart: recharts horizontal BarChart with labels. Score Distribution: custom histogram with 5 bins. Content Filter KPI: show three numbers (allowed/flagged/blocked) in a single card with colored indicators. Trend: two calls to /admin/audit/security with different date ranges.",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-006",
-            "s7-feat-003"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "admin/src/pages/security.tsx",
-            "admin/src/hooks/use-audit-security.ts",
-            "admin/src/components/charts/histogram.tsx"
-          ]
-        },
-        {
-          "id": "s7-feat-012",
-          "category": "ui",
-          "priority": "medium",
-          "title": "Build Provider/Model Status page",
-          "description": "Create admin/src/pages/providers.tsx with: Provider Cards grid (one card per provider showing name, baseUrl, health indicator, key strategy badge, key count, avg latency), Model Mappings table (alias -> real model), Key Usage distribution bars, and Topology View (SVG flow diagram: Provider -> Model Mappings -> Key health nodes). Data from GET /admin/providers + GET /admin/providers/health. Must use ui-ux-pro-max skill for all component implementation.",
-          "acceptance_criteria": [
-            "Given the providers page loads, when data is fetched, then a card grid shows one card per configured provider",
-            "Given a provider card, when health data is loaded, then a green/yellow/red indicator reflects aggregated key health",
-            "Given a provider card, when modelMappings exist, then a table shows alias -> real model name mappings",
-            "Given a provider card, when key health data is loaded, then usage bars show relative latency across keys",
-            "Given the topology view, when rendered, then an SVG diagram shows Provider -> Model -> Key health status flow"
-          ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create admin/src/hooks/use-providers.ts with TanStack Query for both /admin/providers and /admin/providers/health. Provider Card: shadcn/ui Card with health indicator dot (green=all healthy, yellow=some unhealthy, red=all unhealthy), keyStrategy badge, keyCount, avg latency. Model Mappings: simple table within card. Key Usage: horizontal bars showing avgLatency per key, colored by health. Topology: admin/src/pages/providers/topology.tsx — SVG-based flow diagram with nodes for providers, model mappings, and keys, edges showing relationships, node colors based on health status.",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-006",
-            "s7-feat-002"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "admin/src/pages/providers.tsx",
-            "admin/src/pages/providers/topology.tsx",
-            "admin/src/hooks/use-providers.ts"
-          ]
-        },
-        {
-          "id": "s7-feat-013",
-          "category": "ui",
-          "priority": "medium",
-          "title": "Build Settings/Config page",
-          "description": "Create admin/src/pages/settings.tsx with read-only display of current configuration: General config (port, host, log_level, default rate limits), Security Rules (injection_threshold, blocked/flagged PII types), Retry Policy (max_retries, delays, backoff), Provider Config details, and TOML Preview (generated from JSON data). Data from GET /admin/config + GET /admin/providers. Must use ui-ux-pro-max skill for all component implementation.",
-          "acceptance_criteria": [
-            "Given the settings page loads, when config data is fetched, then General, Security, Retry, Provider sections are displayed",
-            "Given each config section, when rendered, then key-value pairs are shown in a description list format",
-            "Given security rules, when displayed, then blocked_pii_types and flagged_pii_types are shown as colored badge lists",
-            "Given the TOML preview, when rendered, then a code block shows the config formatted as TOML text with monospace font and syntax highlighting"
-          ],
-          "technical_notes": "IMPORTANT: Use /ui-ux-pro-max skill for implementation. Create admin/src/hooks/use-config.ts with TanStack Query for GET /admin/config. Each section: shadcn/ui Card with DescriptionList (label-value pairs). Security rules: badges for PII types (red for blocked, amber for flagged). TOML Preview: CodeBlock component with JetBrains Mono font, dark background, formatted TOML generated from JSON data (write a simple JSON-to-TOML formatter or just display key-value pairs in TOML-like format). Provider section: reuse provider cards or show as nested config.",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-006",
-            "s7-feat-002"
+            "s8-feat-002"
           ],
           "estimated_complexity": "small",
           "files_affected": [
-            "admin/src/pages/settings.tsx",
-            "admin/src/hooks/use-config.ts"
+            "admin/e2e/overview.spec.ts"
           ]
         },
         {
-          "id": "s7-feat-014",
+          "id": "s8-feat-006",
+          "category": "ui",
+          "priority": "high",
+          "title": "E2E tests for API Key Management page (~10 tests)",
+          "description": "Create admin/e2e/keys.spec.ts with ~10 tests: keys table loads and displays columns, create key dialog opens and submits successfully, created key is shown in display dialog with copy button, edit key sheet opens with pre-filled data, edit key name updates successfully, edit key rate limits updates successfully, revoke key shows confirmation dialog, revoke key marks key as revoked, revoked keys show disabled edit button, pagination controls work for multiple pages of keys.",
+          "acceptance_criteria": [
+            "Given existing keys, when keys page loads, then table displays rows with Name, Prefix, Rate Limits, Created, Status columns",
+            "Given 'Create Key' button clicked, when dialog opens, then name input and RPM/TPM/RPD fields are visible",
+            "Given create form filled with name, when submitted, then key display dialog shows the generated gwk_ key with copy button",
+            "Given a key row, when edit (pencil) icon is clicked, then side sheet opens with pre-filled name and rate limits",
+            "Given edit sheet with modified name, when saved, then key name updates in the table",
+            "Given a key row, when revoke (trash) icon is clicked, then confirmation dialog appears with destructive button",
+            "Given confirmation dialog accepted, when revoke completes, then key status changes to 'Revoked' in the table",
+            "Given a revoked key, when its row renders, then edit button is disabled",
+            "Given >20 keys exist, when pagination next is clicked, then next page of keys loads with correct offset",
+            "Given copy button in key display dialog, when clicked, then key is copied (verify clipboard or checkmark feedback)"
+          ],
+          "technical_notes": "Create multiple keys via createKey helper for pagination test (>20 keys). Test the full CRUD lifecycle: create -> verify in table -> edit -> verify update -> revoke -> verify revoked. Key display dialog: look for 'gwk_' prefix in text content. Edit sheet: verify it slides in from right side. Copy button: check for checkmark icon change after click. Revoke: verify the red 'Revoke' button in confirmation dialog.",
+          "status": "pending",
+          "dependencies": [
+            "s8-feat-002"
+          ],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "admin/e2e/keys.spec.ts"
+          ]
+        },
+        {
+          "id": "s8-feat-007",
+          "category": "ui",
+          "priority": "high",
+          "title": "E2E tests for Audit Log Browser page (~8 tests)",
+          "description": "Create admin/e2e/audit.spec.ts with ~8 tests: audit table loads with default view, filter by status dropdown works, filter by model dropdown works, date range filter works, clicking a row opens detail drawer, detail drawer displays all log fields, detail drawer can be closed, CSV export triggers a file download, pagination controls work.",
+          "acceptance_criteria": [
+            "Given seeded audit logs, when audit page loads, then log table displays rows with Time, Request ID, Model, Tokens, Cost, Latency, Status columns",
+            "Given status filter dropdown, when 'blocked' is selected, then only blocked logs are shown in table",
+            "Given model filter dropdown, when a specific model is selected, then only matching logs are shown",
+            "Given date range inputs, when a range is set, then only logs within range are shown",
+            "Given a log row, when clicked, then detail drawer slides in from the right",
+            "Given detail drawer open, when content is checked, then Request ID, Timestamp, Status, Model, Tokens, Cost, Latency, PII info, Injection Score fields are visible",
+            "Given detail drawer open, when close button or backdrop is clicked, then drawer closes",
+            "Given export button, when clicked, then a CSV file download is triggered (verify download event)"
+          ],
+          "technical_notes": "Seed varied audit logs: different statuses (success, error, blocked), different models, different dates. For filter tests: apply filter and verify table row count changes. Detail drawer: check for Sheet/drawer container appearing on the right side. CSV export: use page.waitForEvent('download') to catch the download. Pagination: seed >50 logs to test pagination.",
+          "status": "pending",
+          "dependencies": [
+            "s8-feat-002"
+          ],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "admin/e2e/audit.spec.ts"
+          ]
+        },
+        {
+          "id": "s8-feat-008",
+          "category": "ui",
+          "priority": "medium",
+          "title": "E2E tests for Security Monitor page (~4 tests)",
+          "description": "Create admin/e2e/security.spec.ts with ~4 tests: page loads and displays 4 security KPI cards (Blocked Requests, PII Detections, Injection Attempts, Content Filter), PII Detection by Type bar chart renders, Injection Score Distribution histogram renders, Threat Feed table shows blocked request entries.",
+          "acceptance_criteria": [
+            "Given seeded security data (blocked logs, PII, injection scores), when security page loads, then 4 KPI cards display values",
+            "Given PII detection by type data, when bar chart renders, then horizontal bar chart is visible with PII type labels",
+            "Given injection score distribution data, when histogram renders, then 5 score bucket bars are visible",
+            "Given blocked audit logs, when threat feed table renders, then rows show Time, Request ID, Model, PII badge, Injection Score"
+          ],
+          "technical_notes": "Seed audit logs with PII data (pii_types_found with EMAIL, PHONE etc.), injection scores, and blocked status. KPI cards: verify formatted numbers are present. Charts: verify SVG containers rendered. Threat feed: verify table rows with blocked status.",
+          "status": "pending",
+          "dependencies": [
+            "s8-feat-002"
+          ],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/e2e/security.spec.ts"
+          ]
+        },
+        {
+          "id": "s8-feat-009",
+          "category": "ui",
+          "priority": "medium",
+          "title": "E2E tests for Providers page (~3 tests)",
+          "description": "Create admin/e2e/providers.spec.ts with ~3 tests: provider cards render with name and details, health indicator dots display correct colors, key health bars are visible in each provider card.",
+          "acceptance_criteria": [
+            "Given configured providers, when providers page loads, then provider cards display with name, baseUrl, key strategy, key count",
+            "Given provider health data, when cards render, then health dots (green/yellow/red/gray) are visible",
+            "Given provider with multiple keys, when key health section renders, then key health bars are visible with latency data"
+          ],
+          "technical_notes": "Providers come from the test server config (config.toml). Health tracker may have no data in tests — verify cards still render with default health states. Look for provider card containers and health dot elements.",
+          "status": "pending",
+          "dependencies": [
+            "s8-feat-002"
+          ],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/e2e/providers.spec.ts"
+          ]
+        },
+        {
+          "id": "s8-feat-010",
+          "category": "ui",
+          "priority": "medium",
+          "title": "E2E tests for Settings page (~3 tests)",
+          "description": "Create admin/e2e/settings.spec.ts with ~3 tests: page loads and displays config sections (General, Security, Retry), provider configuration section shows provider details, TOML preview code block renders with syntax-highlighted content.",
+          "acceptance_criteria": [
+            "Given the config API returns data, when settings page loads, then General (port, host, log_level, rate limits), Security (injection threshold, PII types), and Retry (max_retries, delays) sections are visible",
+            "Given provider data, when provider section renders, then provider cards with base URL, key strategy, key count are shown",
+            "Given the TOML preview section, when rendered, then a code block with monospace font and TOML-formatted text is visible"
+          ],
+          "technical_notes": "Config sections are read-only. Verify section headings (General, Security, Retry Policy) and key-value pairs. TOML preview: look for a pre/code element with TOML-formatted text. Provider section: may be combined with main provider list or a separate config view.",
+          "status": "pending",
+          "dependencies": [
+            "s8-feat-002"
+          ],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/e2e/settings.spec.ts"
+          ]
+        },
+        {
+          "id": "s8-feat-011",
           "category": "infra",
           "priority": "high",
-          "title": "Production deployment: @fastify/static integration and build pipeline",
-          "description": "Create src/plugins/serve-admin.ts that registers @fastify/static to serve admin/dist/ at /admin prefix with SPA fallback (non-API requests return index.html). Add @fastify/static to main package.json dependencies. Configure admin/ build script. Ensure the plugin only activates when admin/dist/ exists. Add build verification.",
+          "title": "Generate comprehensive bug list (BUGS.md)",
+          "description": "Create admin/e2e/BUGS.md documenting all discovered bugs from code analysis and E2E testing. Categorize into: Functional Bugs (latency delta color inverted, CSV export no error UI, export memory risk, clipboard API failure, rate limit 0 default, pie chart color mismatch, hardcoded empty state, formatUsd dead code, provider health bar misleading width), Accessibility Bugs (missing label associations, no focus traps, no Escape key close, missing aria-labels), and Code Quality Issues (unused dependencies, duplicated components, naming confusion). Each bug entry should include: severity, location, description, steps to reproduce, and expected vs actual behavior.",
           "acceptance_criteria": [
-            "Given admin/dist/ exists, when GET /admin is requested, then index.html is served",
-            "Given admin/dist/ exists, when GET /admin/assets/main-abc123.js is requested, then the JS file is served with 1-year cache",
-            "Given admin/dist/ exists, when GET /admin/keys is requested (SPA route), then index.html is served",
-            "Given admin/dist/ does NOT exist, when the server starts, then admin static serving is skipped with no error",
-            "Given admin/ has pnpm build run, when admin/dist/ is inspected, then index.html and JS/CSS bundles exist",
-            "Given the server serves admin static files, when GET /admin/config is requested, then the API endpoint responds (not static file)"
+            "Given all E2E tests have run, when bug list is generated, then BUGS.md contains all discovered issues",
+            "Given the bug list, when reviewed, then each bug has severity (high/medium/low), location (file:line), description, and reproduction steps",
+            "Given the 16 pre-analysis bugs, when documented, then all are present in BUGS.md with accurate details",
+            "Given any new bugs found during E2E testing, when documented, then they are added to BUGS.md"
           ],
-          "technical_notes": "Install @fastify/static in main project. Create src/plugins/serve-admin.ts: check if admin/dist/ directory exists (fs.existsSync), if yes register @fastify/static with root: resolve('admin/dist'), prefix: '/admin', serve: true, decorateReply: false. Add a wildcard GET /admin/* route AFTER static registration that serves index.html for SPA fallback — but BEFORE the admin API routes (or use a constraint to only serve static for non-API paths). The admin API routes (/admin/keys, /admin/audit/*, /admin/config, /admin/providers) must take precedence over static serving. Strategy: register static plugin AFTER all admin API routes, with a wildcard route that checks if the request is for a static file, and falls back to index.html. Register in src/index.ts.",
-          "status": "completed",
+          "technical_notes": "Pre-identified bugs from code analysis (16 bugs): Functional (9): 1) Latency delta color inverted in overview.tsx, 2) CSV export no error UI in audit.tsx, 3) Export memory risk in export.ts, 4) Clipboard API no try/catch in keys.tsx, 5) Rate limit defaults of 0 in create-dialog/edit-sheet, 6) Pie chart legend color mismatch in pie-chart.tsx, 7) Hardcoded 'No keys found' in data-table.tsx, 8) formatUsd dead code in utils.ts, 9) Provider health bar misleading width. Accessibility (4): 10) Missing htmlFor/id on labels, 11) No focus traps in modals, 12) No Escape key close, 13) Missing aria-labels. Code Quality (3): 14) Unused deps (date-fns, class-variance-authority), 15) Duplicated StatusBadge, 16) Duplicated InjectionScoreBar. During E2E testing, look for additional runtime bugs like broken navigation, missing data rendering, incorrect form submissions, etc.",
+          "status": "pending",
           "dependencies": [
-            "s7-feat-002",
-            "s7-feat-004"
+            "s8-feat-003",
+            "s8-feat-004",
+            "s8-feat-005",
+            "s8-feat-006",
+            "s8-feat-007",
+            "s8-feat-008",
+            "s8-feat-009",
+            "s8-feat-010"
           ],
-          "estimated_complexity": "medium",
+          "estimated_complexity": "small",
           "files_affected": [
-            "src/plugins/serve-admin.ts",
-            "src/index.ts",
-            "package.json",
-            "admin/vite.config.ts"
-          ]
-        },
-        {
-          "id": "s7-feat-015",
-          "category": "infra",
-          "priority": "medium",
-          "title": "Integration tests and end-to-end verification",
-          "description": "Write backend tests for the 4 new admin endpoints (config, providers, providers/health, audit/security). Verify the admin frontend builds successfully. Test the @fastify/static integration. Run full test suite to confirm no regressions.",
-          "acceptance_criteria": [
-            "Given GET /admin/config is called in tests, then sanitized config is returned without secrets",
-            "Given GET /admin/providers is called in tests, then provider list with keyCount is returned",
-            "Given GET /admin/providers/health is called in tests, then health data is returned",
-            "Given GET /admin/audit/security is called in tests, then aggregated security stats are returned with correct structure",
-            "Given pnpm typecheck && pnpm test runs in main project, then all tests pass",
-            "Given admin/ pnpm build runs, then dist/ is produced without errors"
-          ],
-          "technical_notes": "Create tests/integration/admin-config.test.ts (or add to existing admin test files). Use createTestServer() helper. Test each new endpoint: happy path with valid token, 401 without token, response structure validation. For /admin/audit/security: seed test data in audit_logs and verify aggregation. For /admin/providers/health: the healthTracker may have no data in tests — verify it returns empty arrays. Add backend unit tests for AuditStore.querySecurityStats(). Verify admin/ builds: cd admin && pnpm build.",
-          "status": "completed",
-          "dependencies": [
-            "s7-feat-002",
-            "s7-feat-003",
-            "s7-feat-014"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "tests/integration/admin-config.test.ts",
-            "src/db/audit-store.test.ts"
+            "admin/e2e/BUGS.md"
           ]
         }
       ]
@@ -435,6 +305,6 @@
   ],
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2026-04-13"
+    "last_updated": "2026-04-14"
   }
 }
