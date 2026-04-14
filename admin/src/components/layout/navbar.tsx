@@ -19,9 +19,9 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <span className="text-lg font-semibold text-foreground">
+          {/* <span className="text-lg font-semibold text-foreground">
             LLM Gateway
-          </span>
+          </span> */}
         </div>
         <button
           onClick={logout}
