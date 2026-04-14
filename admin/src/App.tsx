@@ -66,7 +66,7 @@ function DashboardLayout() {
         }`}
       >
         <Navbar onMobileMenuToggle={openMobile} />
-        <main className="pt-16 p-4 lg:p-6">
+        <main className="p-4 lg:p-6 pt-20">
           <AuthGuard />
         </main>
       </div>
