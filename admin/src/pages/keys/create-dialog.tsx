@@ -26,12 +26,15 @@ export function CreateKeyDialog({
     e.preventDefault();
     if (!name.trim()) return;
 
+    const rpmNum = rpm ? Number(rpm) : 0;
+    const tpmNum = tpm ? Number(tpm) : 0;
+    const rpdNum = rpd ? Number(rpd) : 0;
     const rateLimits =
-      rpm || tpm || rpd
+      rpmNum > 0 || tpmNum > 0 || rpdNum > 0
         ? {
-            rpm: rpm ? Number(rpm) : 0,
-            tpm: tpm ? Number(tpm) : 0,
-            rpd: rpd ? Number(rpd) : 0,
+            ...(rpmNum > 0 ? { rpm: rpmNum } : {}),
+            ...(tpmNum > 0 ? { tpm: tpmNum } : {}),
+            ...(rpdNum > 0 ? { rpd: rpdNum } : {}),
           }
         : undefined;
 

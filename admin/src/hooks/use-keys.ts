@@ -2,9 +2,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 
 interface KeyRateLimits {
-  rpm: number;
-  tpm: number;
-  rpd: number;
+  rpm?: number;
+  tpm?: number;
+  rpd?: number;
 }
 
 interface VirtualKey {
