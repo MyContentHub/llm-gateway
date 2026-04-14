@@ -34,7 +34,7 @@
       "id": "sprint-009",
       "name": "Phase 9 - Admin Dashboard Bug Fix Sprint",
       "goal": "Fix all 18 bugs documented in admin/e2e/BUGS.md: 2 High functional bugs, 7 Medium functional bugs, 4 Low functional bugs, 4 Accessibility bugs, and eliminate code quality issues by extracting shared components.",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-14",
       "features": [
         {
@@ -49,7 +49,7 @@
             "Given the login error flow, when error occurs, then the error state is set and the red error text is visible"
           ],
           "technical_notes": "In api-client.ts:22-25, remove the window.location.href redirect. Instead, just throw the error and let callers handle it. The use-auth.ts login() already catches errors. For other pages, the 401 should be caught by React Query's onError or a query client interceptor that calls clearToken() + navigate('/login').",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -70,7 +70,7 @@
             "Given the layout, when content scrolls, then the header remains fixed at top without overlapping interactive elements"
           ],
           "technical_notes": "Fix navbar.tsx: change `fixed top-0 right-0` to `fixed top-0 inset-x-0` (or `left-0 right-0`). Ensure main content area has proper top padding (pt-16) to offset the fixed header height. Check App.tsx layout structure for the content wrapper padding.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -90,7 +90,7 @@
             "Given no change in latency, when delta is displayed, then neutral color is shown"
           ],
           "technical_notes": "In overview.tsx, find the latency KPI card delta rendering. The color logic is likely swapped: increase should be text-red-500, decrease should be text-green-500. Swap the color condition for the latency metric specifically (unlike cost/requests where up is good).",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -109,7 +109,7 @@
             "Given the export function, when called with thousands of rows, then memory usage is bounded (chunked/streaming approach or row limit)"
           ],
           "technical_notes": "In audit.tsx handleExport: add a try/catch that sets an error state and displays a toast or inline error. In export.ts: add a max row limit (e.g., 10000) or implement streaming via Blob constructor with incremental chunks to avoid OOM. Display a warning if limit is hit.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -129,7 +129,7 @@
             "Given copy fails, when button is clicked, then a graceful fallback or error indicator is shown"
           ],
           "technical_notes": "In keys.tsx around line 25, wrap the navigator.clipboard.writeText call in try/catch. On failure, could show a brief error tooltip or fall back to selecting text in an input for manual copy.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -148,7 +148,7 @@
             "Given create key dialog with filled rate limit values, when submitted, then the correct values are sent"
           ],
           "technical_notes": "In create-dialog.tsx:30-36 and edit-sheet.tsx:33-37, change the payload construction to only include rpm/tpm/rpd when the field has a non-empty value. Use conditional spreading: ...(rpm ? { rpm } : {}) pattern.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -167,7 +167,7 @@
             "Given pie chart with standard names (success/error/blocked), when rendered, then both chart and legend use the same named colors"
           ],
           "technical_notes": "In pie-chart.tsx, the legend map needs access to the same index-based DEFAULT_COLORS logic as the pie cells. Pass the index to the legend rendering or compute color the same way: COLORS[entry.name] ?? DEFAULT_COLORS[data.indexOf(entry) % DEFAULT_COLORS.length].",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -186,7 +186,7 @@
             "Given all existing DataTable usages, when upgraded, then they can pass appropriate context-specific messages"
           ],
           "technical_notes": "Add emptyMessage?: string prop to DataTableProps with default 'No data found'. Update the empty state td to use this prop. Update callers (keys.tsx, audit.tsx, etc.) to pass appropriate messages.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -206,7 +206,7 @@
             "Given formatUsd code, when reviewed, then there are no redundant branches"
           ],
           "technical_notes": "Remove the `if (n < 1) return \\`$${n.toFixed(2)}\\`;` line since it's identical to the final return. Keep the `n < 0.01 && n > 0` branch which is unique.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -225,7 +225,7 @@
             "Given mixed health keys, when bars render, then healthy keys show full bars regardless of latency"
           ],
           "technical_notes": "In providers.tsx KeyHealthBars: change bar width logic to represent health (e.g., 100% for healthy, proportional to error rate for unhealthy). The color already indicates health (green/red/yellow). The latency value should remain as text label, not drive the bar width.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -245,7 +245,7 @@
             "Given audit page filters, when screen reader focuses date/status inputs, then corresponding labels are announced"
           ],
           "technical_notes": "Add htmlFor/id pairs to all label/input combinations: login.tsx (token input), create-dialog.tsx (name, rpm, tpm, rpd), edit-sheet.tsx (name, rpm, tpm, rpd), audit.tsx (status, model, date range filters). Use descriptive unique IDs like 'key-name-input', 'key-rpm-input', etc.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -267,7 +267,7 @@
             "Given dialog/drawer closed, when Tab is pressed, then normal page focus flow resumes"
           ],
           "technical_notes": "Implement a simple focus trap hook (useFocusTrap) or add onKeyDown={handleEscape} + ref-based focus management to each overlay component. For focus trap: on mount, query all focusable elements, on Tab/Shift+Tab cycle within. For Escape: add keydown listener that calls onClose. Apply to: create-dialog.tsx, edit-sheet.tsx, keys.tsx (revoke dialog), audit/detail-drawer.tsx.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -290,7 +290,7 @@
             "Given keys page revoke button, when screen reader encounters it, then 'Revoke key' is announced"
           ],
           "technical_notes": "Add aria-label to: login.tsx eye/eyeoff toggle button, keys.tsx copy button, keys.tsx edit (pencil) icon button, keys.tsx revoke (trash) icon button, navbar.tsx logout button and mobile menu button.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -310,7 +310,7 @@
             "Given the old inline definitions, when removed, then no duplicate code remains"
           ],
           "technical_notes": "Create admin/src/components/status-badge.tsx (or similar). Move StatusBadge from overview.tsx to this file. Import in both overview.tsx and audit.tsx. The component is identical in both files so extraction is straightforward.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -330,7 +330,7 @@
             "Given the 4 inline implementations, when removed, then no duplicate code remains"
           ],
           "technical_notes": "Create admin/src/components/injection-score-bar.tsx. Find the InjectionScoreBar pattern in all 4 files, unify into a single component with props for score (number) and optional size/threshold config. Import in all 4 consumer files.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -352,7 +352,7 @@
             "Given the admin build, when pnpm install && pnpm build runs, then build succeeds without errors"
           ],
           "technical_notes": "Run grep/search to confirm date-fns and class-variance-authority are truly unused. If confirmed, remove from package.json dependencies and run pnpm install to update lockfile. Verify build still works.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
