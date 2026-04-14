@@ -13,9 +13,15 @@ interface KpiCardProps {
   value: string;
   icon: React.ReactNode;
   delta?: number;
+  invertDelta?: boolean;
 }
 
-function KpiCard({ label, value, icon, delta }: KpiCardProps) {
+function KpiCard({ label, value, icon, delta, invertDelta }: KpiCardProps) {
+  const isPositive = delta !== undefined && delta >= 0;
+  const colorClass = invertDelta
+    ? isPositive ? "text-red-500" : "text-green-500"
+    : isPositive ? "text-green-500" : "text-red-500";
+
   return (
     <div className="rounded-lg border border-border bg-card p-4">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -25,13 +31,8 @@ function KpiCard({ label, value, icon, delta }: KpiCardProps) {
       <div className="mt-2 flex items-baseline gap-2">
         <span className="text-2xl font-bold text-foreground">{value}</span>
         {delta !== undefined && (
-          <span
-            className={cn(
-              "text-xs font-medium",
-              delta >= 0 ? "text-green-500" : "text-red-500",
-            )}
-          >
-            {delta >= 0 ? "↑" : "↓"} {Math.abs(delta).toFixed(1)}%
+          <span className={cn("text-xs font-medium", colorClass)}>
+            {isPositive ? "↑" : "↓"} {Math.abs(delta).toFixed(1)}%
           </span>
         )}
       </div>
@@ -153,6 +154,7 @@ export function OverviewPage() {
             stats?.avgLatencyMs ?? 0,
             prevStats?.avgLatencyMs ?? 0,
           )}
+          invertDelta
         />
       </div>
 
