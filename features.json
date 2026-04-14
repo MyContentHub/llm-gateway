@@ -34,7 +34,7 @@
       "id": "sprint-010",
       "name": "Phase 10 - Admin Dev Proxy for Frontend-Backend Co-development",
       "goal": "Add reverse proxy in Fastify dev server to proxy admin frontend routes to Vite dev server (port 5173), enabling single-origin development at http://localhost:3000/admin/",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-14",
       "features": [
         {
@@ -51,7 +51,7 @@
             "Given dev mode with Vite not running, when accessing /admin/, then a clear error message is returned (not a hang)"
           ],
           "technical_notes": "Modify src/plugins/serve-admin.ts. When admin/dist doesn't exist: (1) Add onRequest hook that checks if URL starts with /admin and is NOT an API route, then uses fetch() to proxy to http://localhost:5173 + request.url. (2) For WebSocket upgrades, use server.addHook('upgrade') or Fastify's raw server 'upgrade' event to pipe to Vite. (3) Stream response body back to client. API route detection: skip proxy for URLs matching /admin/keys, /admin/audit, /admin/config, /admin/providers. Vite HMR paths like /admin/@vite/client, /admin/src/*, /admin/@fs/* must be proxied.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -70,7 +70,7 @@
             "Given a test with admin/dist present, when /admin/ is requested, then static index.html is served"
           ],
           "technical_notes": "Add test in src/plugins/serve-admin.test.ts. Use createTestServer helper. Mock Vite by starting a temporary HTTP server on a port. Test both dev proxy and static serving paths.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s10-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -82,6 +82,6 @@
   ],
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2026-04-14"
+    "last_updated": "2026-04-15"
   }
 }
