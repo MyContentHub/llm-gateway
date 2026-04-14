@@ -31,332 +31,50 @@
   },
   "sprints": [
     {
-      "id": "sprint-009",
-      "name": "Phase 9 - Admin Dashboard Bug Fix Sprint",
-      "goal": "Fix all 18 bugs documented in admin/e2e/BUGS.md: 2 High functional bugs, 7 Medium functional bugs, 4 Low functional bugs, 4 Accessibility bugs, and eliminate code quality issues by extracting shared components.",
-      "status": "completed",
+      "id": "sprint-010",
+      "name": "Phase 10 - Admin Dev Proxy for Frontend-Backend Co-development",
+      "goal": "Add reverse proxy in Fastify dev server to proxy admin frontend routes to Vite dev server (port 5173), enabling single-origin development at http://localhost:3000/admin/",
+      "status": "planning",
       "created_at": "2026-04-14",
       "features": [
         {
-          "id": "s9-feat-001",
-          "category": "ui",
+          "id": "s10-feat-001",
+          "category": "infra",
           "priority": "high",
-          "title": "Fix 401 redirect blocking login error display",
-          "description": "Bug #1 (High): apiClient hard-redirects on 401 via window.location.href before React error handlers run. Login page cannot show 'Token invalid' error. Fix: Remove the hard redirect from api-client.ts request(); let the calling code (login page, auth-guard) handle 401s via the thrown error. The auth-guard in use-auth should handle token clearing and redirect.",
+          "title": "Add Vite dev proxy in serve-admin plugin",
+          "description": "When admin/dist does not exist (dev mode), modify serve-admin plugin to proxy all /admin requests (except API routes) to http://localhost:5173 using native fetch(). This includes: HTML pages, JS/CSS assets, HMR WebSocket upgrades, and Vite's /@vite/client and /@fs/ paths. API routes (/admin/keys, /admin/audit, /admin/config, /admin/providers) must NOT be proxied — they are handled by existing Fastify routes. The proxy must forward request headers (especially Cookie, Accept), request body, and stream back response headers and body (including SSE for HMR).",
           "acceptance_criteria": [
-            "Given invalid token on login page, when form is submitted, then 'Token invalid' error message is displayed (no hard redirect)",
-            "Given an authenticated session that expires, when any API call returns 401, then the app redirects to login via React router (not window.location)",
-            "Given the login error flow, when error occurs, then the error state is set and the red error text is visible"
+            "Given dev mode (no admin/dist), when accessing http://localhost:3000/admin/ in browser, then the admin SPA loads correctly via Vite dev server",
+            "Given dev mode, when API route /admin/keys is called, then it is handled by Fastify (not proxied to Vite)",
+            "Given dev mode, when Vite HMR triggers, then the browser receives HMR updates (WebSocket upgrade works)",
+            "Given production mode (admin/dist exists), when accessing /admin/, then static files are served as before (no proxy)",
+            "Given dev mode with Vite not running, when accessing /admin/, then a clear error message is returned (not a hang)"
           ],
-          "technical_notes": "In api-client.ts:22-25, remove the window.location.href redirect. Instead, just throw the error and let callers handle it. The use-auth.ts login() already catches errors. For other pages, the 401 should be caught by React Query's onError or a query client interceptor that calls clearToken() + navigate('/login').",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/lib/api-client.ts",
-            "admin/src/hooks/use-auth.tsx",
-            "admin/src/components/layout/auth-guard.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-002",
-          "category": "ui",
-          "priority": "high",
-          "title": "Fix fixed header overlapping page content",
-          "description": "Bug #2 (High): Fixed header (h-16, z-30) overlaps page content. The navbar uses `fixed top-0 right-0` without `left-0`, so it doesn't span full width. Page content below needs pt-16 padding to avoid being hidden behind the header. 'Create Key' button is partially blocked.",
-          "acceptance_criteria": [
-            "Given the admin layout, when page renders, then the header spans the full width (left-0 to right-0)",
-            "Given any page with a top action button, when scrolled to top, then the button is fully visible and clickable (not behind header)",
-            "Given the layout, when content scrolls, then the header remains fixed at top without overlapping interactive elements"
-          ],
-          "technical_notes": "Fix navbar.tsx: change `fixed top-0 right-0` to `fixed top-0 inset-x-0` (or `left-0 right-0`). Ensure main content area has proper top padding (pt-16) to offset the fixed header height. Check App.tsx layout structure for the content wrapper padding.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/components/layout/navbar.tsx",
-            "admin/src/App.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-003",
-          "category": "ui",
-          "priority": "medium",
-          "title": "Fix inverted latency delta color on Overview",
-          "description": "Bug #3 (Medium): Latency delta color direction is inverted in overview.tsx. Higher latency (worse) shows green with up arrow, implying improvement. Should show red for increased latency and green for decreased.",
-          "acceptance_criteria": [
-            "Given avg latency increased vs previous period, when delta is displayed, then it shows red color with up arrow",
-            "Given avg latency decreased vs previous period, when delta is displayed, then it shows green color with down arrow",
-            "Given no change in latency, when delta is displayed, then neutral color is shown"
-          ],
-          "technical_notes": "In overview.tsx, find the latency KPI card delta rendering. The color logic is likely swapped: increase should be text-red-500, decrease should be text-green-500. Swap the color condition for the latency metric specifically (unlike cost/requests where up is good).",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/pages/overview.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-004",
-          "category": "ui",
-          "priority": "medium",
-          "title": "Add error UI for CSV export on Audit page",
-          "description": "Bug #4 (Medium): CSV export handleExport catches no errors — the catch is missing so errors from exportAuditCsv are silently swallowed. User sees spinner disappear with no feedback. Bug #5 (Medium): Export also accumulates all rows in memory before generating CSV, risking OOM for large datasets.",
-          "acceptance_criteria": [
-            "Given export is triggered and backend returns error, when export fails, then an error toast/message is displayed to the user",
-            "Given export succeeds, when large dataset is exported, then CSV downloads successfully",
-            "Given the export function, when called with thousands of rows, then memory usage is bounded (chunked/streaming approach or row limit)"
-          ],
-          "technical_notes": "In audit.tsx handleExport: add a try/catch that sets an error state and displays a toast or inline error. In export.ts: add a max row limit (e.g., 10000) or implement streaming via Blob constructor with incremental chunks to avoid OOM. Display a warning if limit is hit.",
-          "status": "completed",
+          "technical_notes": "Modify src/plugins/serve-admin.ts. When admin/dist doesn't exist: (1) Add onRequest hook that checks if URL starts with /admin and is NOT an API route, then uses fetch() to proxy to http://localhost:5173 + request.url. (2) For WebSocket upgrades, use server.addHook('upgrade') or Fastify's raw server 'upgrade' event to pipe to Vite. (3) Stream response body back to client. API route detection: skip proxy for URLs matching /admin/keys, /admin/audit, /admin/config, /admin/providers. Vite HMR paths like /admin/@vite/client, /admin/src/*, /admin/@fs/* must be proxied.",
+          "status": "pending",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
-            "admin/src/pages/audit.tsx",
-            "admin/src/pages/audit/export.ts"
+            "src/plugins/serve-admin.ts"
           ]
         },
         {
-          "id": "s9-feat-005",
-          "category": "ui",
-          "priority": "low",
-          "title": "Wrap clipboard.writeText in try/catch",
-          "description": "Bug #6 (Low): navigator.clipboard.writeText in keys.tsx is not wrapped in try/catch. On non-HTTPS, non-localhost origins it throws DOMException and breaks the copy flow.",
-          "acceptance_criteria": [
-            "Given admin on non-HTTPS origin (not localhost), when copy button is clicked, then no unhandled exception occurs",
-            "Given copy succeeds, when button is clicked, then visual feedback (checkmark) is shown",
-            "Given copy fails, when button is clicked, then a graceful fallback or error indicator is shown"
-          ],
-          "technical_notes": "In keys.tsx around line 25, wrap the navigator.clipboard.writeText call in try/catch. On failure, could show a brief error tooltip or fall back to selecting text in an input for manual copy.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/pages/keys.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-006",
-          "category": "ui",
-          "priority": "low",
-          "title": "Fix empty rate limit fields sending 0 instead of omitting",
-          "description": "Bug #7 (Low): Empty rate limit fields in create-dialog.tsx and edit-sheet.tsx send {rpm:0, tpm:0, rpd:0} which effectively disables rate limits. Should omit these fields or send undefined to use server defaults.",
-          "acceptance_criteria": [
-            "Given create key dialog with empty RPM/TPM/RPD fields, when submitted, then the request body omits rate limit fields or sends null",
-            "Given edit sheet with empty rate limit fields, when saved, then existing rate limits are preserved (not reset to 0)",
-            "Given create key dialog with filled rate limit values, when submitted, then the correct values are sent"
-          ],
-          "technical_notes": "In create-dialog.tsx:30-36 and edit-sheet.tsx:33-37, change the payload construction to only include rpm/tpm/rpd when the field has a non-empty value. Use conditional spreading: ...(rpm ? { rpm } : {}) pattern.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/pages/keys/create-dialog.tsx",
-            "admin/src/pages/keys/edit-sheet.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-007",
-          "category": "ui",
-          "priority": "low",
-          "title": "Fix pie chart legend color mismatch for non-standard statuses",
-          "description": "Bug #8 (Low): Pie slice and legend colors can mismatch for non-standard status names. Chart uses DEFAULT_COLORS[index] but legend falls back to hardcoded '#6366f1'.",
-          "acceptance_criteria": [
-            "Given pie chart with non-standard status name, when rendered, then legend dot color matches the corresponding pie slice color",
-            "Given pie chart with standard names (success/error/blocked), when rendered, then both chart and legend use the same named colors"
-          ],
-          "technical_notes": "In pie-chart.tsx, the legend map needs access to the same index-based DEFAULT_COLORS logic as the pie cells. Pass the index to the legend rendering or compute color the same way: COLORS[entry.name] ?? DEFAULT_COLORS[data.indexOf(entry) % DEFAULT_COLORS.length].",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/components/charts/pie-chart.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-008",
-          "category": "ui",
-          "priority": "low",
-          "title": "Make DataTable empty state text configurable",
-          "description": "Bug #9 (Low): DataTable component has hardcoded 'No keys found' text. Should accept an optional emptyMessage prop with a generic default.",
-          "acceptance_criteria": [
-            "Given DataTable with no data and no emptyMessage prop, when rendered, then generic 'No data found' text is shown",
-            "Given DataTable with emptyMessage='No audit logs found', when rendered with no data, then the custom message is shown",
-            "Given all existing DataTable usages, when upgraded, then they can pass appropriate context-specific messages"
-          ],
-          "technical_notes": "Add emptyMessage?: string prop to DataTableProps with default 'No data found'. Update the empty state td to use this prop. Update callers (keys.tsx, audit.tsx, etc.) to pass appropriate messages.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/components/data-table.tsx",
-            "admin/src/pages/keys.tsx",
-            "admin/src/pages/audit.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-009",
-          "category": "ui",
-          "priority": "low",
-          "title": "Remove formatUsd dead code branch",
-          "description": "Bug #10 (Low): formatUsd() in utils.ts has a dead code branch — if (n < 1) is identical to the final return statement. Both produce $${n.toFixed(2)}.",
-          "acceptance_criteria": [
-            "Given formatUsd(0.5), when called, then output is still '$0.50' (no behavior change)",
-            "Given formatUsd code, when reviewed, then there are no redundant branches"
-          ],
-          "technical_notes": "Remove the `if (n < 1) return \\`$${n.toFixed(2)}\\`;` line since it's identical to the final return. Keep the `n < 0.01 && n > 0` branch which is unique.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/lib/utils.ts"
-          ]
-        },
-        {
-          "id": "s9-feat-010",
-          "category": "ui",
-          "priority": "low",
-          "title": "Fix provider health bar to show health not latency width",
-          "description": "Bug #11 (Low): Key health bar width is proportional to latency — high-latency keys get wider bars, which is misleading for a 'Key Health' visualization. Bar should represent health status (uptime/success rate), not latency.",
-          "acceptance_criteria": [
-            "Given healthy key with low latency, when health bar renders, then it shows a full-width green bar",
-            "Given unhealthy key with high latency, when health bar renders, then it shows a short red bar",
-            "Given mixed health keys, when bars render, then healthy keys show full bars regardless of latency"
-          ],
-          "technical_notes": "In providers.tsx KeyHealthBars: change bar width logic to represent health (e.g., 100% for healthy, proportional to error rate for unhealthy). The color already indicates health (green/red/yellow). The latency value should remain as text label, not drive the bar width.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/pages/providers.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-011",
-          "category": "ui",
+          "id": "s10-feat-002",
+          "category": "infra",
           "priority": "medium",
-          "title": "Add label-input associations for accessibility",
-          "description": "Bug #12 (Medium): label elements in login.tsx, create-dialog.tsx, edit-sheet.tsx, and audit.tsx are not associated with inputs via htmlFor/id attributes. Screen readers cannot announce the label when the input is focused.",
+          "title": "Add dev proxy integration test",
+          "description": "Add a test to verify the dev proxy behavior: when admin/dist doesn't exist, non-API /admin requests are proxied to Vite; API routes are still handled by Fastify; when admin/dist exists, static serving works as before.",
           "acceptance_criteria": [
-            "Given login form, when screen reader focuses the token input, then 'Admin Token' label is announced",
-            "Given create key dialog, when screen reader focuses any input, then the corresponding label is announced",
-            "Given edit sheet, when screen reader focuses any input, then the corresponding label is announced",
-            "Given audit page filters, when screen reader focuses date/status inputs, then corresponding labels are announced"
+            "Given a test with no admin/dist, when /admin/ is requested and Vite mock returns HTML, then the proxy returns the HTML",
+            "Given a test with no admin/dist, when /admin/keys is requested, then Fastify handles it (not proxied)",
+            "Given a test with admin/dist present, when /admin/ is requested, then static index.html is served"
           ],
-          "technical_notes": "Add htmlFor/id pairs to all label/input combinations: login.tsx (token input), create-dialog.tsx (name, rpm, tpm, rpd), edit-sheet.tsx (name, rpm, tpm, rpd), audit.tsx (status, model, date range filters). Use descriptive unique IDs like 'key-name-input', 'key-rpm-input', etc.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/pages/login.tsx",
-            "admin/src/pages/keys/create-dialog.tsx",
-            "admin/src/pages/keys/edit-sheet.tsx",
-            "admin/src/pages/audit.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-012",
-          "category": "ui",
-          "priority": "medium",
-          "title": "Add focus trap to all modals and drawers",
-          "description": "Bug #13 (Medium): No focus trap in any dialog or drawer — Tab key navigates to elements behind the overlay. Bug #14 (Medium): Pressing Escape does not close any dialog or drawer. Both issues affect create-dialog, edit-sheet, revoke-dialog, and detail-drawer.",
-          "acceptance_criteria": [
-            "Given any open dialog/drawer, when Tab key is pressed repeatedly, then focus cycles within the overlay only",
-            "Given any open dialog/drawer, when Escape key is pressed, then the dialog/drawer closes",
-            "Given dialog/drawer closed, when Tab is pressed, then normal page focus flow resumes"
-          ],
-          "technical_notes": "Implement a simple focus trap hook (useFocusTrap) or add onKeyDown={handleEscape} + ref-based focus management to each overlay component. For focus trap: on mount, query all focusable elements, on Tab/Shift+Tab cycle within. For Escape: add keydown listener that calls onClose. Apply to: create-dialog.tsx, edit-sheet.tsx, keys.tsx (revoke dialog), audit/detail-drawer.tsx.",
-          "status": "completed",
-          "dependencies": [],
+          "technical_notes": "Add test in src/plugins/serve-admin.test.ts. Use createTestServer helper. Mock Vite by starting a temporary HTTP server on a port. Test both dev proxy and static serving paths.",
+          "status": "pending",
+          "dependencies": ["s10-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
-            "admin/src/pages/keys/create-dialog.tsx",
-            "admin/src/pages/keys/edit-sheet.tsx",
-            "admin/src/pages/keys.tsx",
-            "admin/src/pages/audit/detail-drawer.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-013",
-          "category": "ui",
-          "priority": "low",
-          "title": "Add aria-labels to icon-only buttons",
-          "description": "Bug #15 (Low): Icon-only buttons in login.tsx (eye toggle) and keys.tsx (copy, edit, revoke actions) are missing aria-label attributes. Screen readers announce them as unlabeled buttons.",
-          "acceptance_criteria": [
-            "Given login page eye toggle button, when screen reader encounters it, then 'Toggle password visibility' is announced",
-            "Given keys page copy button, when screen reader encounters it, then 'Copy key' is announced",
-            "Given keys page edit button, when screen reader encounters it, then 'Edit key' is announced",
-            "Given keys page revoke button, when screen reader encounters it, then 'Revoke key' is announced"
-          ],
-          "technical_notes": "Add aria-label to: login.tsx eye/eyeoff toggle button, keys.tsx copy button, keys.tsx edit (pencil) icon button, keys.tsx revoke (trash) icon button, navbar.tsx logout button and mobile menu button.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/pages/login.tsx",
-            "admin/src/pages/keys.tsx",
-            "admin/src/components/layout/navbar.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-014",
-          "category": "infra",
-          "priority": "low",
-          "title": "Extract shared StatusBadge component",
-          "description": "Bug #17 (Low): StatusBadge component is duplicated verbatim in overview.tsx and audit.tsx. Extract to a shared component file.",
-          "acceptance_criteria": [
-            "Given a new shared component file, when StatusBadge is imported in overview.tsx and audit.tsx, then both pages render identically to before",
-            "Given the old inline definitions, when removed, then no duplicate code remains"
-          ],
-          "technical_notes": "Create admin/src/components/status-badge.tsx (or similar). Move StatusBadge from overview.tsx to this file. Import in both overview.tsx and audit.tsx. The component is identical in both files so extraction is straightforward.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/components/status-badge.tsx",
-            "admin/src/pages/overview.tsx",
-            "admin/src/pages/audit.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-015",
-          "category": "infra",
-          "priority": "low",
-          "title": "Extract shared InjectionScoreBar component",
-          "description": "Bug #18 (Low): InjectionScoreBar logic is duplicated 4 times across overview.tsx, audit.tsx, security.tsx, and detail-drawer.tsx. Extract to a shared component.",
-          "acceptance_criteria": [
-            "Given a new shared component file, when InjectionScoreBar is imported in all 4 files, then all pages render identically to before",
-            "Given the 4 inline implementations, when removed, then no duplicate code remains"
-          ],
-          "technical_notes": "Create admin/src/components/injection-score-bar.tsx. Find the InjectionScoreBar pattern in all 4 files, unify into a single component with props for score (number) and optional size/threshold config. Import in all 4 consumer files.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/components/injection-score-bar.tsx",
-            "admin/src/pages/overview.tsx",
-            "admin/src/pages/audit.tsx",
-            "admin/src/pages/security.tsx",
-            "admin/src/pages/audit/detail-drawer.tsx"
-          ]
-        },
-        {
-          "id": "s9-feat-016",
-          "category": "infra",
-          "priority": "low",
-          "title": "Remove unused npm dependencies",
-          "description": "Bug #16 (Low): admin/package.json lists date-fns and class-variance-authority as dependencies but they are never imported in the codebase.",
-          "acceptance_criteria": [
-            "Given admin/package.json, when reviewed, then only actually-used dependencies are listed",
-            "Given the admin build, when pnpm install && pnpm build runs, then build succeeds without errors"
-          ],
-          "technical_notes": "Run grep/search to confirm date-fns and class-variance-authority are truly unused. If confirmed, remove from package.json dependencies and run pnpm install to update lockfile. Verify build still works.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/package.json"
+            "src/plugins/serve-admin.test.ts"
           ]
         }
       ]
