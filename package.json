@@ -14,7 +14,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ --ext .ts",
     "clean": "rimraf dist",
-    "gen-key": "node -e \"console.log(require('crypto').randomBytes(16).toString('hex'))\""
+    "gen-key": "node -e \"console.log(require('crypto').randomBytes(16).toString('hex'))\"",
+    "test:e2e": "playwright test"
   },
   "keywords": [
     "llm",
@@ -43,6 +44,7 @@
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.5.2",
     "pino-pretty": "^13.1.3",

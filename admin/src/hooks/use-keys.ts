@@ -10,18 +10,18 @@ interface KeyRateLimits {
 interface VirtualKey {
   id: string;
   name: string;
-  key_prefix: string;
+  key_prefix?: string;
   rateLimits: KeyRateLimits;
-  created_at: string;
-  revoked_at: string | null;
+  createdAt: string;
+  revokedAt: string | null;
   key?: string;
 }
 
 interface KeysResponse {
   keys: VirtualKey[];
   total: number;
-  offset: number;
-  limit: number;
+  offset?: number;
+  limit?: number;
 }
 
 export type { VirtualKey, KeyRateLimits, KeysResponse };

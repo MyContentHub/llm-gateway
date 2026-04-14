@@ -159,11 +159,14 @@ export function KeysPage() {
     {
       accessorKey: "key_prefix",
       header: "Prefix",
-      cell: ({ getValue }) => (
-        <span className="font-mono text-xs text-muted-foreground">
-          {getValue() as string}
-        </span>
-      ),
+      cell: ({ getValue }) => {
+        const prefix = getValue() as string | undefined;
+        return (
+          <span className="font-mono text-xs text-muted-foreground">
+            {prefix ?? "gwk_****"}
+          </span>
+        );
+      },
     },
     {
       id: "rateLimits",
@@ -195,7 +198,7 @@ export function KeysPage() {
       },
     },
     {
-      accessorKey: "created_at",
+      accessorKey: "createdAt",
       header: "Created",
       cell: ({ getValue }) => (
         <span className="text-muted-foreground">
@@ -207,7 +210,7 @@ export function KeysPage() {
       id: "status",
       header: "Status",
       cell: ({ row }) => {
-        const revoked = row.original.revoked_at;
+        const revoked = row.original.revokedAt;
         return revoked ? (
           <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
             Revoked
@@ -224,7 +227,7 @@ export function KeysPage() {
       header: "",
       cell: ({ row }) => {
         const k = row.original;
-        const revoked = !!k.revoked_at;
+        const revoked = !!k.revokedAt;
         return (
           <div className="flex items-center gap-1">
             <button

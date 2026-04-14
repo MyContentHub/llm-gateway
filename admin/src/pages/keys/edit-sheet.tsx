@@ -68,7 +68,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
           <p className="text-sm text-muted-foreground">
             Prefix:{" "}
             <span className="font-mono text-foreground">
-              {virtualKey.key_prefix}
+              {virtualKey.key_prefix ?? "gwk_****"}
             </span>
           </p>
         </div>

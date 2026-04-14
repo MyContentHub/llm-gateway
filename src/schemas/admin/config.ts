@@ -39,7 +39,7 @@ export const providersResponseSchema = {
           baseUrl: { type: "string" },
           keyStrategy: { type: "string" },
           keyCount: { type: "number" },
-          modelMappings: { type: "object" },
+          modelMappings: { type: "object", additionalProperties: true },
           isDefault: { type: "boolean" },
         },
       },
