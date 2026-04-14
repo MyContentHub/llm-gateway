@@ -71,7 +71,7 @@ export function Sidebar({
             to={item.to}
             end={item.to === "/"}
             onClick={onMobileClose}
-            className={({ isActive }) =>
+            className={({ isActive }: { isActive: boolean }) =>
               cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
                 collapsed && "justify-center px-0",
