@@ -51,11 +51,11 @@ export function PieChartComponent({ data }: PieChartProps) {
         </RechartsPieChart>
       </ResponsiveContainer>
       <div className="flex flex-col gap-2 min-w-[80px]">
-        {data.map((entry) => (
+        {data.map((entry, index) => (
           <div key={entry.name} className="flex items-center gap-2 text-xs">
             <span
               className="h-2.5 w-2.5 rounded-full shrink-0"
-              style={{ backgroundColor: COLORS[entry.name] ?? "#6366f1" }}
+              style={{ backgroundColor: COLORS[entry.name] ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length] }}
             />
             <span className="text-muted-foreground capitalize">{entry.name}</span>
           </div>
