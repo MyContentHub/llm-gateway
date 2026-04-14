@@ -1,7 +1,7 @@
-import { useState, useCallback } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { useState, useCallback, useEffect, type ReactNode } from "react";
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider } from "./hooks/use-auth";
+import { AuthProvider, useAuth } from "./hooks/use-auth";
 import { AuthGuard } from "./components/layout/auth-guard";
 import { Sidebar } from "./components/layout/sidebar";
 import { Navbar } from "./components/layout/navbar";
@@ -14,6 +14,35 @@ import { ProvidersPage } from "./pages/providers";
 import { SettingsPage } from "./pages/settings";
 
 const queryClient = new QueryClient();
+
+function QueryErrorHandler({ children }: { children: ReactNode }) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handle = (err: unknown) => {
+      if (err instanceof Error && err.message === "Unauthorized") {
+        logout();
+        navigate("/login", { replace: true });
+      }
+    };
+
+    const unsubQ = queryClient.getQueryCache().subscribe((e) => {
+      if (e?.query?.state?.status === "error") handle(e.query.state.error);
+    });
+
+    const unsubM = queryClient.getMutationCache().subscribe((e) => {
+      if (e?.mutation?.state?.status === "error") handle(e.mutation.state.error);
+    });
+
+    return () => {
+      unsubQ();
+      unsubM();
+    };
+  }, [logout, navigate]);
+
+  return <>{children}</>;
+}
 
 function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -50,7 +79,8 @@ export function App() {
     <BrowserRouter basename="/admin">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <Routes>
+          <QueryErrorHandler>
+            <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<DashboardLayout />}>
               <Route index element={<OverviewPage />} />
@@ -62,6 +92,7 @@ export function App() {
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+          </QueryErrorHandler>
         </AuthProvider>
       </QueryClientProvider>
     </BrowserRouter>
