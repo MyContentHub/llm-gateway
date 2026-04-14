@@ -217,8 +217,9 @@ export function AuditPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Start Date</label>
+            <label htmlFor="audit-start-date" className="text-xs font-medium text-muted-foreground">Start Date</label>
             <input
+              id="audit-start-date"
               type="date"
               value={startDate}
               onChange={(e) => {
@@ -229,8 +230,9 @@ export function AuditPage() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">End Date</label>
+            <label htmlFor="audit-end-date" className="text-xs font-medium text-muted-foreground">End Date</label>
             <input
+              id="audit-end-date"
               type="date"
               value={endDate}
               onChange={(e) => {
@@ -241,8 +243,9 @@ export function AuditPage() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Model</label>
+            <label htmlFor="audit-model" className="text-xs font-medium text-muted-foreground">Model</label>
             <select
+              id="audit-model"
               value={modelFilter}
               onChange={(e) => {
                 setModelFilter(e.target.value);
@@ -259,8 +262,9 @@ export function AuditPage() {
             </select>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Status</label>
+            <label htmlFor="audit-status" className="text-xs font-medium text-muted-foreground">Status</label>
             <select
+              id="audit-status"
               value={statusFilter}
               onChange={(e) => {
                 setStatusFilter(e.target.value);

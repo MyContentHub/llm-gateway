@@ -36,11 +36,12 @@ export function LoginPage() {
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">
+            <label htmlFor="login-token" className="text-sm font-medium text-foreground">
               Admin Token
             </label>
             <div className="relative">
               <input
+                id="login-token"
                 type={showToken ? "text" : "password"}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}

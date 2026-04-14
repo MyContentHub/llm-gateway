@@ -77,8 +77,9 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground">Name</label>
+            <label htmlFor="edit-key-name" className="text-sm font-medium text-foreground">Name</label>
             <input
+              id="edit-key-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -91,8 +92,9 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
             </label>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-xs text-muted-foreground">RPM</label>
+                <label htmlFor="edit-key-rpm" className="text-xs text-muted-foreground">RPM</label>
                 <input
+                  id="edit-key-rpm"
                   type="number"
                   value={rpm}
                   onChange={(e) => setRpm(e.target.value)}
@@ -102,8 +104,9 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">TPM</label>
+                <label htmlFor="edit-key-tpm" className="text-xs text-muted-foreground">TPM</label>
                 <input
+                  id="edit-key-tpm"
                   type="number"
                   value={tpm}
                   onChange={(e) => setTpm(e.target.value)}
@@ -113,8 +116,9 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
                 />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground">RPD</label>
+                <label htmlFor="edit-key-rpd" className="text-xs text-muted-foreground">RPD</label>
                 <input
+                  id="edit-key-rpd"
                   type="number"
                   value={rpd}
                   onChange={(e) => setRpd(e.target.value)}
