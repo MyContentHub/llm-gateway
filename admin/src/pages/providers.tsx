@@ -38,13 +38,15 @@ function HealthDot({ status }: { status: ReturnType<typeof getHealthStatus> }) {
 function KeyHealthBars({ health }: { health: ProviderHealth | undefined }) {
   if (!health || health.keys.length === 0) return null;
 
-  const maxLatency = Math.max(...health.keys.map((k) => k.avgLatency), 1);
-
   return (
     <div className="space-y-1.5">
       <span className="text-xs font-medium text-muted-foreground">Key Health</span>
       {health.keys.map((key) => {
-        const pct = (key.avgLatency / maxLatency) * 100;
+        const pct = key.isHealthy
+          ? 100
+          : key.consecutiveErrors > 0
+            ? Math.max(15, 100 - key.consecutiveErrors * 25)
+            : 60;
         return (
           <div key={key.id} className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground w-10 shrink-0 truncate">
