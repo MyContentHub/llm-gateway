@@ -4,6 +4,7 @@ import type { AuditLogRow } from "@/hooks/use-audit-logs";
 import { formatDate, formatUsd, formatMs } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { InjectionScoreBar } from "@/components/injection-score-bar";
 
 interface DetailDrawerProps {
   log: AuditLogRow | null;
@@ -16,20 +17,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1">
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
       <dd className="text-sm text-foreground">{children}</dd>
-    </div>
-  );
-}
-
-function ScoreBar({ value }: { value: number }) {
-  const pct = Math.round(value * 100);
-  const color =
-    value > 0.7 ? "bg-red-500" : value > 0.3 ? "bg-orange-500" : "bg-green-500";
-  return (
-    <div className="flex items-center gap-2">
-      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-        <div className={cn("h-full rounded-full", color)} style={{ width: `${pct}%` }} />
-      </div>
-      <span className="text-xs text-muted-foreground">{pct}%</span>
     </div>
   );
 }
@@ -105,7 +92,7 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
             )}
           </Field>
           <Field label="Injection Score">
-            <ScoreBar value={log.prompt_injection_score} />
+            <InjectionScoreBar score={log.prompt_injection_score} />
           </Field>
           <Field label="Content Hash">
             <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">

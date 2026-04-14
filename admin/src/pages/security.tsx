@@ -17,6 +17,7 @@ import {
   type BlockedLog,
 } from "@/hooks/use-audit-security";
 import { formatNumber, formatDate, cn } from "@/lib/utils";
+import { InjectionScoreBar } from "@/components/injection-score-bar";
 
 const PII_COLORS = [
   "#6366f1",
@@ -169,26 +170,7 @@ function ThreatFeedTable({ logs }: { logs: BlockedLog[] }) {
                 )}
               </td>
               <td className="px-4 py-2.5">
-                <div className="flex items-center gap-2 min-w-[80px]">
-                  <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-full rounded-full transition-all",
-                        log.prompt_injection_score > 0.7
-                          ? "bg-red-500"
-                          : log.prompt_injection_score > 0.3
-                            ? "bg-orange-500"
-                            : "bg-green-500",
-                      )}
-                      style={{
-                        width: `${Math.round(log.prompt_injection_score * 100)}%`,
-                      }}
-                    />
-                  </div>
-                  <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
-                    {Math.round(log.prompt_injection_score * 100)}%
-                  </span>
-                </div>
+                <InjectionScoreBar score={log.prompt_injection_score} />
               </td>
             </tr>
           ))}

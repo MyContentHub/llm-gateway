@@ -15,8 +15,9 @@ import {
   type AuditLogRow,
   type AuditFilters,
 } from "@/hooks/use-audit-logs";
-import { formatDate, formatUsd, formatMs, cn } from "@/lib/utils";
+import { formatDate, formatUsd, formatMs } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
+import { InjectionScoreBar } from "@/components/injection-score-bar";
 import { DetailDrawer } from "./audit/detail-drawer";
 import { exportAuditCsv } from "./audit/export";
 import { AlertCircle, AlertTriangle } from "lucide-react";
@@ -40,25 +41,6 @@ function PiiBadge({ detected, types }: { detected: 0 | 1; types: string | null }
     >
       PII{parsed.length > 0 && ` (${parsed.length})`}
     </span>
-  );
-}
-
-function InjectionScoreBar({ score }: { score: number }) {
-  const pct = Math.round(score * 100);
-  const color =
-    score > 0.7 ? "bg-red-500" : score > 0.3 ? "bg-orange-500" : "bg-green-500";
-  return (
-    <div className="flex items-center gap-2 min-w-[80px]">
-      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all", color)}
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <span className="text-xs text-muted-foreground tabular-nums w-8 text-right">
-        {pct}%
-      </span>
-    </div>
   );
 }
 
