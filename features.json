@@ -31,273 +31,332 @@
   },
   "sprints": [
     {
-      "id": "sprint-008",
-      "name": "Phase 8 - Admin Playwright E2E Testing & Bug Audit",
-      "goal": "Implement comprehensive Playwright E2E test suite for the admin dashboard (8 spec files, ~46 tests) using a real backend server, and generate a structured bug list (BUGS.md) documenting all discovered functional, accessibility, and code quality issues.",
+      "id": "sprint-009",
+      "name": "Phase 9 - Admin Dashboard Bug Fix Sprint",
+      "goal": "Fix all 18 bugs documented in admin/e2e/BUGS.md: 2 High functional bugs, 7 Medium functional bugs, 4 Low functional bugs, 4 Accessibility bugs, and eliminate code quality issues by extracting shared components.",
       "status": "planning",
       "created_at": "2026-04-14",
       "features": [
         {
-          "id": "s8-feat-001",
-          "category": "infra",
+          "id": "s9-feat-001",
+          "category": "ui",
           "priority": "high",
-          "title": "Install Playwright and create test configuration",
-          "description": "Install @playwright/test as a devDependency in admin/package.json. Create admin/playwright.config.ts with Chromium browser, baseURL pointing to http://localhost:3000, webServer configuration to start the backend, test match pattern admin/e2e/**/*.spec.ts, and screenshot/video artifacts output. Add test:e2e and test:e2e:ui scripts to admin/package.json. Install Playwright browsers via npx playwright install chromium.",
+          "title": "Fix 401 redirect blocking login error display",
+          "description": "Bug #1 (High): apiClient hard-redirects on 401 via window.location.href before React error handlers run. Login page cannot show 'Token invalid' error. Fix: Remove the hard redirect from api-client.ts request(); let the calling code (login page, auth-guard) handle 401s via the thrown error. The auth-guard in use-auth should handle token clearing and redirect.",
           "acceptance_criteria": [
-            "Given @playwright/test is installed, when npx playwright test --config admin/playwright.config.ts runs, then the test runner starts without errors",
-            "Given playwright.config.ts webServer config, when tests run, then the backend server starts automatically",
-            "Given admin/package.json, when pnpm test:e2e is called, then it invokes playwright test with the correct config"
+            "Given invalid token on login page, when form is submitted, then 'Token invalid' error message is displayed (no hard redirect)",
+            "Given an authenticated session that expires, when any API call returns 401, then the app redirects to login via React router (not window.location)",
+            "Given the login error flow, when error occurs, then the error state is set and the red error text is visible"
           ],
-          "technical_notes": "Playwright config should set baseURL to http://localhost:3000/admin/ since the admin SPA is served at /admin. Use webServer.command to start the backend with a test config. Set timeout to 30s for E2E tests. Use { channel: 'chromium' } for browser. Set use.screenshot to 'only-on-failure', use.video to 'retain-on-failure'. Artifacts output to admin/e2e/results/.",
+          "technical_notes": "In api-client.ts:22-25, remove the window.location.href redirect. Instead, just throw the error and let callers handle it. The use-auth.ts login() already catches errors. For other pages, the 401 should be caught by React Query's onError or a query client interceptor that calls clearToken() + navigate('/login').",
           "status": "pending",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
-            "admin/package.json",
-            "admin/playwright.config.ts"
+            "admin/src/lib/api-client.ts",
+            "admin/src/hooks/use-auth.tsx",
+            "admin/src/components/layout/auth-guard.tsx"
           ]
         },
         {
-          "id": "s8-feat-002",
+          "id": "s9-feat-002",
+          "category": "ui",
+          "priority": "high",
+          "title": "Fix fixed header overlapping page content",
+          "description": "Bug #2 (High): Fixed header (h-16, z-30) overlaps page content. The navbar uses `fixed top-0 right-0` without `left-0`, so it doesn't span full width. Page content below needs pt-16 padding to avoid being hidden behind the header. 'Create Key' button is partially blocked.",
+          "acceptance_criteria": [
+            "Given the admin layout, when page renders, then the header spans the full width (left-0 to right-0)",
+            "Given any page with a top action button, when scrolled to top, then the button is fully visible and clickable (not behind header)",
+            "Given the layout, when content scrolls, then the header remains fixed at top without overlapping interactive elements"
+          ],
+          "technical_notes": "Fix navbar.tsx: change `fixed top-0 right-0` to `fixed top-0 inset-x-0` (or `left-0 right-0`). Ensure main content area has proper top padding (pt-16) to offset the fixed header height. Check App.tsx layout structure for the content wrapper padding.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/components/layout/navbar.tsx",
+            "admin/src/App.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-003",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Fix inverted latency delta color on Overview",
+          "description": "Bug #3 (Medium): Latency delta color direction is inverted in overview.tsx. Higher latency (worse) shows green with up arrow, implying improvement. Should show red for increased latency and green for decreased.",
+          "acceptance_criteria": [
+            "Given avg latency increased vs previous period, when delta is displayed, then it shows red color with up arrow",
+            "Given avg latency decreased vs previous period, when delta is displayed, then it shows green color with down arrow",
+            "Given no change in latency, when delta is displayed, then neutral color is shown"
+          ],
+          "technical_notes": "In overview.tsx, find the latency KPI card delta rendering. The color logic is likely swapped: increase should be text-red-500, decrease should be text-green-500. Swap the color condition for the latency metric specifically (unlike cost/requests where up is good).",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/pages/overview.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-004",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Add error UI for CSV export on Audit page",
+          "description": "Bug #4 (Medium): CSV export handleExport catches no errors — the catch is missing so errors from exportAuditCsv are silently swallowed. User sees spinner disappear with no feedback. Bug #5 (Medium): Export also accumulates all rows in memory before generating CSV, risking OOM for large datasets.",
+          "acceptance_criteria": [
+            "Given export is triggered and backend returns error, when export fails, then an error toast/message is displayed to the user",
+            "Given export succeeds, when large dataset is exported, then CSV downloads successfully",
+            "Given the export function, when called with thousands of rows, then memory usage is bounded (chunked/streaming approach or row limit)"
+          ],
+          "technical_notes": "In audit.tsx handleExport: add a try/catch that sets an error state and displays a toast or inline error. In export.ts: add a max row limit (e.g., 10000) or implement streaming via Blob constructor with incremental chunks to avoid OOM. Display a warning if limit is hit.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "admin/src/pages/audit.tsx",
+            "admin/src/pages/audit/export.ts"
+          ]
+        },
+        {
+          "id": "s9-feat-005",
+          "category": "ui",
+          "priority": "low",
+          "title": "Wrap clipboard.writeText in try/catch",
+          "description": "Bug #6 (Low): navigator.clipboard.writeText in keys.tsx is not wrapped in try/catch. On non-HTTPS, non-localhost origins it throws DOMException and breaks the copy flow.",
+          "acceptance_criteria": [
+            "Given admin on non-HTTPS origin (not localhost), when copy button is clicked, then no unhandled exception occurs",
+            "Given copy succeeds, when button is clicked, then visual feedback (checkmark) is shown",
+            "Given copy fails, when button is clicked, then a graceful fallback or error indicator is shown"
+          ],
+          "technical_notes": "In keys.tsx around line 25, wrap the navigator.clipboard.writeText call in try/catch. On failure, could show a brief error tooltip or fall back to selecting text in an input for manual copy.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/pages/keys.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-006",
+          "category": "ui",
+          "priority": "low",
+          "title": "Fix empty rate limit fields sending 0 instead of omitting",
+          "description": "Bug #7 (Low): Empty rate limit fields in create-dialog.tsx and edit-sheet.tsx send {rpm:0, tpm:0, rpd:0} which effectively disables rate limits. Should omit these fields or send undefined to use server defaults.",
+          "acceptance_criteria": [
+            "Given create key dialog with empty RPM/TPM/RPD fields, when submitted, then the request body omits rate limit fields or sends null",
+            "Given edit sheet with empty rate limit fields, when saved, then existing rate limits are preserved (not reset to 0)",
+            "Given create key dialog with filled rate limit values, when submitted, then the correct values are sent"
+          ],
+          "technical_notes": "In create-dialog.tsx:30-36 and edit-sheet.tsx:33-37, change the payload construction to only include rpm/tpm/rpd when the field has a non-empty value. Use conditional spreading: ...(rpm ? { rpm } : {}) pattern.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/pages/keys/create-dialog.tsx",
+            "admin/src/pages/keys/edit-sheet.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-007",
+          "category": "ui",
+          "priority": "low",
+          "title": "Fix pie chart legend color mismatch for non-standard statuses",
+          "description": "Bug #8 (Low): Pie slice and legend colors can mismatch for non-standard status names. Chart uses DEFAULT_COLORS[index] but legend falls back to hardcoded '#6366f1'.",
+          "acceptance_criteria": [
+            "Given pie chart with non-standard status name, when rendered, then legend dot color matches the corresponding pie slice color",
+            "Given pie chart with standard names (success/error/blocked), when rendered, then both chart and legend use the same named colors"
+          ],
+          "technical_notes": "In pie-chart.tsx, the legend map needs access to the same index-based DEFAULT_COLORS logic as the pie cells. Pass the index to the legend rendering or compute color the same way: COLORS[entry.name] ?? DEFAULT_COLORS[data.indexOf(entry) % DEFAULT_COLORS.length].",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/components/charts/pie-chart.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-008",
+          "category": "ui",
+          "priority": "low",
+          "title": "Make DataTable empty state text configurable",
+          "description": "Bug #9 (Low): DataTable component has hardcoded 'No keys found' text. Should accept an optional emptyMessage prop with a generic default.",
+          "acceptance_criteria": [
+            "Given DataTable with no data and no emptyMessage prop, when rendered, then generic 'No data found' text is shown",
+            "Given DataTable with emptyMessage='No audit logs found', when rendered with no data, then the custom message is shown",
+            "Given all existing DataTable usages, when upgraded, then they can pass appropriate context-specific messages"
+          ],
+          "technical_notes": "Add emptyMessage?: string prop to DataTableProps with default 'No data found'. Update the empty state td to use this prop. Update callers (keys.tsx, audit.tsx, etc.) to pass appropriate messages.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/components/data-table.tsx",
+            "admin/src/pages/keys.tsx",
+            "admin/src/pages/audit.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-009",
+          "category": "ui",
+          "priority": "low",
+          "title": "Remove formatUsd dead code branch",
+          "description": "Bug #10 (Low): formatUsd() in utils.ts has a dead code branch — if (n < 1) is identical to the final return statement. Both produce $${n.toFixed(2)}.",
+          "acceptance_criteria": [
+            "Given formatUsd(0.5), when called, then output is still '$0.50' (no behavior change)",
+            "Given formatUsd code, when reviewed, then there are no redundant branches"
+          ],
+          "technical_notes": "Remove the `if (n < 1) return \\`$${n.toFixed(2)}\\`;` line since it's identical to the final return. Keep the `n < 0.01 && n > 0` branch which is unique.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/lib/utils.ts"
+          ]
+        },
+        {
+          "id": "s9-feat-010",
+          "category": "ui",
+          "priority": "low",
+          "title": "Fix provider health bar to show health not latency width",
+          "description": "Bug #11 (Low): Key health bar width is proportional to latency — high-latency keys get wider bars, which is misleading for a 'Key Health' visualization. Bar should represent health status (uptime/success rate), not latency.",
+          "acceptance_criteria": [
+            "Given healthy key with low latency, when health bar renders, then it shows a full-width green bar",
+            "Given unhealthy key with high latency, when health bar renders, then it shows a short red bar",
+            "Given mixed health keys, when bars render, then healthy keys show full bars regardless of latency"
+          ],
+          "technical_notes": "In providers.tsx KeyHealthBars: change bar width logic to represent health (e.g., 100% for healthy, proportional to error rate for unhealthy). The color already indicates health (green/red/yellow). The latency value should remain as text label, not drive the bar width.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/pages/providers.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-011",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Add label-input associations for accessibility",
+          "description": "Bug #12 (Medium): label elements in login.tsx, create-dialog.tsx, edit-sheet.tsx, and audit.tsx are not associated with inputs via htmlFor/id attributes. Screen readers cannot announce the label when the input is focused.",
+          "acceptance_criteria": [
+            "Given login form, when screen reader focuses the token input, then 'Admin Token' label is announced",
+            "Given create key dialog, when screen reader focuses any input, then the corresponding label is announced",
+            "Given edit sheet, when screen reader focuses any input, then the corresponding label is announced",
+            "Given audit page filters, when screen reader focuses date/status inputs, then corresponding labels are announced"
+          ],
+          "technical_notes": "Add htmlFor/id pairs to all label/input combinations: login.tsx (token input), create-dialog.tsx (name, rpm, tpm, rpd), edit-sheet.tsx (name, rpm, tpm, rpd), audit.tsx (status, model, date range filters). Use descriptive unique IDs like 'key-name-input', 'key-rpm-input', etc.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/pages/login.tsx",
+            "admin/src/pages/keys/create-dialog.tsx",
+            "admin/src/pages/keys/edit-sheet.tsx",
+            "admin/src/pages/audit.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-012",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Add focus trap to all modals and drawers",
+          "description": "Bug #13 (Medium): No focus trap in any dialog or drawer — Tab key navigates to elements behind the overlay. Bug #14 (Medium): Pressing Escape does not close any dialog or drawer. Both issues affect create-dialog, edit-sheet, revoke-dialog, and detail-drawer.",
+          "acceptance_criteria": [
+            "Given any open dialog/drawer, when Tab key is pressed repeatedly, then focus cycles within the overlay only",
+            "Given any open dialog/drawer, when Escape key is pressed, then the dialog/drawer closes",
+            "Given dialog/drawer closed, when Tab is pressed, then normal page focus flow resumes"
+          ],
+          "technical_notes": "Implement a simple focus trap hook (useFocusTrap) or add onKeyDown={handleEscape} + ref-based focus management to each overlay component. For focus trap: on mount, query all focusable elements, on Tab/Shift+Tab cycle within. For Escape: add keydown listener that calls onClose. Apply to: create-dialog.tsx, edit-sheet.tsx, keys.tsx (revoke dialog), audit/detail-drawer.tsx.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "admin/src/pages/keys/create-dialog.tsx",
+            "admin/src/pages/keys/edit-sheet.tsx",
+            "admin/src/pages/keys.tsx",
+            "admin/src/pages/audit/detail-drawer.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-013",
+          "category": "ui",
+          "priority": "low",
+          "title": "Add aria-labels to icon-only buttons",
+          "description": "Bug #15 (Low): Icon-only buttons in login.tsx (eye toggle) and keys.tsx (copy, edit, revoke actions) are missing aria-label attributes. Screen readers announce them as unlabeled buttons.",
+          "acceptance_criteria": [
+            "Given login page eye toggle button, when screen reader encounters it, then 'Toggle password visibility' is announced",
+            "Given keys page copy button, when screen reader encounters it, then 'Copy key' is announced",
+            "Given keys page edit button, when screen reader encounters it, then 'Edit key' is announced",
+            "Given keys page revoke button, when screen reader encounters it, then 'Revoke key' is announced"
+          ],
+          "technical_notes": "Add aria-label to: login.tsx eye/eyeoff toggle button, keys.tsx copy button, keys.tsx edit (pencil) icon button, keys.tsx revoke (trash) icon button, navbar.tsx logout button and mobile menu button.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/pages/login.tsx",
+            "admin/src/pages/keys.tsx",
+            "admin/src/components/layout/navbar.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-014",
           "category": "infra",
-          "priority": "high",
-          "title": "Create E2E test fixtures with real backend server",
-          "description": "Create admin/e2e/fixtures/admin-server.ts that starts a real Fastify server with in-memory SQLite, a known admin_token (e.g. 'test-admin-token'), a test provider config, and helper methods to create test keys, seed audit logs, and get the authenticated browser state. Create admin/e2e/fixtures/index.ts extending Playwright's base test with custom fixtures (authenticatedPage, adminToken, createKey, seedAuditLog). Create admin/e2e/global-setup.ts to build the admin frontend before tests.",
+          "priority": "low",
+          "title": "Extract shared StatusBadge component",
+          "description": "Bug #17 (Low): StatusBadge component is duplicated verbatim in overview.tsx and audit.tsx. Extract to a shared component file.",
           "acceptance_criteria": [
-            "Given the fixture, when tests use the 'authenticatedPage' fixture, then the browser has a valid admin token in localStorage and is logged in",
-            "Given the server fixture, when it starts, then a Fastify instance with in-memory SQLite and test config is running on a dynamic port",
-            "Given createKey helper, when called, then a test API key is created via the real backend and the key data is returned",
-            "Given seedAuditLog helper, when called with log data, then an audit log entry is inserted into the test database"
+            "Given a new shared component file, when StatusBadge is imported in overview.tsx and audit.tsx, then both pages render identically to before",
+            "Given the old inline definitions, when removed, then no duplicate code remains"
           ],
-          "technical_notes": "Reuse the pattern from tests/helpers/setup.ts (createTestServer) but adapt for Playwright. The fixture should: (1) Build admin/dist if not exists (global-setup), (2) Start Fastify server on port 3000 with config.admin_token='test-admin-token', in-memory SQLite, and a mock provider, (3) Provide authenticatedPage fixture that navigates to /admin/ and sets localStorage token, (4) Provide createKey() that calls POST /admin/keys, (5) Provide seedAuditLog() that directly inserts into the DB. Server lifecycle: start in fixture setup, stop in teardown.",
+          "technical_notes": "Create admin/src/components/status-badge.tsx (or similar). Move StatusBadge from overview.tsx to this file. Import in both overview.tsx and audit.tsx. The component is identical in both files so extraction is straightforward.",
           "status": "pending",
-          "dependencies": [
-            "s8-feat-001"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "admin/e2e/fixtures/admin-server.ts",
-            "admin/e2e/fixtures/index.ts",
-            "admin/e2e/global-setup.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-003",
-          "category": "auth",
-          "priority": "high",
-          "title": "E2E tests for Login page (~8 tests)",
-          "description": "Create admin/e2e/login.spec.ts with ~8 tests covering the login page: renders login form with title and token input, shows/hide password toggle works, login with valid admin token redirects to overview page, login with invalid token shows error message, submitting empty token shows validation error, already-authenticated user visiting /login gets redirected to overview, auth guard redirects unauthenticated users to /login, logout clears token and redirects to login.",
-          "acceptance_criteria": [
-            "Given /admin/login page, when rendered, then card with 'LLM Gateway Admin' title and password input is visible",
-            "Given the password input, when Eye/EyeOff toggle is clicked, then input type switches between password and text",
-            "Given valid admin token entered, when form is submitted, then page redirects to /admin/ overview",
-            "Given invalid token entered, when form is submitted, then error message is displayed",
-            "Given no token entered, when form is submitted, then validation prevents submission",
-            "Given authenticated user, when navigating to /admin/login, then redirect to /admin/ occurs",
-            "Given unauthenticated user, when accessing /admin/keys, then redirect to /admin/login occurs",
-            "Given authenticated user, when clicking Logout, then token is cleared and redirect to /admin/login occurs"
-          ],
-          "technical_notes": "Use authenticatedPage fixture from s8-feat-002 for tests that need logged-in state. For invalid token tests, use a fresh page without token. Selectors: input[type='password'] or placeholder text, Eye/EyeOff button, submit button, error message text. Verify redirect via page.url(). Test the auth guard by navigating to a protected route and checking the final URL.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
+          "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
-            "admin/e2e/login.spec.ts"
+            "admin/src/components/status-badge.tsx",
+            "admin/src/pages/overview.tsx",
+            "admin/src/pages/audit.tsx"
           ]
         },
         {
-          "id": "s8-feat-004",
-          "category": "ui",
-          "priority": "high",
-          "title": "E2E tests for Navigation and layout (~5 tests)",
-          "description": "Create admin/e2e/navigation.spec.ts with ~5 tests: sidebar navigation links work (each link navigates to correct page), sidebar collapse/expand toggle works on desktop, mobile hamburger menu opens sidebar overlay, active nav item is highlighted, page header displays correct title for each route.",
-          "acceptance_criteria": [
-            "Given the sidebar, when Home/Keys/Audit/Security/Providers/Settings links are clicked, then correct page loads",
-            "Given the sidebar toggle button, when clicked, then sidebar collapses to icon-only mode (64px width)",
-            "Given the sidebar collapsed, when toggle is clicked again, then sidebar expands back to full width (240px)",
-            "Given viewport < 768px, when hamburger menu is clicked, then sidebar appears as overlay",
-            "Given current route is /admin/keys, when sidebar renders, then the Keys link shows active/highlighted state"
-          ],
-          "technical_notes": "Use authenticatedPage fixture. Test each sidebar link by clicking and verifying URL change and page content. For collapse test, check element width or class changes. For mobile test, use page.setViewportSize({width: 375, height: 667}). Active state can be verified by checking for an active CSS class or aria-current attribute.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/e2e/navigation.spec.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-005",
-          "category": "ui",
-          "priority": "high",
-          "title": "E2E tests for Overview Dashboard page (~5 tests)",
-          "description": "Create admin/e2e/overview.spec.ts with ~5 tests: page loads and displays 4 KPI cards (Total Requests, Token Usage, Total Cost, Avg Latency), bar chart for Requests by Model renders, pie chart for Requests by Status renders, recent activity table shows rows, donut chart for PII Detection Rate renders. Seed test audit data before running tests.",
-          "acceptance_criteria": [
-            "Given seeded audit data, when overview page loads, then 4 KPI cards display correct formatted values",
-            "Given audit stats with byModel data, when bar chart renders, then chart container is visible with axis labels",
-            "Given audit stats with byStatus data, when pie chart renders, then chart container is visible with legend",
-            "Given seeded recent logs, when recent activity table renders, then table rows with model, tokens, cost, status are visible",
-            "Given piiDetectionRate from stats, when donut chart renders, then percentage text is displayed"
-          ],
-          "technical_notes": "Seed audit logs using seedAuditLog helper with varied data (different models, statuses, PII scores). KPI card selectors: look for formatted numbers in card elements. Chart verification: check that recharts SVG containers exist and have rendered content (not just empty). Table verification: check row count matches seeded data (limited to 5). Use page.waitForSelector for chart SVG elements since they render asynchronously.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/e2e/overview.spec.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-006",
-          "category": "ui",
-          "priority": "high",
-          "title": "E2E tests for API Key Management page (~10 tests)",
-          "description": "Create admin/e2e/keys.spec.ts with ~10 tests: keys table loads and displays columns, create key dialog opens and submits successfully, created key is shown in display dialog with copy button, edit key sheet opens with pre-filled data, edit key name updates successfully, edit key rate limits updates successfully, revoke key shows confirmation dialog, revoke key marks key as revoked, revoked keys show disabled edit button, pagination controls work for multiple pages of keys.",
-          "acceptance_criteria": [
-            "Given existing keys, when keys page loads, then table displays rows with Name, Prefix, Rate Limits, Created, Status columns",
-            "Given 'Create Key' button clicked, when dialog opens, then name input and RPM/TPM/RPD fields are visible",
-            "Given create form filled with name, when submitted, then key display dialog shows the generated gwk_ key with copy button",
-            "Given a key row, when edit (pencil) icon is clicked, then side sheet opens with pre-filled name and rate limits",
-            "Given edit sheet with modified name, when saved, then key name updates in the table",
-            "Given a key row, when revoke (trash) icon is clicked, then confirmation dialog appears with destructive button",
-            "Given confirmation dialog accepted, when revoke completes, then key status changes to 'Revoked' in the table",
-            "Given a revoked key, when its row renders, then edit button is disabled",
-            "Given >20 keys exist, when pagination next is clicked, then next page of keys loads with correct offset",
-            "Given copy button in key display dialog, when clicked, then key is copied (verify clipboard or checkmark feedback)"
-          ],
-          "technical_notes": "Create multiple keys via createKey helper for pagination test (>20 keys). Test the full CRUD lifecycle: create -> verify in table -> edit -> verify update -> revoke -> verify revoked. Key display dialog: look for 'gwk_' prefix in text content. Edit sheet: verify it slides in from right side. Copy button: check for checkmark icon change after click. Revoke: verify the red 'Revoke' button in confirmation dialog.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "admin/e2e/keys.spec.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-007",
-          "category": "ui",
-          "priority": "high",
-          "title": "E2E tests for Audit Log Browser page (~8 tests)",
-          "description": "Create admin/e2e/audit.spec.ts with ~8 tests: audit table loads with default view, filter by status dropdown works, filter by model dropdown works, date range filter works, clicking a row opens detail drawer, detail drawer displays all log fields, detail drawer can be closed, CSV export triggers a file download, pagination controls work.",
-          "acceptance_criteria": [
-            "Given seeded audit logs, when audit page loads, then log table displays rows with Time, Request ID, Model, Tokens, Cost, Latency, Status columns",
-            "Given status filter dropdown, when 'blocked' is selected, then only blocked logs are shown in table",
-            "Given model filter dropdown, when a specific model is selected, then only matching logs are shown",
-            "Given date range inputs, when a range is set, then only logs within range are shown",
-            "Given a log row, when clicked, then detail drawer slides in from the right",
-            "Given detail drawer open, when content is checked, then Request ID, Timestamp, Status, Model, Tokens, Cost, Latency, PII info, Injection Score fields are visible",
-            "Given detail drawer open, when close button or backdrop is clicked, then drawer closes",
-            "Given export button, when clicked, then a CSV file download is triggered (verify download event)"
-          ],
-          "technical_notes": "Seed varied audit logs: different statuses (success, error, blocked), different models, different dates. For filter tests: apply filter and verify table row count changes. Detail drawer: check for Sheet/drawer container appearing on the right side. CSV export: use page.waitForEvent('download') to catch the download. Pagination: seed >50 logs to test pagination.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "admin/e2e/audit.spec.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-008",
-          "category": "ui",
-          "priority": "medium",
-          "title": "E2E tests for Security Monitor page (~4 tests)",
-          "description": "Create admin/e2e/security.spec.ts with ~4 tests: page loads and displays 4 security KPI cards (Blocked Requests, PII Detections, Injection Attempts, Content Filter), PII Detection by Type bar chart renders, Injection Score Distribution histogram renders, Threat Feed table shows blocked request entries.",
-          "acceptance_criteria": [
-            "Given seeded security data (blocked logs, PII, injection scores), when security page loads, then 4 KPI cards display values",
-            "Given PII detection by type data, when bar chart renders, then horizontal bar chart is visible with PII type labels",
-            "Given injection score distribution data, when histogram renders, then 5 score bucket bars are visible",
-            "Given blocked audit logs, when threat feed table renders, then rows show Time, Request ID, Model, PII badge, Injection Score"
-          ],
-          "technical_notes": "Seed audit logs with PII data (pii_types_found with EMAIL, PHONE etc.), injection scores, and blocked status. KPI cards: verify formatted numbers are present. Charts: verify SVG containers rendered. Threat feed: verify table rows with blocked status.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/e2e/security.spec.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-009",
-          "category": "ui",
-          "priority": "medium",
-          "title": "E2E tests for Providers page (~3 tests)",
-          "description": "Create admin/e2e/providers.spec.ts with ~3 tests: provider cards render with name and details, health indicator dots display correct colors, key health bars are visible in each provider card.",
-          "acceptance_criteria": [
-            "Given configured providers, when providers page loads, then provider cards display with name, baseUrl, key strategy, key count",
-            "Given provider health data, when cards render, then health dots (green/yellow/red/gray) are visible",
-            "Given provider with multiple keys, when key health section renders, then key health bars are visible with latency data"
-          ],
-          "technical_notes": "Providers come from the test server config (config.toml). Health tracker may have no data in tests — verify cards still render with default health states. Look for provider card containers and health dot elements.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/e2e/providers.spec.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-010",
-          "category": "ui",
-          "priority": "medium",
-          "title": "E2E tests for Settings page (~3 tests)",
-          "description": "Create admin/e2e/settings.spec.ts with ~3 tests: page loads and displays config sections (General, Security, Retry), provider configuration section shows provider details, TOML preview code block renders with syntax-highlighted content.",
-          "acceptance_criteria": [
-            "Given the config API returns data, when settings page loads, then General (port, host, log_level, rate limits), Security (injection threshold, PII types), and Retry (max_retries, delays) sections are visible",
-            "Given provider data, when provider section renders, then provider cards with base URL, key strategy, key count are shown",
-            "Given the TOML preview section, when rendered, then a code block with monospace font and TOML-formatted text is visible"
-          ],
-          "technical_notes": "Config sections are read-only. Verify section headings (General, Security, Retry Policy) and key-value pairs. TOML preview: look for a pre/code element with TOML-formatted text. Provider section: may be combined with main provider list or a separate config view.",
-          "status": "pending",
-          "dependencies": [
-            "s8-feat-002"
-          ],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/e2e/settings.spec.ts"
-          ]
-        },
-        {
-          "id": "s8-feat-011",
+          "id": "s9-feat-015",
           "category": "infra",
-          "priority": "high",
-          "title": "Generate comprehensive bug list (BUGS.md)",
-          "description": "Create admin/e2e/BUGS.md documenting all discovered bugs from code analysis and E2E testing. Categorize into: Functional Bugs (latency delta color inverted, CSV export no error UI, export memory risk, clipboard API failure, rate limit 0 default, pie chart color mismatch, hardcoded empty state, formatUsd dead code, provider health bar misleading width), Accessibility Bugs (missing label associations, no focus traps, no Escape key close, missing aria-labels), and Code Quality Issues (unused dependencies, duplicated components, naming confusion). Each bug entry should include: severity, location, description, steps to reproduce, and expected vs actual behavior.",
+          "priority": "low",
+          "title": "Extract shared InjectionScoreBar component",
+          "description": "Bug #18 (Low): InjectionScoreBar logic is duplicated 4 times across overview.tsx, audit.tsx, security.tsx, and detail-drawer.tsx. Extract to a shared component.",
           "acceptance_criteria": [
-            "Given all E2E tests have run, when bug list is generated, then BUGS.md contains all discovered issues",
-            "Given the bug list, when reviewed, then each bug has severity (high/medium/low), location (file:line), description, and reproduction steps",
-            "Given the 16 pre-analysis bugs, when documented, then all are present in BUGS.md with accurate details",
-            "Given any new bugs found during E2E testing, when documented, then they are added to BUGS.md"
+            "Given a new shared component file, when InjectionScoreBar is imported in all 4 files, then all pages render identically to before",
+            "Given the 4 inline implementations, when removed, then no duplicate code remains"
           ],
-          "technical_notes": "Pre-identified bugs from code analysis (16 bugs): Functional (9): 1) Latency delta color inverted in overview.tsx, 2) CSV export no error UI in audit.tsx, 3) Export memory risk in export.ts, 4) Clipboard API no try/catch in keys.tsx, 5) Rate limit defaults of 0 in create-dialog/edit-sheet, 6) Pie chart legend color mismatch in pie-chart.tsx, 7) Hardcoded 'No keys found' in data-table.tsx, 8) formatUsd dead code in utils.ts, 9) Provider health bar misleading width. Accessibility (4): 10) Missing htmlFor/id on labels, 11) No focus traps in modals, 12) No Escape key close, 13) Missing aria-labels. Code Quality (3): 14) Unused deps (date-fns, class-variance-authority), 15) Duplicated StatusBadge, 16) Duplicated InjectionScoreBar. During E2E testing, look for additional runtime bugs like broken navigation, missing data rendering, incorrect form submissions, etc.",
+          "technical_notes": "Create admin/src/components/injection-score-bar.tsx. Find the InjectionScoreBar pattern in all 4 files, unify into a single component with props for score (number) and optional size/threshold config. Import in all 4 consumer files.",
           "status": "pending",
-          "dependencies": [
-            "s8-feat-003",
-            "s8-feat-004",
-            "s8-feat-005",
-            "s8-feat-006",
-            "s8-feat-007",
-            "s8-feat-008",
-            "s8-feat-009",
-            "s8-feat-010"
-          ],
+          "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
-            "admin/e2e/BUGS.md"
+            "admin/src/components/injection-score-bar.tsx",
+            "admin/src/pages/overview.tsx",
+            "admin/src/pages/audit.tsx",
+            "admin/src/pages/security.tsx",
+            "admin/src/pages/audit/detail-drawer.tsx"
+          ]
+        },
+        {
+          "id": "s9-feat-016",
+          "category": "infra",
+          "priority": "low",
+          "title": "Remove unused npm dependencies",
+          "description": "Bug #16 (Low): admin/package.json lists date-fns and class-variance-authority as dependencies but they are never imported in the codebase.",
+          "acceptance_criteria": [
+            "Given admin/package.json, when reviewed, then only actually-used dependencies are listed",
+            "Given the admin build, when pnpm install && pnpm build runs, then build succeeds without errors"
+          ],
+          "technical_notes": "Run grep/search to confirm date-fns and class-variance-authority are truly unused. If confirmed, remove from package.json dependencies and run pnpm install to update lockfile. Verify build still works.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/package.json"
           ]
         }
       ]

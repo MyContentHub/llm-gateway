@@ -6,67 +6,55 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 ## Sprint Planning - 2026-04-14
 **Agent**: Sprint Agent
-**Sprint**: sprint-008 - Phase 8: Admin Playwright E2E Testing & Bug Audit
+**Sprint**: sprint-009 - Phase 9: Admin Dashboard Bug Fix Sprint
 
 ### Requirements Received
-- Implement comprehensive Playwright E2E test suite for the admin dashboard
-- Use real backend server (not mocked APIs) for authentic E2E testing
-- 8 spec files covering all admin pages: Login, Navigation, Overview, Keys, Audit, Security, Providers, Settings
-- ~46 total tests covering full CRUD flows, filtering, navigation, auth, charts, export
-- Generate structured bug list (BUGS.md) with all discovered functional, accessibility, and code quality issues
-- 16 pre-identified bugs from static code analysis + any new bugs found during testing
+- Fix all 18 bugs documented in admin/e2e/BUGS.md
+- Bugs sourced from E2E test execution (45/45 passing) and code analysis
+- Categories: 2 High functional, 7 Medium functional, 4 Low functional, 4 Accessibility, 3 Code quality
 
 ### Features Planned
-- Total: 11 features
-- High priority: 6 (Playwright setup, fixtures, login, navigation, overview, keys, bug list)
-- Medium priority: 4 (security, providers, settings, audit)
-- Low priority: 0
+- Total: 16 features
+- High priority: 2 (401 redirect, header overlap)
+- Medium priority: 5 (latency color, export errors, label associations, focus trap, accessibility)
+- Low priority: 9 (clipboard, rate limits, pie chart, data-table, formatUsd, health bar, aria-labels, shared components, unused deps)
 
 ### Sprint Goal
-Comprehensive E2E test coverage for the admin dashboard using Playwright with real backend, plus a documented bug audit capturing all functional, accessibility, and code quality issues.
+Fix all bugs from E2E audit to make the admin dashboard production-quality: no broken UX flows, proper error handling, full accessibility, and clean code architecture.
 
 ### Implementation Order
-1. s8-feat-001 - Install Playwright and create test configuration (infra) - small
-2. s8-feat-002 - Create E2E test fixtures with real backend server (infra) - medium
-3. s8-feat-003 - E2E tests for Login page (auth) - small
-4. s8-feat-004 - E2E tests for Navigation and layout (ui) - small
-5. s8-feat-005 - E2E tests for Overview Dashboard (ui) - small
-6. s8-feat-006 - E2E tests for API Key Management (ui) - medium
-7. s8-feat-007 - E2E tests for Audit Log Browser (ui) - medium
-8. s8-feat-008 - E2E tests for Security Monitor (ui) - small
-9. s8-feat-009 - E2E tests for Providers page (ui) - small
-10. s8-feat-010 - E2E tests for Settings page (ui) - small
-11. s8-feat-011 - Generate comprehensive bug list BUGS.md (infra) - small
+1. s9-feat-001 - Fix 401 redirect blocking login error display (high)
+2. s9-feat-002 - Fix fixed header overlapping page content (high)
+3. s9-feat-003 - Fix inverted latency delta color (medium)
+4. s9-feat-004 - Add error UI for CSV export + memory safety (medium)
+5. s9-feat-011 - Add label-input associations (medium)
+6. s9-feat-012 - Add focus trap and Escape close to modals (medium)
+7. s9-feat-005 - Wrap clipboard.writeText in try/catch (low)
+8. s9-feat-006 - Fix empty rate limit fields sending 0 (low)
+9. s9-feat-007 - Fix pie chart legend color mismatch (low)
+10. s9-feat-008 - Make DataTable empty state configurable (low)
+11. s9-feat-009 - Remove formatUsd dead code (low)
+12. s9-feat-010 - Fix provider health bar width logic (low)
+13. s9-feat-013 - Add aria-labels to icon-only buttons (low)
+14. s9-feat-014 - Extract shared StatusBadge component (low)
+15. s9-feat-015 - Extract shared InjectionScoreBar component (low)
+16. s9-feat-016 - Remove unused npm dependencies (low)
 
 ### Dependencies
-- s8-feat-002 depends on s8-feat-001
-- s8-feat-003 through s8-feat-010 depend on s8-feat-002
-- s8-feat-011 depends on all test features (s8-feat-003 through s8-feat-010)
+- All features are independent — no blocking dependencies
+- s9-feat-014 and s9-feat-015 (shared components) are independent refactors
+- s9-feat-008 (DataTable) touches same files as s9-feat-014 (StatusBadge extraction) in audit.tsx
 
 ### Parallelization Opportunities
-- Batch 1: s8-feat-001 (Playwright install)
-- Batch 2: s8-feat-002 (test fixtures)
-- Batch 3 (parallel): s8-feat-003 + s8-feat-004 + s8-feat-005 (login, nav, overview — no file conflicts)
-- Batch 4 (parallel): s8-feat-006 + s8-feat-007 + s8-feat-008 + s8-feat-009 + s8-feat-010 (all page tests — separate files)
-- Batch 5: s8-feat-011 (bug list — needs test results)
-
-### Pre-Identified Bugs (from code analysis)
-Functional (9): Latency delta color inverted, CSV export silent errors, export memory risk, clipboard API no try/catch, rate limit 0 defaults, pie chart color mismatch, hardcoded empty state, formatUsd dead code, misleading health bars
-Accessibility (4): Missing label associations, no focus traps, no Escape close, missing aria-labels
-Code Quality (3): Unused dependencies, duplicated StatusBadge, duplicated InjectionScoreBar
-
-### Technical Decisions
-- Real backend server (not mocked) for authentic E2E testing
-- Tests in admin/e2e/ directory alongside frontend code
-- Bug list written to admin/e2e/BUGS.md
-- Playwright config in admin/playwright.config.ts
-- Test fixtures reuse createTestServer pattern from existing integration tests
+- Batch 1 (high, independent): s9-feat-001 + s9-feat-002
+- Batch 2 (medium, independent): s9-feat-003 + s9-feat-004 + s9-feat-011 + s9-feat-012
+- Batch 3 (low, independent): s9-feat-005 + s9-feat-006 + s9-feat-007 + s9-feat-009 + s9-feat-010 + s9-feat-013 + s9-feat-016
+- Batch 4 (refactoring, may conflict): s9-feat-008 + s9-feat-014 + s9-feat-015
 
 ### Notes
-- Sprint-007 (Admin Dashboard) archived — 15/15 features completed
-- Admin frontend already built and working at /admin/
-- All 12 backend admin API endpoints verified and documented
-- E2E tests will verify full-stack integration (frontend + backend + database)
+- Sprint-008 archived (E2E testing complete, BUGS.md generated)
+- All 45 E2E tests passing — fixes should not break existing tests
+- Focus on no-regression: each fix should be verifiable via existing E2E suite
 
 ---
 
