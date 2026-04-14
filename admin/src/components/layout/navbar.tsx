@@ -14,6 +14,7 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
         <div className="flex items-center gap-3">
           <button
             onClick={onMobileMenuToggle}
+            aria-label="Toggle menu"
             className="lg:hidden h-8 w-8 flex items-center justify-center rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
           >
             <Menu className="h-5 w-5" />

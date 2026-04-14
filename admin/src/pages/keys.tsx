@@ -55,6 +55,7 @@ function KeyDisplayDialog({
           </code>
           <button
             onClick={handleCopy}
+            aria-label="Copy key"
             className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             {copied ? (
@@ -237,6 +238,7 @@ export function KeysPage() {
             <button
               onClick={() => setEditKey(k)}
               disabled={revoked}
+              aria-label="Edit key"
               className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               title="Edit"
             >
@@ -245,6 +247,7 @@ export function KeysPage() {
             {!revoked && (
               <button
                 onClick={() => setRevokeKey(k)}
+                aria-label="Revoke key"
                 className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
                 title="Revoke"
               >
