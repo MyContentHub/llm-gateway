@@ -18,6 +18,7 @@ import {
 import { formatDate, formatUsd, formatMs, cn } from "@/lib/utils";
 import { DetailDrawer } from "./audit/detail-drawer";
 import { exportAuditCsv } from "./audit/export";
+import { AlertCircle, AlertTriangle } from "lucide-react";
 
 const PAGE_SIZE = 50;
 
@@ -87,6 +88,8 @@ export function AuditPage() {
   const [selectedLog, setSelectedLog] = useState<AuditLogRow | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [exportWarning, setExportWarning] = useState<string | null>(null);
 
   const filters: AuditFilters = useMemo(
     () => ({
@@ -197,15 +200,29 @@ export function AuditPage() {
     setDrawerOpen(true);
   }
 
+  const exportFilters: Record<string, string | undefined> = useMemo(
+    () => ({
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      model: modelFilter || undefined,
+      status: statusFilter || undefined,
+    }),
+    [startDate, endDate, modelFilter, statusFilter],
+  );
+
   async function handleExport() {
     setExporting(true);
+    setExportError(null);
+    setExportWarning(null);
     try {
-      const exportFilters: Record<string, string | undefined> = {};
-      if (startDate) exportFilters.startDate = startDate;
-      if (endDate) exportFilters.endDate = endDate;
-      if (modelFilter) exportFilters.model = modelFilter;
-      if (statusFilter) exportFilters.status = statusFilter;
-      await exportAuditCsv(exportFilters);
+      const result = await exportAuditCsv(exportFilters);
+      if (result.truncated) {
+        setExportWarning(
+          `Export capped at ${result.maxRows.toLocaleString()} rows. Apply tighter filters to export all results.`,
+        );
+      }
+    } catch {
+      setExportError("Export failed. Please try again.");
     } finally {
       setExporting(false);
     }
@@ -287,6 +304,18 @@ export function AuditPage() {
             Export CSV
           </button>
         </div>
+        {exportError && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm text-red-800">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {exportError}
+          </div>
+        )}
+        {exportWarning && (
+          <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            {exportWarning}
+          </div>
+        )}
 
         <div className="rounded-lg border border-border bg-card overflow-hidden">
           {isLoading ? (

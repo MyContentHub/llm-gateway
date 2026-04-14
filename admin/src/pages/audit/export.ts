@@ -57,9 +57,16 @@ function rowToCsv(row: AuditLogRow): string {
   return values.map(escapeCsv).join(",");
 }
 
+export interface ExportResult {
+  truncated: boolean;
+  maxRows: number;
+}
+
+const MAX_ROWS = 50000;
+
 export async function exportAuditCsv(
   filters: Record<string, string | number | undefined>,
-): Promise<void> {
+): Promise<ExportResult> {
   const PAGE_SIZE = 200;
   let offset = 0;
   let hasMore = true;
@@ -78,11 +85,18 @@ export async function exportAuditCsv(
     }>(`/admin/audit/logs?${params.toString()}`);
     allRows.push(...res.logs);
     offset += res.logs.length;
-    if (offset >= res.total || res.logs.length === 0) hasMore = false;
+    if (allRows.length >= MAX_ROWS) {
+      hasMore = false;
+    } else if (offset >= res.total || res.logs.length === 0) {
+      hasMore = false;
+    }
   }
 
+  const truncated = allRows.length >= MAX_ROWS;
+  const rowsToExport = truncated ? allRows.slice(0, MAX_ROWS) : allRows;
+
   const header = COLUMNS.join(",");
-  const rows = allRows.map(rowToCsv).join("\n");
+  const rows = rowsToExport.map(rowToCsv).join("\n");
   const csv = `${header}\n${rows}`;
 
   const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -94,4 +108,6 @@ export async function exportAuditCsv(
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+
+  return { truncated, maxRows: MAX_ROWS };
 }
