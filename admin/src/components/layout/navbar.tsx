@@ -9,7 +9,7 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
   const { logout } = useAuth();
 
   return (
-    <header className="fixed top-0 right-0 z-30 h-16 border-b border-border bg-card/80 backdrop-blur-sm">
+    <header className="fixed top-0 inset-x-0 z-30 h-16 border-b border-border bg-card/80 backdrop-blur-sm">
       <div className="flex h-full items-center justify-between px-4 lg:px-6">
         <div className="flex items-center gap-3">
           <button
