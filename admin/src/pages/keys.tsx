@@ -282,6 +282,7 @@ export function KeysPage() {
           pageSize={pageSize}
           page={page}
           onPageChange={setPage}
+          emptyMessage="No keys found"
         />
       )}
 

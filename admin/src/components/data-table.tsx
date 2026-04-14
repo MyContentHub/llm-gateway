@@ -14,6 +14,7 @@ interface DataTableProps<T> {
   pageSize?: number;
   page: number;
   onPageChange: (page: number) => void;
+  emptyMessage?: string;
 }
 
 export function DataTable<T>({
@@ -23,6 +24,7 @@ export function DataTable<T>({
   pageSize = 20,
   page,
   onPageChange,
+  emptyMessage,
 }: DataTableProps<T>) {
   const table = useReactTable({
     data,
@@ -83,7 +85,7 @@ export function DataTable<T>({
                   colSpan={columns.length}
                   className="px-4 py-8 text-center text-sm text-muted-foreground"
                 >
-                  No keys found
+                  {emptyMessage ?? "No data found"}
                 </td>
               </tr>
             )}
