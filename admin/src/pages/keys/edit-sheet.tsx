@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Loader2, X } from "lucide-react";
 import { useUpdateKey } from "@/hooks/use-keys";
 import type { VirtualKey } from "@/hooks/use-keys";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface EditSheetProps {
   open: boolean;
@@ -15,6 +16,8 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
   const [tpm, setTpm] = useState("");
   const [rpd, setRpd] = useState("");
   const updateKey = useUpdateKey();
+  const sheetRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(sheetRef, open, () => onOpenChange(false));
 
   useEffect(() => {
     if (virtualKey) {
@@ -57,7 +60,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 w-full max-w-md h-full border-l border-border bg-card p-6 shadow-lg overflow-y-auto">
+      <div ref={sheetRef} className="relative z-50 w-full max-w-md h-full border-l border-border bg-card p-6 shadow-lg overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-semibold text-foreground">Edit Key</h2>
           <button

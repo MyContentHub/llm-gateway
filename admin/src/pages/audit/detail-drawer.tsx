@@ -1,7 +1,9 @@
+import { useRef } from "react";
 import { X } from "lucide-react";
 import type { AuditLogRow } from "@/hooks/use-audit-logs";
 import { formatDate, formatUsd, formatMs } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface DetailDrawerProps {
   log: AuditLogRow | null;
@@ -33,6 +35,9 @@ function ScoreBar({ value }: { value: number }) {
 }
 
 export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
+  const drawerRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(drawerRef, open, onClose);
+
   if (!log || !open) return null;
 
   let piiTypes: string[] = [];
@@ -56,7 +61,7 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
         className="fixed inset-0 z-40 bg-black/50"
         onClick={onClose}
       />
-      <div className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-card shadow-xl border-l border-border overflow-y-auto">
+      <div ref={drawerRef} className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-card shadow-xl border-l border-border overflow-y-auto">
         <div className="sticky top-0 flex items-center justify-between p-4 border-b border-border bg-card">
           <h2 className="text-lg font-semibold text-foreground">Log Detail</h2>
           <button

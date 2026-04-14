@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Loader2, X } from "lucide-react";
 import { useCreateKey } from "@/hooks/use-keys";
 import type { VirtualKey } from "@/hooks/use-keys";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface CreateDialogProps {
   open: boolean;
@@ -19,6 +20,8 @@ export function CreateKeyDialog({
   const [tpm, setTpm] = useState("");
   const [rpd, setRpd] = useState("");
   const createKey = useCreateKey();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open, () => onOpenChange(false));
 
   if (!open) return null;
 
@@ -60,7 +63,7 @@ export function CreateKeyDialog({
         className="fixed inset-0 bg-black/50"
         onClick={() => onOpenChange(false)}
       />
-      <div className="relative z-50 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
+      <div ref={dialogRef} className="relative z-50 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">
             Create API Key

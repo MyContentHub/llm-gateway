@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, Pencil, Trash2, Copy, Check, Loader2, X } from "lucide-react";
 import { PageHeader } from "@/components/layout/page-header";
@@ -11,6 +11,7 @@ import type { VirtualKey } from "@/hooks/use-keys";
 import { formatRelativeDate } from "@/lib/utils";
 import { CreateKeyDialog } from "./keys/create-dialog";
 import { EditKeySheet } from "./keys/edit-sheet";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 function KeyDisplayDialog({
   keyValue,
@@ -20,6 +21,8 @@ function KeyDisplayDialog({
   onClose: () => void;
 }) {
   const [copied, setCopied] = useState(false);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true, onClose);
 
   const handleCopy = async () => {
     try {
@@ -34,7 +37,7 @@ function KeyDisplayDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative z-50 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
+      <div ref={dialogRef} className="relative z-50 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">
             API Key Created
@@ -88,6 +91,8 @@ function RevokeDialog({
   virtualKey: VirtualKey | null;
 }) {
   const revokeKey = useRevokeKey();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, open, () => onOpenChange(false));
 
   if (!open || !virtualKey) return null;
 
@@ -103,7 +108,7 @@ function RevokeDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="fixed inset-0 bg-black/50" onClick={() => onOpenChange(false)} />
-      <div className="relative z-50 w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-lg">
+      <div ref={dialogRef} className="relative z-50 w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-lg">
         <h2 className="text-lg font-semibold text-foreground mb-2">
           Revoke API Key
         </h2>
