@@ -23,7 +23,7 @@ describe("Security Pipeline Integration", () => {
       const key = await createKey();
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -53,7 +53,7 @@ describe("Security Pipeline Integration", () => {
       const key = await createKey();
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -79,7 +79,7 @@ describe("Security Pipeline Integration", () => {
       const key = await createKey();
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -102,7 +102,7 @@ describe("Security Pipeline Integration", () => {
       const key = await createKey();
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -130,7 +130,7 @@ describe("Security Pipeline Integration", () => {
 
       const noAuthResponse = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: {
           model: "gpt-4o",
           messages: [{ role: "user", content: "Hello" }],
@@ -140,7 +140,7 @@ describe("Security Pipeline Integration", () => {
 
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -167,7 +167,7 @@ describe("Security Pipeline Integration", () => {
       const key = await createKey();
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -196,7 +196,7 @@ describe("Security Pipeline Integration", () => {
       const key = await createKey();
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",

@@ -16,7 +16,7 @@ describe("Admin Keys API Integration", () => {
   it("POST /admin/keys creates a key with gwk_ prefix", async () => {
     const response = await ctx.server.inject({
       method: "POST",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
       payload: { name: "created-via-admin" },
     });
@@ -32,7 +32,7 @@ describe("Admin Keys API Integration", () => {
     await ctx.createKey("list-test-2");
     const response = await ctx.server.inject({
       method: "GET",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
     });
     expect(response.statusCode).toBe(200);
@@ -44,14 +44,14 @@ describe("Admin Keys API Integration", () => {
   it("GET /admin/keys/:id returns key details", async () => {
     const createRes = await ctx.server.inject({
       method: "POST",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
       payload: { name: "detail-key" },
     });
     const created = createRes.json();
     const response = await ctx.server.inject({
       method: "GET",
-      url: `/admin/keys/${created.id}`,
+      url: `/api/admin/keys/${created.id}`,
       headers: { authorization: `Bearer ${ctx.adminToken}` },
     });
     expect(response.statusCode).toBe(200);
@@ -64,14 +64,14 @@ describe("Admin Keys API Integration", () => {
   it("DELETE /admin/keys/:id revokes a key", async () => {
     const createRes = await ctx.server.inject({
       method: "POST",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
       payload: { name: "delete-key" },
     });
     const created = createRes.json();
     const response = await ctx.server.inject({
       method: "DELETE",
-      url: `/admin/keys/${created.id}`,
+      url: `/api/admin/keys/${created.id}`,
       headers: { authorization: `Bearer ${ctx.adminToken}` },
     });
     expect(response.statusCode).toBe(200);
@@ -82,14 +82,14 @@ describe("Admin Keys API Integration", () => {
   it("PATCH /admin/keys/:id updates rate limits", async () => {
     const createRes = await ctx.server.inject({
       method: "POST",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
       payload: { name: "patch-key" },
     });
     const created = createRes.json();
     const response = await ctx.server.inject({
       method: "PATCH",
-      url: `/admin/keys/${created.id}`,
+      url: `/api/admin/keys/${created.id}`,
       headers: { authorization: `Bearer ${ctx.adminToken}` },
       payload: { rateLimits: { rpm: 99, tpm: 9999, rpd: 999 } },
     });
@@ -103,7 +103,7 @@ describe("Admin Keys API Integration", () => {
   it("returns 401 when admin token is missing", async () => {
     const response = await ctx.server.inject({
       method: "GET",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
     });
     expect(response.statusCode).toBe(401);
   });
@@ -111,7 +111,7 @@ describe("Admin Keys API Integration", () => {
   it("returns 400 when name is missing on create", async () => {
     const response = await ctx.server.inject({
       method: "POST",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
       payload: {},
     });
@@ -123,7 +123,7 @@ describe("Admin Keys API Integration", () => {
   it("key created via admin API can authenticate /v1/* requests", async () => {
     const createRes = await ctx.server.inject({
       method: "POST",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
       payload: {
         name: "usable-key",
@@ -134,7 +134,7 @@ describe("Admin Keys API Integration", () => {
     const { key } = createRes.json();
     const response = await ctx.server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       headers: { authorization: `Bearer ${key}` },
       payload: {
         model: "gpt-4o",

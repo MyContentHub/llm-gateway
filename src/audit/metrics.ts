@@ -75,15 +75,15 @@ collectDefaultMetrics({ register: defaultMetrics.registry });
 
 function normalizeEndpoint(url: string): string {
   const pathname = url.split("?")[0];
-  if (pathname.startsWith("/v1/chat/completions")) return "/v1/chat/completions";
-  if (pathname.startsWith("/v1/completions")) return "/v1/completions";
-  if (pathname.startsWith("/v1/embeddings")) return "/v1/embeddings";
-  if (pathname.startsWith("/v1/models")) return "/v1/models";
+  if (pathname.startsWith("/api/v1/chat/completions")) return "/api/v1/chat/completions";
+  if (pathname.startsWith("/api/v1/completions")) return "/api/v1/completions";
+  if (pathname.startsWith("/api/v1/embeddings")) return "/api/v1/embeddings";
+  if (pathname.startsWith("/api/v1/models")) return "/api/v1/models";
   return pathname;
 }
 
 function isLlmRoute(url: string): boolean {
-  return normalizeEndpoint(url).startsWith("/v1/");
+  return normalizeEndpoint(url).startsWith("/api/v1/");
 }
 
 function getModelFromBody(body: unknown): string {

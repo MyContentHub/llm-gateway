@@ -271,7 +271,7 @@ describe("Retry & Failover Integration", () => {
 
         const noAuth = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           payload: {
             model: "gpt-4o",
             messages: [{ role: "user", content: "Hello" }],
@@ -281,7 +281,7 @@ describe("Retry & Failover Integration", () => {
 
         const response = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",
@@ -300,7 +300,7 @@ describe("Retry & Failover Integration", () => {
 
         const auditRes = await server.inject({
           method: "GET",
-          url: "/admin/audit/logs",
+          url: "/api/admin/audit/logs",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(auditRes.statusCode).toBe(200);
@@ -309,7 +309,7 @@ describe("Retry & Failover Integration", () => {
           (l: Record<string, unknown>) => l.model === "gpt-4o" && l.status === "success",
         );
         expect(log).toBeDefined();
-        expect(log.endpoint).toBe("/v1/chat/completions");
+        expect(log.endpoint).toBe("/api/v1/chat/completions");
 
         const metricsRes = await server.inject({
           method: "GET",
@@ -343,7 +343,7 @@ describe("Retry & Failover Integration", () => {
 
         const blockedRes = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",
@@ -355,7 +355,7 @@ describe("Retry & Failover Integration", () => {
 
         const allowedRes = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",
@@ -366,7 +366,7 @@ describe("Retry & Failover Integration", () => {
 
         const auditRes = await server.inject({
           method: "GET",
-          url: "/admin/audit/logs",
+          url: "/api/admin/audit/logs",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         const auditBody = auditRes.json();
@@ -386,7 +386,7 @@ describe("Retry & Failover Integration", () => {
 
         const embRes = await server.inject({
           method: "POST",
-          url: "/v1/embeddings",
+          url: "/api/v1/embeddings",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "text-embedding-3-small",
@@ -400,7 +400,7 @@ describe("Retry & Failover Integration", () => {
 
         const modelsRes = await server.inject({
           method: "GET",
-          url: "/v1/models",
+          url: "/api/v1/models",
           headers: { authorization: `Bearer ${key}` },
         });
         expect(modelsRes.statusCode).toBe(200);
@@ -425,7 +425,7 @@ describe("Retry & Failover Integration", () => {
 
         const res1 = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",
@@ -436,7 +436,7 @@ describe("Retry & Failover Integration", () => {
 
         const res2 = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",
@@ -447,7 +447,7 @@ describe("Retry & Failover Integration", () => {
 
         const res3 = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",

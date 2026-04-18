@@ -17,7 +17,7 @@ describe("Authentication Integration", () => {
     const key = await ctx.createKey("auth-valid");
     const response = await ctx.server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       headers: { authorization: `Bearer ${key}` },
       payload: {
         model: "gpt-4o",
@@ -33,7 +33,7 @@ describe("Authentication Integration", () => {
   it("returns 401 when Authorization header is missing", async () => {
     const response = await ctx.server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         model: "gpt-4o",
         messages: [{ role: "user", content: "Hello" }],
@@ -48,7 +48,7 @@ describe("Authentication Integration", () => {
   it("returns 401 for an invalid Bearer token", async () => {
     const response = await ctx.server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       headers: { authorization: "Bearer invalid-token-xyz" },
       payload: {
         model: "gpt-4o",
@@ -64,19 +64,19 @@ describe("Authentication Integration", () => {
     const key = await ctx.createKey("to-revoke");
     const listRes = await ctx.server.inject({
       method: "GET",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${ctx.adminToken}` },
     });
     const keys = listRes.json();
     const createdKey = keys.keys.find((k: { name: string }) => k.name === "to-revoke");
     await ctx.server.inject({
       method: "DELETE",
-      url: `/admin/keys/${createdKey.id}`,
+      url: `/api/admin/keys/${createdKey.id}`,
       headers: { authorization: `Bearer ${ctx.adminToken}` },
     });
     const response = await ctx.server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       headers: { authorization: `Bearer ${key}` },
       payload: {
         model: "gpt-4o",
@@ -102,7 +102,7 @@ describe("Authentication Integration", () => {
     const key = await ctx.createKey("not-admin");
     const response = await ctx.server.inject({
       method: "GET",
-      url: "/admin/keys",
+      url: "/api/admin/keys",
       headers: { authorization: `Bearer ${key}` },
     });
     expect(response.statusCode).toBe(401);

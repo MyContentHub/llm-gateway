@@ -105,7 +105,7 @@ describe("PII Redaction/Restoration Integration", () => {
       const ssn = "123-45-6789";
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -136,7 +136,7 @@ describe("PII Redaction/Restoration Integration", () => {
       const email = "user@example.com";
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -168,7 +168,7 @@ describe("PII Redaction/Restoration Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -202,7 +202,7 @@ describe("PII Redaction/Restoration Integration", () => {
       const email = "multi@test.com";
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",

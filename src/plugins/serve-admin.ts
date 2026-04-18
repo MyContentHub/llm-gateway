@@ -9,8 +9,6 @@ const VITE_PORT = 5173;
 const VITE_HOST = "localhost";
 const VITE_ORIGIN = `http://${VITE_HOST}:${VITE_PORT}`;
 
-const API_PREFIXES = ["/admin/keys", "/admin/audit", "/admin/config", "/admin/providers"];
-
 const HOP_BY_HOP = new Set([
   "connection",
   "keep-alive",
@@ -19,13 +17,6 @@ const HOP_BY_HOP = new Set([
   "trailer",
   "upgrade",
 ]);
-
-function isApiRoute(url: string): boolean {
-  const path = url.split("?")[0];
-  return API_PREFIXES.some(
-    (prefix) => path === prefix || path.startsWith(prefix + "/"),
-  );
-}
 
 function readRawBody(stream: NodeJS.ReadableStream): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -42,7 +33,7 @@ const serveAdminPlugin: FastifyPluginCallback = async (server, _opts) => {
   if (!existsSync(adminDistPath)) {
     server.addHook("onRequest", async (request, reply) => {
       if (!request.url.startsWith("/admin")) return;
-      if (isApiRoute(request.url)) return;
+      if (request.url.startsWith("/api")) return;
 
       const targetUrl = new URL(request.url, VITE_ORIGIN);
       const headers = new Headers();
@@ -84,7 +75,7 @@ const serveAdminPlugin: FastifyPluginCallback = async (server, _opts) => {
 
     server.server.on("upgrade", (req, socket, head) => {
       if (!req.url?.startsWith("/admin")) return;
-      if (isApiRoute(req.url)) return;
+      if (req.url.startsWith("/api")) return;
 
       const vite = net.connect(VITE_PORT, VITE_HOST, () => {
         let raw = `GET ${req.url} HTTP/1.1\r\nHost: ${VITE_HOST}:${VITE_PORT}\r\n`;

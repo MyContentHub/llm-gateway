@@ -8,7 +8,7 @@ describe("Rate Limiting Integration", () => {
       const key = await createKey("rl-ok", { rpm: 10, tpm: 100000, rpd: 100 });
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -37,7 +37,7 @@ describe("Rate Limiting Integration", () => {
       for (let i = 0; i < 2; i++) {
         const res = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",
@@ -48,7 +48,7 @@ describe("Rate Limiting Integration", () => {
       }
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -73,7 +73,7 @@ describe("Rate Limiting Integration", () => {
       const key = await createKey("rl-headers", { rpm: 10, tpm: 100000, rpd: 100 });
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -98,7 +98,7 @@ describe("Rate Limiting Integration", () => {
       for (let i = 0; i < 2; i++) {
         const res = await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key1}` },
           payload: {
             model: "gpt-4o",
@@ -110,7 +110,7 @@ describe("Rate Limiting Integration", () => {
 
       const rejected = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key1}` },
         payload: {
           model: "gpt-4o",
@@ -121,7 +121,7 @@ describe("Rate Limiting Integration", () => {
 
       const key2Response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key2}` },
         payload: {
           model: "gpt-4o",

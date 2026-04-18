@@ -19,7 +19,7 @@ describe("Embeddings Integration", () => {
   it("forwards an embeddings request and returns the response", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/embeddings",
+      url: "/api/v1/embeddings",
       payload: {
         model: "gpt-4o",
         input: "Hello, world!",
@@ -41,7 +41,7 @@ describe("Embeddings Integration", () => {
   it("returns 400 when model is missing", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/embeddings",
+      url: "/api/v1/embeddings",
       payload: {
         input: "Hello, world!",
       },

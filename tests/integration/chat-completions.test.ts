@@ -19,7 +19,7 @@ describe("Chat Completions Integration", () => {
   it("proxies a non-streaming chat completion request", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         model: "gpt-4o",
         messages: [{ role: "user", content: "Hello" }],
@@ -41,7 +41,7 @@ describe("Chat Completions Integration", () => {
   it("relays streaming SSE chunks in order with [DONE] termination", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         model: "gpt-4o",
         messages: [{ role: "user", content: "Hello" }],
@@ -75,7 +75,7 @@ describe("Chat Completions Integration", () => {
   it("forwards upstream 429 errors", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         model: "error-429",
         messages: [{ role: "user", content: "test" }],
@@ -91,7 +91,7 @@ describe("Chat Completions Integration", () => {
   it("forwards upstream 500 errors", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         model: "error-500",
         messages: [{ role: "user", content: "test" }],
@@ -107,7 +107,7 @@ describe("Chat Completions Integration", () => {
   it("resolves model alias and returns successful response", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         model: "fast-chat",
         messages: [{ role: "user", content: "Hello" }],
@@ -123,7 +123,7 @@ describe("Chat Completions Integration", () => {
   it("returns 400 when model is missing", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         messages: [{ role: "user", content: "Hello" }],
       },
@@ -137,7 +137,7 @@ describe("Chat Completions Integration", () => {
   it("forwards upstream 429 errors for streaming requests", async () => {
     const response = await gateway.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: {
         model: "error-429",
         messages: [{ role: "user", content: "test" }],

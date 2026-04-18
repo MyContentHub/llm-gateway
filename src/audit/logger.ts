@@ -19,7 +19,7 @@ export function createAuditLogger(db: Database.Database, config: AppConfig): Fas
     });
 
     server.addHook("onResponse", (request, reply, done) => {
-      if (!request.url.startsWith("/v1/")) {
+      if (!request.url.startsWith("/api/v1/")) {
         done();
         return;
       }

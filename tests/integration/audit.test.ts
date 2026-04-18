@@ -24,7 +24,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -34,19 +34,19 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       expect(res.statusCode).toBe(200);
       const body = res.json();
       expect(body.total).toBeGreaterThanOrEqual(1);
       const log = body.logs.find(
-        (l: Record<string, unknown>) => l.model === "gpt-4o" && l.endpoint === "/v1/chat/completions",
+        (l: Record<string, unknown>) => l.model === "gpt-4o" && l.endpoint === "/api/v1/chat/completions",
       );
       expect(log).toBeDefined();
       expect(log.status).toBe("success");
       expect(log.model).toBe("gpt-4o");
-      expect(log.endpoint).toBe("/v1/chat/completions");
+      expect(log.endpoint).toBe("/api/v1/chat/completions");
       expect(log.prompt_tokens).toBe(10);
       expect(log.completion_tokens).toBe(5);
       expect(log.cost_usd).toBeCloseTo(0.000075, 5);
@@ -65,7 +65,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       const response = await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -81,12 +81,12 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       const body = res.json();
       const log = body.logs.find(
-        (l: Record<string, unknown>) => l.model === "gpt-4o" && l.endpoint === "/v1/chat/completions",
+        (l: Record<string, unknown>) => l.model === "gpt-4o" && l.endpoint === "/api/v1/chat/completions",
       );
       expect(log).toBeDefined();
       expect(log.status).toBe("error");
@@ -103,7 +103,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "error-500",
@@ -113,12 +113,12 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       const body = res.json();
       const log = body.logs.find(
-        (l: Record<string, unknown>) => l.model === "error-500" && l.endpoint === "/v1/chat/completions",
+        (l: Record<string, unknown>) => l.model === "error-500" && l.endpoint === "/api/v1/chat/completions",
       );
       expect(log).toBeDefined();
       expect(log.status).toBe("error");
@@ -138,7 +138,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -148,7 +148,7 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       const body = res.json();
@@ -169,7 +169,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -179,7 +179,7 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       expect(res.statusCode).toBe(200);
@@ -213,7 +213,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -223,7 +223,7 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs?status=success",
+        url: "/api/admin/audit/logs?status=success",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       expect(res.statusCode).toBe(200);
@@ -242,7 +242,7 @@ describe("Audit Pipeline Integration", () => {
     try {
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
       });
       expect(res.statusCode).toBe(401);
     } finally {
@@ -256,7 +256,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -265,7 +265,7 @@ describe("Audit Pipeline Integration", () => {
       });
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -275,7 +275,7 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/stats",
+        url: "/api/admin/audit/stats",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       expect(res.statusCode).toBe(200);
@@ -301,7 +301,7 @@ describe("Audit Pipeline Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -311,7 +311,7 @@ describe("Audit Pipeline Integration", () => {
 
       const res = await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
         headers: { authorization: `Bearer ${adminToken}` },
       });
       const body = res.json();

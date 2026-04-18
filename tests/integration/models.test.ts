@@ -19,7 +19,7 @@ describe("Models Integration", () => {
   it("returns prefixed model list from provider", async () => {
     const response = await gateway.inject({
       method: "GET",
-      url: "/v1/models",
+      url: "/api/v1/models",
     });
 
     expect(response.statusCode).toBe(200);
@@ -48,7 +48,7 @@ describe("Models Integration", () => {
 
     const response = await multiGateway.inject({
       method: "GET",
-      url: "/v1/models",
+      url: "/api/v1/models",
     });
 
     expect(response.statusCode).toBe(200);

@@ -261,13 +261,13 @@ describe("setupMetrics", () => {
     const server = Fastify({ logger: false });
     setupMetrics(server, m);
 
-    server.post("/v1/chat/completions", async (request, reply) => {
+    server.post("/api/v1/chat/completions", async (request, reply) => {
       return reply.code(200).send({ ok: true });
     });
 
     await server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: { model: "gpt-4o", messages: [{ role: "user", content: "Hi" }] },
     });
 
@@ -276,13 +276,13 @@ describe("setupMetrics", () => {
     const llmTotal = json.find((x) => x.name === "llm_request_total")!;
     expect(llmTotal.values).toContainEqual({
       value: 1,
-      labels: { model: "gpt-4o", status: "success", endpoint: "/v1/chat/completions" },
+      labels: { model: "gpt-4o", status: "success", endpoint: "/api/v1/chat/completions" },
     });
 
     const httpTotal = json.find((x) => x.name === "http_request_total")!;
     expect(httpTotal.values).toContainEqual({
       value: 1,
-      labels: { method: "POST", route: "/v1/chat/completions", status_code: "200" },
+      labels: { method: "POST", route: "/api/v1/chat/completions", status_code: "200" },
     });
 
     await server.close();
@@ -293,13 +293,13 @@ describe("setupMetrics", () => {
     const server = Fastify({ logger: false });
     setupMetrics(server, m);
 
-    server.post("/v1/chat/completions", async (request, reply) => {
+    server.post("/api/v1/chat/completions", async (request, reply) => {
       return reply.code(400).send({ error: "bad request" });
     });
 
     await server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: { model: "gpt-4o", messages: [] },
     });
 
@@ -307,7 +307,7 @@ describe("setupMetrics", () => {
     const llmTotal = json.find((x) => x.name === "llm_request_total")!;
     expect(llmTotal.values).toContainEqual({
       value: 1,
-      labels: { model: "gpt-4o", status: "error", endpoint: "/v1/chat/completions" },
+      labels: { model: "gpt-4o", status: "error", endpoint: "/api/v1/chat/completions" },
     });
 
     await server.close();
@@ -318,13 +318,13 @@ describe("setupMetrics", () => {
     const server = Fastify({ logger: false });
     setupMetrics(server, m);
 
-    server.post("/v1/chat/completions", async (request, reply) => {
+    server.post("/api/v1/chat/completions", async (request, reply) => {
       return reply.code(200).send({});
     });
 
     await server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: { messages: [{ role: "user", content: "Hi" }] },
     });
 
@@ -332,7 +332,7 @@ describe("setupMetrics", () => {
     const llmTotal = json.find((x) => x.name === "llm_request_total")!;
     expect(llmTotal.values).toContainEqual({
       value: 1,
-      labels: { model: "unknown", status: "success", endpoint: "/v1/chat/completions" },
+      labels: { model: "unknown", status: "success", endpoint: "/api/v1/chat/completions" },
     });
 
     await server.close();
@@ -343,13 +343,13 @@ describe("setupMetrics", () => {
     const server = Fastify({ logger: false });
     setupMetrics(server, m);
 
-    server.post("/v1/chat/completions", async (request, reply) => {
+    server.post("/api/v1/chat/completions", async (request, reply) => {
       return reply.code(200).send({});
     });
 
     await server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: { model: "gpt-4o", messages: [] },
     });
 
@@ -361,7 +361,7 @@ describe("setupMetrics", () => {
         "model" in v.labels &&
         v.labels.model === "gpt-4o" &&
         "endpoint" in v.labels &&
-        v.labels.endpoint === "/v1/chat/completions" &&
+        v.labels.endpoint === "/api/v1/chat/completions" &&
         v.labels.le === "+Inf",
     );
     expect(obs!.value).toBe(1);
@@ -374,22 +374,22 @@ describe("setupMetrics", () => {
     const server = Fastify({ logger: false });
     setupMetrics(server, m);
 
-    server.post("/v1/chat/completions", async (request, reply) => {
+    server.post("/api/v1/chat/completions", async (request, reply) => {
       return reply.code(200).send({});
     });
-    server.get("/v1/models", async () => ({ data: [] }));
+    server.get("/api/v1/models", async () => ({ data: [] }));
 
     await server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: { model: "gpt-4o", messages: [] },
     });
     await server.inject({
       method: "POST",
-      url: "/v1/chat/completions",
+      url: "/api/v1/chat/completions",
       payload: { model: "gpt-4o", messages: [] },
     });
-    await server.inject({ method: "GET", url: "/v1/models" });
+    await server.inject({ method: "GET", url: "/api/v1/models" });
 
     const json = await m.registry.getMetricsAsJSON();
 
@@ -399,7 +399,7 @@ describe("setupMetrics", () => {
         (v) =>
           v.labels.model === "gpt-4o" &&
           v.labels.status === "success" &&
-          v.labels.endpoint === "/v1/chat/completions",
+          v.labels.endpoint === "/api/v1/chat/completions",
       )!.value,
     ).toBe(2);
 
@@ -408,7 +408,7 @@ describe("setupMetrics", () => {
         (v) =>
           v.labels.model === "unknown" &&
           v.labels.status === "success" &&
-          v.labels.endpoint === "/v1/models",
+          v.labels.endpoint === "/api/v1/models",
       )!.value,
     ).toBe(1);
 

@@ -169,8 +169,10 @@ export async function createGateway(
 
   const gateway = Fastify({ logger: false });
   gateway.decorate("config", config);
-  await gateway.register(chatCompletionsPlugin);
-  await gateway.register(embeddingsPlugin);
-  await gateway.register(modelsPlugin);
+  await gateway.register(async (apiScope) => {
+    await apiScope.register(chatCompletionsPlugin);
+    await apiScope.register(embeddingsPlugin);
+    await apiScope.register(modelsPlugin);
+  }, { prefix: "/api" });
   return gateway;
 }

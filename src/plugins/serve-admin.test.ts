@@ -98,25 +98,25 @@ describe("serve-admin plugin", () => {
       expect(res.headers["content-type"]).toContain("application/javascript");
     });
 
-    it("does NOT proxy /admin/keys (API route)", async () => {
-      const res = await app.inject({ method: "GET", url: "/admin/keys" });
+    it("does NOT proxy /api/admin/keys (API route)", async () => {
+      const res = await app.inject({ method: "GET", url: "/api/admin/keys" });
       expect(res.statusCode).toBe(404);
     });
 
-    it("does NOT proxy /admin/audit/logs (API route)", async () => {
-      const res = await app.inject({ method: "GET", url: "/admin/audit/logs" });
+    it("does NOT proxy /api/admin/audit/logs (API route)", async () => {
+      const res = await app.inject({ method: "GET", url: "/api/admin/audit/logs" });
       expect(res.statusCode).toBe(404);
     });
 
-    it("does NOT proxy /admin/config (API route)", async () => {
-      const res = await app.inject({ method: "GET", url: "/admin/config" });
+    it("does NOT proxy /api/admin/config (API route)", async () => {
+      const res = await app.inject({ method: "GET", url: "/api/admin/config" });
       expect(res.statusCode).toBe(404);
     });
 
-    it("does NOT proxy /admin/providers (API route)", async () => {
+    it("does NOT proxy /api/admin/providers (API route)", async () => {
       const res = await app.inject({
         method: "GET",
-        url: "/admin/providers",
+        url: "/api/admin/providers",
       });
       expect(res.statusCode).toBe(404);
     });

@@ -76,7 +76,7 @@ describe("createAuditLogger", () => {
 
   describe("successful non-streaming request", () => {
     beforeEach(() => {
-      server.post("/v1/chat/completions", async (request, reply) => {
+      server.post("/api/v1/chat/completions", async (request, reply) => {
         return reply.code(200).send({
           id: "chatcmpl-123",
           model: "gpt-4o",
@@ -93,7 +93,7 @@ describe("createAuditLogger", () => {
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload,
       });
 
@@ -110,18 +110,18 @@ describe("createAuditLogger", () => {
     it("records the correct endpoint", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
       const row = getLastAuditRow(auditStore);
-      expect(row!.endpoint).toBe("/v1/chat/completions");
+      expect(row!.endpoint).toBe("/api/v1/chat/completions");
     });
 
     it("computes cost from token usage", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -135,7 +135,7 @@ describe("createAuditLogger", () => {
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload,
       });
 
@@ -154,7 +154,7 @@ describe("createAuditLogger", () => {
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -165,7 +165,7 @@ describe("createAuditLogger", () => {
     it("sets request_id to a valid UUID", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -179,7 +179,7 @@ describe("createAuditLogger", () => {
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -192,7 +192,7 @@ describe("createAuditLogger", () => {
 
   describe("streaming request", () => {
     beforeEach(() => {
-      server.post("/v1/chat/completions", async (request, reply) => {
+      server.post("/api/v1/chat/completions", async (request, reply) => {
         const body = request.body as { stream?: boolean };
         if (body?.stream) {
           return reply
@@ -216,7 +216,7 @@ describe("createAuditLogger", () => {
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload,
       });
 
@@ -230,7 +230,7 @@ describe("createAuditLogger", () => {
     it("sets completion tokens to 0 for streaming", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: {
           model: "gpt-4o",
           stream: true,
@@ -267,7 +267,7 @@ describe("createAuditLogger", () => {
     it("writes audit log with status=blocked and injection score", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [{ role: "user", content: "inject prompt" }] },
       });
 
@@ -290,7 +290,7 @@ describe("createAuditLogger", () => {
     it("writes audit log with status=error for 502 response", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -300,13 +300,13 @@ describe("createAuditLogger", () => {
     });
 
     it("writes audit log with status=error for 500 response", async () => {
-      server.post("/v1/chat/completions-error", async (_request, reply) => {
+      server.post("/api/v1/chat/completions-error", async (_request, reply) => {
         return reply.code(500).send({ error: "Internal error" });
       });
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions-error",
+        url: "/api/v1/chat/completions-error",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -316,13 +316,13 @@ describe("createAuditLogger", () => {
     });
 
     it("writes audit log with status=error for 401 response", async () => {
-      server.post("/v1/chat/completions-unauth", async (_request, reply) => {
+      server.post("/api/v1/chat/completions-unauth", async (_request, reply) => {
         return reply.code(401).send({ error: { message: "Unauthorized" } });
       });
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions-unauth",
+        url: "/api/v1/chat/completions-unauth",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -357,7 +357,7 @@ describe("createAuditLogger", () => {
     it("writes pii_detected=true when PII is detected", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [{ role: "user", content: "My email is test@example.com" }] },
       });
 
@@ -368,7 +368,7 @@ describe("createAuditLogger", () => {
     it("writes pii_types_found as JSON array of detected types", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -381,7 +381,7 @@ describe("createAuditLogger", () => {
     it("writes injection score from security scan", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -403,7 +403,7 @@ describe("createAuditLogger", () => {
     it("writes pii_detected=false and null pii_types_found when no security scan", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [] },
       });
 
@@ -429,7 +429,7 @@ describe("createAuditLogger", () => {
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload,
       });
 
@@ -444,13 +444,13 @@ describe("createAuditLogger", () => {
     it("produces different hashes for different request bodies", async () => {
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [{ role: "user", content: "first" }] },
       });
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [{ role: "user", content: "second" }] },
       });
 
@@ -473,9 +473,9 @@ describe("createAuditLogger", () => {
 
   describe("request without body", () => {
     it("handles GET requests with no body", async () => {
-      server.get("/v1/models", async () => ({ data: [] }));
+      server.get("/api/v1/models", async () => ({ data: [] }));
 
-      await server.inject({ method: "GET", url: "/v1/models" });
+      await server.inject({ method: "GET", url: "/api/v1/models" });
 
       const row = getLastAuditRow(auditStore);
       expect(row).not.toBeNull();
@@ -488,7 +488,7 @@ describe("createAuditLogger", () => {
 
   describe("model not in pricing table", () => {
     it("records cost_usd as 0 for unknown models", async () => {
-      server.post("/v1/chat/completions", async (_request, reply) => {
+      server.post("/api/v1/chat/completions", async (_request, reply) => {
         return reply.code(200).send({
           usage: { prompt_tokens: 100, completion_tokens: 50 },
         });
@@ -496,7 +496,7 @@ describe("createAuditLogger", () => {
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "unknown-model-xyz", messages: [] },
       });
 
@@ -507,23 +507,23 @@ describe("createAuditLogger", () => {
 
   describe("multiple requests", () => {
     it("writes separate audit records for each request", async () => {
-      server.post("/v1/chat/completions", async (_request, reply) => {
+      server.post("/api/v1/chat/completions", async (_request, reply) => {
         return reply.code(200).send({ usage: { prompt_tokens: 10, completion_tokens: 5 } });
       });
 
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4o", messages: [{ role: "user", content: "one" }] },
       });
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-3.5-turbo", messages: [{ role: "user", content: "two" }] },
       });
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         payload: { model: "gpt-4", messages: [{ role: "user", content: "three" }] },
       });
 

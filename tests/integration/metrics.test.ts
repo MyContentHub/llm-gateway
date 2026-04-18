@@ -26,7 +26,7 @@ describe("Metrics Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -55,7 +55,7 @@ describe("Metrics Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -90,7 +90,7 @@ describe("Metrics Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -120,7 +120,7 @@ describe("Metrics Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -152,7 +152,7 @@ describe("Metrics Integration", () => {
       const key = await createKey();
       await server.inject({
         method: "POST",
-        url: "/v1/chat/completions",
+        url: "/api/v1/chat/completions",
         headers: { authorization: `Bearer ${key}` },
         payload: {
           model: "gpt-4o",
@@ -161,7 +161,7 @@ describe("Metrics Integration", () => {
       });
       await server.inject({
         method: "GET",
-        url: "/admin/audit/logs",
+        url: "/api/admin/audit/logs",
         headers: { authorization: `Bearer ${adminToken}` },
       });
 

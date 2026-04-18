@@ -8,7 +8,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/config",
+          url: "/api/admin/config",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -42,7 +42,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/config",
+          url: "/api/admin/config",
         });
         expect(res.statusCode).toBe(401);
       } finally {
@@ -55,7 +55,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/config",
+          url: "/api/admin/config",
           headers: { authorization: "Bearer wrong-token" },
         });
         expect(res.statusCode).toBe(401);
@@ -71,7 +71,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/providers",
+          url: "/api/admin/providers",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -109,7 +109,7 @@ describe("Admin Config Endpoints", () => {
         });
         const res = await server.inject({
           method: "GET",
-          url: "/admin/providers",
+          url: "/api/admin/providers",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -129,7 +129,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/providers",
+          url: "/api/admin/providers",
         });
         expect(res.statusCode).toBe(401);
       } finally {
@@ -144,7 +144,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/providers/health",
+          url: "/api/admin/providers/health",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -177,7 +177,7 @@ describe("Admin Config Endpoints", () => {
         server.healthTracker.recordSuccess("sk-test-key", 250);
         const res = await server.inject({
           method: "GET",
-          url: "/admin/providers/health",
+          url: "/api/admin/providers/health",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -200,7 +200,7 @@ describe("Admin Config Endpoints", () => {
         server.healthTracker.recordError("sk-test-key");
         const res = await server.inject({
           method: "GET",
-          url: "/admin/providers/health",
+          url: "/api/admin/providers/health",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -218,7 +218,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/providers/health",
+          url: "/api/admin/providers/health",
         });
         expect(res.statusCode).toBe(401);
       } finally {
@@ -233,7 +233,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/audit/security",
+          url: "/api/admin/audit/security",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -268,7 +268,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/audit/security",
+          url: "/api/admin/audit/security",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -300,7 +300,7 @@ describe("Admin Config Endpoints", () => {
         const key = await createKey();
         await server.inject({
           method: "POST",
-          url: "/v1/chat/completions",
+          url: "/api/v1/chat/completions",
           headers: { authorization: `Bearer ${key}` },
           payload: {
             model: "gpt-4o",
@@ -309,7 +309,7 @@ describe("Admin Config Endpoints", () => {
         });
         const res = await server.inject({
           method: "GET",
-          url: "/admin/audit/security",
+          url: "/api/admin/audit/security",
           headers: { authorization: `Bearer ${adminToken}` },
         });
         expect(res.statusCode).toBe(200);
@@ -325,7 +325,7 @@ describe("Admin Config Endpoints", () => {
       try {
         const res = await server.inject({
           method: "GET",
-          url: "/admin/audit/security",
+          url: "/api/admin/audit/security",
         });
         expect(res.statusCode).toBe(401);
       } finally {
