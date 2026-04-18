@@ -87,19 +87,25 @@ export function AuditPage() {
       }),
       columnHelper.accessor("request_id", {
         header: "Request ID",
-        cell: (info: CellContext<AuditLogRow, string>) => (
-          <code className="text-xs" title={info.getValue()}>
-            {info.getValue().slice(0, 8)}...
-          </code>
-        ),
+        cell: (info: CellContext<AuditLogRow, string>) => {
+          const val = info.getValue();
+          return (
+            <code className="text-xs" title={val}>
+              {val ? `${val.slice(0, 8)}...` : "—"}
+            </code>
+          );
+        },
       }),
       columnHelper.accessor("api_key_id", {
         header: "Key",
-        cell: (info: CellContext<AuditLogRow, string>) => (
-          <code className="text-xs" title={info.getValue()}>
-            {info.getValue().slice(0, 8)}...
-          </code>
-        ),
+        cell: (info: CellContext<AuditLogRow, string>) => {
+          const val = info.getValue();
+          return (
+            <code className="text-xs" title={val}>
+              {val ? `${val.slice(0, 8)}...` : "—"}
+            </code>
+          );
+        },
       }),
       columnHelper.accessor("model", {
         header: "Model",
