@@ -49,7 +49,7 @@ export function Sidebar({
       >
         {!collapsed && (
           <span className="text-sm font-semibold text-foreground">
-            Navigation
+            LLM Gateway
           </span>
         )}
         <button
