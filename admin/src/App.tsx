@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, type ReactNode } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense, type ReactNode } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
@@ -7,11 +7,12 @@ import { Sidebar } from "./components/layout/sidebar";
 import { Navbar } from "./components/layout/navbar";
 import { LoginPage } from "./pages/login";
 import { OverviewPage } from "./pages/overview";
-import { KeysPage } from "./pages/keys";
-import { AuditPage } from "./pages/audit";
-import { SecurityPage } from "./pages/security";
-import { ProvidersPage } from "./pages/providers";
-import { SettingsPage } from "./pages/settings";
+
+const KeysPage = lazy(() => import("./pages/keys").then((m) => ({ default: m.KeysPage })));
+const AuditPage = lazy(() => import("./pages/audit").then((m) => ({ default: m.AuditPage })));
+const SecurityPage = lazy(() => import("./pages/security").then((m) => ({ default: m.SecurityPage })));
+const ProvidersPage = lazy(() => import("./pages/providers").then((m) => ({ default: m.ProvidersPage })));
+const SettingsPage = lazy(() => import("./pages/settings").then((m) => ({ default: m.SettingsPage })));
 
 const queryClient = new QueryClient();
 
@@ -84,11 +85,11 @@ export function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route element={<DashboardLayout />}>
               <Route index element={<OverviewPage />} />
-              <Route path="keys" element={<KeysPage />} />
-              <Route path="audit" element={<AuditPage />} />
-              <Route path="security" element={<SecurityPage />} />
-              <Route path="providers" element={<ProvidersPage />} />
-              <Route path="settings" element={<SettingsPage />} />
+              <Route path="keys" element={<Suspense><KeysPage /></Suspense>} />
+              <Route path="audit" element={<Suspense><AuditPage /></Suspense>} />
+              <Route path="security" element={<Suspense><SecurityPage /></Suspense>} />
+              <Route path="providers" element={<Suspense><ProvidersPage /></Suspense>} />
+              <Route path="settings" element={<Suspense><SettingsPage /></Suspense>} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
