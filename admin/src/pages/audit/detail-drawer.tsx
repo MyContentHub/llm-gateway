@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { X } from "lucide-react";
+import { useRef, useState } from "react";
+import { X, ChevronDown, ChevronRight } from "lucide-react";
 import type { AuditLogRow } from "@/hooks/use-audit-logs";
 import { formatDate, formatUsd, formatMs } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -17,6 +17,103 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     <div className="space-y-1">
       <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
       <dd className="text-sm text-foreground">{children}</dd>
+    </div>
+  );
+}
+
+const PII_TYPE_COLORS: Record<string, string> = {
+  EMAIL: "bg-blue-100 text-blue-800",
+  PHONE: "bg-purple-100 text-purple-800",
+  SSN: "bg-red-100 text-red-800",
+  CREDIT_CARD: "bg-orange-100 text-orange-800",
+  IP_ADDRESS: "bg-cyan-100 text-cyan-800",
+  DATE: "bg-green-100 text-green-800",
+  ADDRESS: "bg-amber-100 text-amber-800",
+  NAME: "bg-pink-100 text-pink-800",
+  URL: "bg-indigo-100 text-indigo-800",
+};
+
+function PIITypeBadge({ type }: { type: string }) {
+  const colorClass = PII_TYPE_COLORS[type] ?? "bg-gray-100 text-gray-800";
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+        colorClass,
+      )}
+    >
+      {type}
+    </span>
+  );
+}
+
+function PIIDetectedDisplay({ piiTypes }: { piiTypes: string[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const typeCounts = piiTypes.reduce(
+    (acc, type) => {
+      acc[type] = (acc[type] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const uniqueTypes = Object.keys(typeCounts);
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium">
+          Yes
+        </span>
+        {uniqueTypes.length > 0 && (
+          <span className="text-xs text-muted-foreground">
+            {uniqueTypes.length} type{uniqueTypes.length !== 1 ? "s" : ""} found
+          </span>
+        )}
+      </div>
+      {uniqueTypes.length > 0 && (
+        <>
+          <div className="flex flex-wrap gap-1.5">
+            {uniqueTypes.map((type) => (
+              <PIITypeBadge key={type} type={type} />
+            ))}
+          </div>
+          <button
+            type="button"
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {expanded ? (
+              <ChevronDown className="h-3 w-3" />
+            ) : (
+              <ChevronRight className="h-3 w-3" />
+            )}
+            {expanded ? "Hide details" : "Show details"}
+          </button>
+          {expanded && (
+            <div className="bg-muted/50 rounded-md p-3 space-y-1.5">
+              <p className="text-xs font-medium text-muted-foreground">
+                Type breakdown
+              </p>
+              <div className="space-y-1">
+                {uniqueTypes.map((type) => (
+                  <div
+                    key={type}
+                    className="flex items-center justify-between text-xs"
+                  >
+                    <PIITypeBadge type={type} />
+                    <span className="text-muted-foreground">
+                      {typeCounts[type]} occurrence{typeCounts[type] !== 1 ? "s" : ""}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-[10px] text-muted-foreground/70 italic mt-2">
+                Note: Actual PII values are not stored for security reasons.
+              </p>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
@@ -84,9 +181,7 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
           <Field label="Latency">{formatMs(log.latency_ms)}</Field>
           <Field label="PII Detected">
             {log.pii_detected ? (
-              <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium">
-                Yes {piiTypes.length > 0 && `(${piiTypes.join(", ")})`}
-              </span>
+              <PIIDetectedDisplay piiTypes={piiTypes} />
             ) : (
               <span className="text-muted-foreground">No</span>
             )}
