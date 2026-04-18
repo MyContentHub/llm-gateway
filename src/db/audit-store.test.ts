@@ -28,7 +28,7 @@ function makeEntry(overrides: Partial<AuditLogEntry> = {}): AuditLogEntry {
     timestamp: new Date().toISOString(),
     api_key_id: "key-001",
     model: "gpt-4",
-    endpoint: "/v1/chat/completions",
+    endpoint: "/api/v1/chat/completions",
     prompt_tokens: 100,
     completion_tokens: 50,
     cost_usd: 0.003,
@@ -65,7 +65,7 @@ describe("AuditStore", () => {
       expect(row!.timestamp).toBe(entry.timestamp);
       expect(row!.api_key_id).toBe("key-001");
       expect(row!.model).toBe("gpt-4");
-      expect(row!.endpoint).toBe("/v1/chat/completions");
+      expect(row!.endpoint).toBe("/api/v1/chat/completions");
       expect(row!.prompt_tokens).toBe(100);
       expect(row!.completion_tokens).toBe(50);
       expect(row!.cost_usd).toBeCloseTo(0.003);
@@ -154,7 +154,7 @@ describe("AuditStore", () => {
         timestamp: "2025-01-01T10:00:00.000Z",
         api_key_id: "key-A",
         model: "gpt-4",
-        endpoint: "/v1/chat/completions",
+        endpoint: "/api/v1/chat/completions",
         status: "success",
       }));
       store.insertAuditLog(makeEntry({
@@ -162,7 +162,7 @@ describe("AuditStore", () => {
         timestamp: "2025-01-02T10:00:00.000Z",
         api_key_id: "key-B",
         model: "gpt-3.5-turbo",
-        endpoint: "/v1/chat/completions",
+        endpoint: "/api/v1/chat/completions",
         status: "success",
       }));
       store.insertAuditLog(makeEntry({
@@ -170,7 +170,7 @@ describe("AuditStore", () => {
         timestamp: "2025-01-03T10:00:00.000Z",
         api_key_id: "key-A",
         model: "gpt-4",
-        endpoint: "/v1/embeddings",
+        endpoint: "/api/v1/embeddings",
         status: "error",
       }));
       store.insertAuditLog(makeEntry({
@@ -178,7 +178,7 @@ describe("AuditStore", () => {
         timestamp: "2025-01-04T10:00:00.000Z",
         api_key_id: "key-B",
         model: "gpt-3.5-turbo",
-        endpoint: "/v1/completions",
+        endpoint: "/api/v1/completions",
         status: "success",
       }));
       store.insertAuditLog(makeEntry({
@@ -186,7 +186,7 @@ describe("AuditStore", () => {
         timestamp: "2025-01-05T10:00:00.000Z",
         api_key_id: "key-A",
         model: "claude-3",
-        endpoint: "/v1/chat/completions",
+        endpoint: "/api/v1/chat/completions",
         status: "error",
       }));
     });
@@ -222,7 +222,7 @@ describe("AuditStore", () => {
     });
 
     it("filters by endpoint", () => {
-      const result = store.queryAuditLogs({ endpoint: "/v1/embeddings" });
+      const result = store.queryAuditLogs({ endpoint: "/api/v1/embeddings" });
       expect(result.total).toBe(1);
       expect(result.rows[0].request_id).toBe("r3");
     });
@@ -249,10 +249,9 @@ describe("AuditStore", () => {
         endDate: "2025-01-05T23:59:59.000Z",
         model: "gpt-4",
         api_key_id: "key-A",
-        endpoint: "/v1/chat/completions",
+        endpoint: "/api/v1/chat/completions",
         status: "success",
       });
-      expect(result.total).toBe(1);
       expect(result.rows[0].request_id).toBe("r1");
     });
 

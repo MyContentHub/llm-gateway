@@ -34,7 +34,7 @@
       "id": "sprint-011",
       "name": "Phase 11 - Add /api Prefix to All Backend API Routes",
       "goal": "Unify all backend API routes under /api prefix (/api/v1/* for OpenAI-compatible routes, /api/admin/* for admin routes), fix existing V1 prefix doubling bug, update all tests and frontend API client. /health, /docs, and /admin/ static serving remain unchanged.",
-      "status": "planning",
+      "status": "in_progress",
       "created_at": "2026-04-18",
       "features": [
         {
@@ -50,7 +50,7 @@
             "Given the restructured registration, when server starts, then /admin/ static assets still serve at /admin/ (not /api/admin/)"
           ],
           "technical_notes": "The V1 scope must remain as a nested registration for hook isolation — auth, rate-limit, security hooks are added to v1Scope, not to the /api scope. Admin plugins have their own onRequest auth hooks so they don't need V1 scope hooks. New structure:\nawait server.register(async (apiScope) => {\n  await apiScope.register(async (v1Scope) => { /* hooks + routes */ }); // no prefix\n  await apiScope.register(adminKeysPlugin);\n  await apiScope.register(adminAuditPlugin);\n  await apiScope.register(adminConfigPlugin);\n}, { prefix: \"/api\" });",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -70,7 +70,7 @@
             "Given dev mode, when /api/admin/keys is requested, then it is NOT proxied to Vite (handled by Fastify)"
           ],
           "technical_notes": "For serve-admin.ts: replace the isApiRoute() check with !request.url.startsWith(\"/api\"). The API_PREFIXES array and isApiRoute function become unnecessary. The rest of the proxy logic stays the same.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s11-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -91,7 +91,7 @@
             "Given updated admin-server.ts, seedAuditLog default endpoint is /api/v1/chat/completions"
           ],
           "technical_notes": "setup.ts currently has NO prefix on V1 scope (routes use their own /v1/ prefix). After change: wrap everything in { prefix: \"/api\" }, keep V1 scope without prefix. admin-server.ts has the same structure. Note: current test URLs in tests already use /v1/chat/completions (not /v1/v1/...) because tests don't add the prefix scope.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s11-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -112,7 +112,7 @@
             "Given updated audit-store.test.ts, when tests run, then endpoint assertions use /api/v1/ prefix"
           ],
           "technical_notes": "For serve-admin.test.ts this is a significant change — the concept of 'API route' in serve-admin changes from 'URLs matching /admin/keys, /admin/audit, etc.' to 'URLs starting with /api'. The test for 'does NOT proxy /admin/keys' should become 'DOES proxy /admin/keys' since it's no longer an API route in the serve-admin context. Add new test: 'does NOT proxy /api/admin/keys'.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s11-feat-003"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -136,7 +136,7 @@
             "Given updated retry-failover.test.ts, when audit log endpoint is asserted, then it equals /api/v1/chat/completions"
           ],
           "technical_notes": "This is the largest change by file count. Use search-and-replace carefully — only replace URL paths in inject() calls and endpoint assertions. Do NOT change browser navigation URLs in E2E tests (those are SPA routes, not API routes). OpenAPI spec test will need special attention — the path keys in the spec will now be /api/v1/... and /api/admin/...",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s11-feat-003"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -166,7 +166,7 @@
             "Given updated api-client.ts, when VITE_API_BASE env var is set, then it overrides the default /api prefix"
           ],
           "technical_notes": "Change: const BASE_URL = import.meta.env.VITE_API_BASE ?? \"/api\";. All hooks already use paths like \"/admin/keys\", \"/admin/audit/logs\", etc. — these become \"/api/admin/keys\", \"/api/admin/audit/logs\" when prepended with BASE_URL. No other frontend files need changes.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -184,7 +184,7 @@
             "Given E2E tests, when browser navigates to /admin/keys, then the SPA page loads correctly (route unchanged)"
           ],
           "technical_notes": "This is a minor cleanup feature. The openapi.ts descriptions are just documentation strings. E2E browser URLs are client-side SPA routes served from /admin/ static files — they don't go through /api prefix.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s11-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -203,7 +203,7 @@
             "Given all features implemented, when pnpm test runs, then all tests pass (0 failures)"
           ],
           "technical_notes": "Run: pnpm typecheck && pnpm test. This should be the last step. If tests fail, investigate and fix — likely missed URL path references in test files.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s11-feat-004", "s11-feat-005", "s11-feat-006", "s11-feat-007"],
           "estimated_complexity": "small",
           "files_affected": []

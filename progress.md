@@ -87,4 +87,37 @@ All backend API routes unified under /api prefix. /api/v1/* for OpenAI-compatibl
 
 ## Sessions
 
+## 996 Orchestration - 2026-04-19
+**Agent**: 996 Orchestrator
+**Sprint**: sprint-011
+**Max Parallelism**: 3
+
+### Execution Summary
+| Feature | Status | Result |
+|---------|--------|--------|
+| s11-feat-001 | completed | route registration restructured with /api prefix |
+| s11-feat-002 | completed | audit logger + serve-admin updated |
+| s11-feat-003 | completed | test helpers updated with /api prefix |
+| s11-feat-004 | completed | unit tests updated (scope-creep from feat-002 + manual fix) |
+| s11-feat-005 | completed | integration tests updated (scope-creep from feat-002) |
+| s11-feat-006 | completed | frontend API client BASE_URL updated |
+| s11-feat-007 | completed | openapi descriptions + E2E fixtures updated |
+| s11-feat-008 | completed | typecheck + 685/686 tests pass (1 pre-existing flaky test) |
+
+### Statistics
+- Total features: 8
+- Completed: 8
+- Blocked: 0
+- Success rate: 100%
+
+### Execution Batches
+- **Batch 1** (parallel): s11-feat-001, s11-feat-006 — both completed
+- **Batch 2** (parallel): s11-feat-002, s11-feat-003, s11-feat-007 — all completed
+- **Batch 3** (sequential cleanup): audit-store.test.ts endpoints updated manually
+
+### Notes
+- s11-feat-002 agent scope-crept into test files, covering most of s11-feat-004/005 work
+- Pre-existing flaky test in shutdown.test.ts (passes in isolation, fails in full suite due to MaxListenersExceeded)
+- admin/dist rebuilt for static mode tests
+
 <!-- New sessions should be added above this line -->
