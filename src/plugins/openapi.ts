@@ -18,12 +18,12 @@ const openapiPlugin: FastifyPluginCallback = async (server, _opts) => {
           VirtualKey: {
             type: "http",
             scheme: "bearer",
-            description: "Virtual API key for /v1/* endpoints",
+            description: "Virtual API key for /api/v1/* endpoints",
           },
           AdminToken: {
             type: "http",
             scheme: "bearer",
-            description: "Admin token for /admin/* endpoints",
+            description: "Admin token for /api/admin/* endpoints",
           },
         },
       },
