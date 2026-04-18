@@ -1,6 +1,6 @@
 import { getToken, clearToken } from "./auth";
 
-const BASE_URL = import.meta.env.VITE_API_BASE ?? "";
+const BASE_URL = import.meta.env.VITE_API_BASE ?? "/api";
 
 async function request<T>(
   method: string,
