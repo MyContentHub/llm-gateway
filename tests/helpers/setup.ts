@@ -114,24 +114,27 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
     return { status: "ok", providers: config.providers.length };
   });
 
-  await server.register(async (v1Scope) => {
-    v1Scope.addHook("onRequest", createAuthMiddleware(db));
-    v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
-    v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
-    if (options?.security) {
-      v1Scope.addHook("preHandler", createSecurityMiddleware(options.security));
-    }
-    await v1Scope.register(createAuditLogger(db, config));
-    await v1Scope.register(chatCompletionsPlugin);
-    await v1Scope.register(embeddingsPlugin);
-    await v1Scope.register(modelsPlugin);
-  });
+  await server.register(async (apiScope) => {
+    await apiScope.register(async (v1Scope) => {
+      v1Scope.addHook("onRequest", createAuthMiddleware(db));
+      v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
+      v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
+      if (options?.security) {
+        v1Scope.addHook("preHandler", createSecurityMiddleware(options.security));
+      }
+      await v1Scope.register(createAuditLogger(db, config));
+      await v1Scope.register(chatCompletionsPlugin);
+      await v1Scope.register(embeddingsPlugin);
+      await v1Scope.register(modelsPlugin);
+    });
+
+    await apiScope.register(adminKeysPlugin);
+    await apiScope.register(adminAuditPlugin);
+    await apiScope.register(adminConfigPlugin);
+  }, { prefix: "/api" });
 
   server.decorate("healthTracker", new KeyHealthTracker());
 
-  await server.register(adminKeysPlugin);
-  await server.register(adminAuditPlugin);
-  await server.register(adminConfigPlugin);
   setupMetrics(server);
 
   await server.ready();

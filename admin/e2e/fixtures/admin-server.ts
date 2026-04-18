@@ -89,22 +89,25 @@ export async function startE2EServer(): Promise<E2EServerResult> {
 
   server.get("/health", async () => ({ status: "ok" }));
 
-  await server.register(async (v1Scope) => {
-    v1Scope.addHook("onRequest", createAuthMiddleware(db));
-    v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
-    v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
-    await v1Scope.register(createAuditLogger(db, config));
-    await v1Scope.register(chatCompletionsPlugin);
-    await v1Scope.register(embeddingsPlugin);
-    await v1Scope.register(modelsPlugin);
-  });
+  await server.register(async (apiScope) => {
+    await apiScope.register(async (v1Scope) => {
+      v1Scope.addHook("onRequest", createAuthMiddleware(db));
+      v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
+      v1Scope.addHook("onSend", createRateLimitResponseHook(rateLimiter));
+      await v1Scope.register(createAuditLogger(db, config));
+      await v1Scope.register(chatCompletionsPlugin);
+      await v1Scope.register(embeddingsPlugin);
+      await v1Scope.register(modelsPlugin);
+    });
+
+    await apiScope.register(adminKeysPlugin);
+    await apiScope.register(adminAuditPlugin);
+    await apiScope.register(adminConfigPlugin);
+  }, { prefix: "/api" });
 
   server.decorate("healthTracker", new KeyHealthTracker());
 
   await server.register(serveAdmin);
-  await server.register(adminKeysPlugin);
-  await server.register(adminAuditPlugin);
-  await server.register(adminConfigPlugin);
   setupMetrics(server);
 
   await server.ready();
@@ -129,7 +132,7 @@ export async function startE2EServer(): Promise<E2EServerResult> {
       timestamp: entry.timestamp,
       api_key_id: entry.api_key_id ?? "key-seed-00000000",
       model: entry.model ?? "gpt-4o",
-      endpoint: entry.endpoint ?? "/v1/chat/completions",
+      endpoint: entry.endpoint ?? "/api/v1/chat/completions",
       prompt_tokens: entry.prompt_tokens ?? 100,
       completion_tokens: entry.completion_tokens ?? 50,
       cost_usd: entry.cost_usd ?? 0.005,
