@@ -1,11 +1,14 @@
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import type { FastifyPluginCallback } from "fastify";
 import fp from "fastify-plugin";
 import fastifyStatic from "@fastify/static";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
 const serveAdminPlugin: FastifyPluginCallback = async (server, _opts) => {
-  const adminDistPath = resolve(process.cwd(), "admin", "dist");
+  const adminDistPath = resolve(__dirname, "..", "..", "..", "admin", "dist");
 
   let indexHtml: string | null = null;
 

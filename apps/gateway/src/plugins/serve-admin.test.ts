@@ -39,7 +39,7 @@ describe("serve-admin plugin", () => {
   it("serves static assets from admin/dist", async () => {
     const res = await app.inject({
       method: "GET",
-      url: "/admin/assets/index-Bok_DZqx.js",
+      url: "/admin/assets/index-DY0WZrMU.js",
     });
     expect(res.statusCode).toBe(200);
   });
