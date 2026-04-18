@@ -36,7 +36,7 @@
       "id": "sprint-013",
       "name": "Phase 13 - Monorepo Restructuring with Turborepo",
       "goal": "Restructure the project into a standard Turborepo monorepo with pnpm workspaces. Gateway and admin become independent apps in apps/ directory, E2E tests move to a separate workspace. Eliminate cross-project config interference and establish proper build pipeline.",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-19",
       "features": [
         {
@@ -52,7 +52,7 @@
             "Given tsconfig.base.json, when referenced by child tsconfig, then shared options apply"
           ],
           "technical_notes": "Root package.json replaces the current one. Keep packageManager: pnpm@10.18.3. Move pnpm.onlyBuiltDependencies from current gateway package.json to root. The old pnpm-workspace.yaml content (onlyBuiltDependencies: esbuild) is incorrect syntax — this belongs in .npmrc or package.json pnpm field.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -77,7 +77,7 @@
             "Given apps/gateway/src/ structure preserved, when running pnpm build --filter=@llm-gateway/gateway, then tsc compiles successfully"
           ],
           "technical_notes": "Use git mv to preserve history. The critical change is tsconfig.json — it must extend ../../tsconfig.base.json while overriding with Node16 module resolution and ES2024 target. The include path stays [\"src/**/*.ts\"] since it's relative to apps/gateway/. Do NOT update import paths within src/ — they use relative .js imports which work regardless of directory depth.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s13-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -100,7 +100,7 @@
             "Given no package-lock.json in apps/admin/, then only root pnpm-lock.yaml exists"
           ],
           "technical_notes": "Delete admin/node_modules/, admin/package-lock.json, admin/tsconfig.tsbuildinfo before/after move — these are generated files. The admin's tsconfig.json uses moduleResolution: bundler which is independent from the base config and should NOT extend tsconfig.base.json (different module system). Same for tsconfig.node.json.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s13-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -127,7 +127,7 @@
             "Given all spec files moved, when playwright runs, then all E2E test files are found"
           ],
           "technical_notes": "The import path change in admin-server.ts is the most critical part: from apps/e2e/admin/fixtures/admin-server.ts to apps/gateway/src/... requires ../../gateway/src/... (up from fixtures→admin→e2e→apps, then into gateway/src). Same for tests/helpers: ../../gateway/tests/helpers/.... These are relative file paths resolved by tsx at runtime, not package imports, so pnpm workspace isolation doesn't apply.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s13-feat-002", "s13-feat-003"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -159,7 +159,7 @@
             "Given admin is built (apps/admin/dist exists), when gateway starts, then /admin/ serves the SPA"
           ],
           "technical_notes": "Use: resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', 'admin', 'dist'). Add import { fileURLToPath } from 'node:url' and import { dirname, resolve } from 'node:path'. For compiled output (dist/), the path from dist/plugins/serve-admin.js to apps/admin/dist is: ../../admin/dist (dist→gateway→apps→admin/dist) = ../../../admin/dist. Consider using process.cwd() approach with monorepo-aware fallback: try ../../admin/dist relative to cwd, then fall back to monorepo root. Actually, simplest: always resolve relative to file location using import.meta.url.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s13-feat-002", "s13-feat-003"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -180,7 +180,7 @@
             "Given turbo build order, when gateway builds, then admin build has already completed"
           ],
           "technical_notes": "Key: use turbo --filter to build only needed packages. The --filter=@llm-gateway/gateway... (with trailing ...) means 'gateway and all its dependencies'. In monorepo, migrations/ and config.example.toml live inside apps/gateway/. Docker build context is the repo root. Consider using turbo prune for optimized Docker builds (copies only needed packages).",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s13-feat-002", "s13-feat-003", "s13-feat-005"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -201,7 +201,7 @@
             "Given root cleanup complete, when running git status, then only intended changes appear"
           ],
           "technical_notes": "Use git rm for tracked files to preserve history. The root directory after cleanup should contain: apps/, docs/, .agent-harness/, .agents/, .git/, .gitignore, .npmrc, AGENTS.md, Dockerfile, docker-compose.yml, config.toml (gitignored), features.json, migrations (if kept at root), opencode.json, package.json, pnpm-lock.yaml, pnpm-workspace.yaml, progress.md, README.md, turbo.json, tsconfig.base.json. Note: migrations/ should be inside apps/gateway/ now.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s13-feat-002", "s13-feat-003", "s13-feat-004"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -224,7 +224,7 @@
             "Given pnpm dev --filter=@llm-gateway/gateway runs, when gateway starts, then /health endpoint responds"
           ],
           "technical_notes": "Run: pnpm install && pnpm turbo build && pnpm turbo typecheck && pnpm turbo test. The first pnpm install may take time as it regenerates the lockfile for the new workspace structure. If tests fail due to path issues, fix and re-run. The turbo cache will speed up subsequent runs.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s13-feat-001", "s13-feat-002", "s13-feat-003", "s13-feat-004", "s13-feat-005", "s13-feat-006", "s13-feat-007"],
           "estimated_complexity": "medium",
           "files_affected": []
