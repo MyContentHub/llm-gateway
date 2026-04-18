@@ -48,7 +48,7 @@
             "Given the sidebar is collapsed, when user views the header area, then no text is shown (current behavior preserved)"
           ],
           "technical_notes": "Single line change: replace 'Navigation' with 'LLM Gateway' in the span element at line 51-52 of sidebar.tsx.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -67,7 +67,7 @@
             "Given Select component exists, when imported, then it renders a styled dropdown"
           ],
           "technical_notes": "Follow shadcn/ui installation guide for Vite + Tailwind. Create components in admin/src/components/ui/. Use existing clsx and tailwind-merge dependencies. DatePicker needs date-fns for date formatting.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [

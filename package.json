@@ -32,6 +32,7 @@
     "@fastify/static": "^9.1.0",
     "@fastify/swagger": "^9.7.0",
     "@fastify/swagger-ui": "^5.2.5",
+    "argon2": "^0.44.0",
     "better-sqlite3": "^12.8.0",
     "compromise": "^14.15.0",
     "eventsource-parser": "^3.0.6",
