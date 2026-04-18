@@ -30,6 +30,72 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 ---
 
+## Sprint Planning - 2026-04-19
+**Agent**: Sprint Agent
+**Sprint**: sprint-013 - Phase 13 - Monorepo Restructuring with Turborepo
+
+### Requirements Received
+- Restructure project into standard Turborepo monorepo with pnpm workspaces
+- Gateway and admin become independent apps in apps/ directory
+- E2E tests extracted to separate apps/e2e/ workspace
+- Admin dist served at runtime via turbo build dependency order
+- Eliminate cross-project tsconfig/pnpm config interference
+
+### Features Planned
+- Total: 8 features
+- High priority: 5 (root config, gateway move, admin move, e2e workspace, serve-admin path, verification)
+- Medium priority: 2 (Docker, cleanup/docs)
+- Low priority: 0
+
+### Sprint Goal
+Standard Turborepo monorepo: apps/gateway (Fastify), apps/admin (Vite/React SPA), apps/e2e (Playwright). All packages managed by pnpm workspaces, build pipeline via turbo. Zero cross-project config interference.
+
+### Target Structure
+```
+llm-gateway/
+├── apps/
+│   ├── gateway/        # Fastify server (src/, tests/, migrations/)
+│   ├── admin/          # Vite/React SPA (src/, vite.config.ts)
+│   └── e2e/            # Playwright E2E (admin/*.spec.ts, fixtures/)
+├── turbo.json
+├── pnpm-workspace.yaml
+├── package.json        # root workspace
+├── tsconfig.base.json
+├── Dockerfile
+└── docker-compose.yml
+```
+
+### Implementation Order
+1. s13-feat-001 - Root monorepo config files (medium)
+2. s13-feat-002 - Move gateway to apps/gateway/ (medium)
+3. s13-feat-003 - Move admin to apps/admin/ (small, parallel with feat-002)
+4. s13-feat-004 - Create apps/e2e/ workspace with Playwright tests (medium)
+5. s13-feat-005 - Update serve-admin.ts monorepo paths (small, parallel with feat-004)
+6. s13-feat-006 - Update Dockerfile/docker-compose.yml (medium)
+7. s13-feat-007 - Clean up old root files + update AGENTS.md (small)
+8. s13-feat-008 - Install deps + full verification (medium)
+
+### Dependencies
+- feat-002, feat-003 depend on feat-001
+- feat-004, feat-005, feat-006 depend on feat-002 + feat-003
+- feat-007 depends on feat-002 + feat-003 + feat-004
+- feat-008 depends on all
+
+### Key Decisions
+- E2E tests in apps/e2e/ workspace (not embedded in admin) — enables cross-package imports via relative paths
+- admin-server.ts fixture uses relative paths ../../gateway/src/... (tsx resolves at runtime)
+- serve-admin.ts uses import.meta.url for monorepo-aware path resolution
+- Gateway tsconfig extends tsconfig.base.json; admin tsconfig stays independent (bundler moduleResolution)
+- pnpm.onlyBuiltDependencies moved to root package.json
+
+### Notes
+- Sprints 011-012 archived before planning
+- This is a structural refactor — no business logic changes
+- All existing tests must continue passing after restructuring
+- pnpm-lock.yaml regenerated on first install
+
+---
+
 ## 996 Orchestration - 2026-04-19
 **Agent**: 996 Orchestrator
 **Sprint**: sprint-012

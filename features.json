@@ -25,300 +25,214 @@
       "@tanstack/react-table v8",
       "recharts 2",
       "react-router-dom v6",
-      "@playwright/test"
+      "@playwright/test",
+      "Turborepo",
+      "pnpm 10 (workspaces)"
     ],
     "created_at": "2026-04-09"
   },
   "sprints": [
     {
-      "id": "sprint-012",
-      "name": "Phase 12 - Admin UI Polish: Sidebar Branding, Standard Filters, Enhanced PII Display",
-      "goal": "Three UI improvements: (1) Change sidebar header from 'Navigation' to 'LLM Gateway'; (2) Replace audit page filter inputs with standard shadcn/ui components; (3) Enhance Log Detail drawer to show PII type details with counts and expandable sections.",
-      "status": "completed",
+      "id": "sprint-013",
+      "name": "Phase 13 - Monorepo Restructuring with Turborepo",
+      "goal": "Restructure the project into a standard Turborepo monorepo with pnpm workspaces. Gateway and admin become independent apps in apps/ directory, E2E tests move to a separate workspace. Eliminate cross-project config interference and establish proper build pipeline.",
+      "status": "planning",
       "created_at": "2026-04-19",
       "features": [
         {
-          "id": "s12-feat-001",
-          "category": "ui",
+          "id": "s13-feat-001",
+          "category": "infra",
           "priority": "high",
-          "title": "Change sidebar header from 'Navigation' to 'LLM Gateway'",
-          "description": "In admin/src/components/layout/sidebar.tsx, change the sidebar header text from 'Navigation' to 'LLM Gateway'. This is a simple text change in the collapsed/expanded header area.",
+          "title": "Create root monorepo config files",
+          "description": "Create the foundational monorepo configuration at the project root: (1) Replace root package.json with a workspace root package (name: llm-gateway-monorepo, private: true, turbo devDep, workspace scripts for build/dev/test/typecheck/lint). (2) Create turbo.json defining task pipeline with build dependsOn [\"^build\"], dev as persistent/uncached, test dependsOn [\"build\"], typecheck dependsOn [\"^build\"], lint with no deps. (3) Rewrite pnpm-workspace.yaml to declare packages: [\"apps/*\", \"packages/*\"]. (4) Create tsconfig.base.json extracting shared compilerOptions (strict, esModuleInterop, skipLibCheck, forceConsistentCasingInFileNames, resolveJsonModule, declaration, declarationMap, sourceMap). (5) Create .npmrc with shamefully-hoist=true and onlyBuiltDependencies for argon2, better-sqlite3, esbuild. (6) Delete old .npmrc.yml (incorrect format). (7) Create apps/ directory structure (apps/gateway/, apps/admin/, apps/e2e/ as empty dirs).",
           "acceptance_criteria": [
-            "Given the sidebar is expanded, when user views the header, then they see 'LLM Gateway' instead of 'Navigation'",
-            "Given the sidebar is collapsed, when user views the header area, then no text is shown (current behavior preserved)"
+            "Given root package.json, when running pnpm install, then workspace packages are recognized",
+            "Given turbo.json, when running pnpm turbo build, then tasks execute in dependency order",
+            "Given pnpm-workspace.yaml, when running pnpm ls -r, then apps/* packages are listed",
+            "Given tsconfig.base.json, when referenced by child tsconfig, then shared options apply"
           ],
-          "technical_notes": "Single line change: replace 'Navigation' with 'LLM Gateway' in the span element at line 51-52 of sidebar.tsx.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/components/layout/sidebar.tsx"
-          ]
-        },
-        {
-          "id": "s12-feat-002",
-          "category": "ui",
-          "priority": "high",
-          "title": "Install shadcn/ui and add DatePicker, Select components",
-          "description": "Set up shadcn/ui in the admin project: (1) Install @radix-ui/react-popover, @radix-ui/react-select, date-fns dependencies; (2) Create admin/src/lib/utils.ts with cn() helper if not exists; (3) Add DatePicker component (Popover + Calendar); (4) Add Select component. Configure components.json for shadcn CLI compatibility.",
-          "acceptance_criteria": [
-            "Given shadcn/ui is installed, when running pnpm dev, then no dependency errors occur",
-            "Given DatePicker component exists, when imported, then it renders a calendar popover",
-            "Given Select component exists, when imported, then it renders a styled dropdown"
-          ],
-          "technical_notes": "Follow shadcn/ui installation guide for Vite + Tailwind. Create components in admin/src/components/ui/. Use existing clsx and tailwind-merge dependencies. DatePicker needs date-fns for date formatting.",
-          "status": "completed",
+          "technical_notes": "Root package.json replaces the current one. Keep packageManager: pnpm@10.18.3. Move pnpm.onlyBuiltDependencies from current gateway package.json to root. The old pnpm-workspace.yaml content (onlyBuiltDependencies: esbuild) is incorrect syntax — this belongs in .npmrc or package.json pnpm field.",
+          "status": "pending",
           "dependencies": [],
           "estimated_complexity": "medium",
           "files_affected": [
-            "admin/package.json",
-            "admin/src/components/ui/popover.tsx",
-            "admin/src/components/ui/calendar.tsx",
-            "admin/src/components/ui/select.tsx",
-            "admin/src/components/ui/button.tsx",
-            "admin/src/lib/utils.ts"
+            "package.json",
+            "turbo.json",
+            "pnpm-workspace.yaml",
+            "tsconfig.base.json",
+            ".npmrc",
+            ".npmrc.yml"
           ]
         },
         {
-          "id": "s12-feat-003",
-          "category": "ui",
+          "id": "s13-feat-002",
+          "category": "infra",
           "priority": "high",
-          "title": "Replace audit page filter inputs with shadcn/ui components",
-          "description": "In admin/src/pages/audit.tsx, replace the native HTML date inputs and select elements with shadcn/ui DatePicker and Select components. Maintain the same filter functionality (startDate, endDate, model, status) but with consistent styling.",
+          "title": "Move gateway to apps/gateway/ and update configs",
+          "description": "Move the entire gateway project into apps/gateway/: (1) Move src/, tests/, migrations/, vitest.config.ts, config.example.toml from root to apps/gateway/. (2) Create apps/gateway/package.json with name @llm-gateway/gateway, moving all current dependencies and scripts from the old root package.json. Keep all fields: type: module, main: dist/index.js, scripts (dev, build, start, test, test:watch, test:coverage, typecheck, lint, clean, gen-key). Remove the pnpm.onlyBuiltDependencies field (moved to root). (3) Create apps/gateway/tsconfig.json extending ../../tsconfig.base.json, keeping gateway-specific options: target ES2024, module Node16, moduleResolution Node16, rootDir src, outDir dist, include [\"src/**/*.ts\"], types [\"node\"]. (4) vitest.config.ts stays unchanged — test paths (src/**/*.test.ts, tests/**/*.test.ts) are relative to apps/gateway/ which is correct.",
           "acceptance_criteria": [
-            "Given the audit page loads, when viewing filters, then DatePicker components replace native date inputs",
-            "Given the audit page loads, when viewing filters, then Select components replace native dropdowns",
-            "Given a date is selected via DatePicker, when the value changes, then the filter updates and table refreshes",
-            "Given a model/status is selected via Select, when the value changes, then the filter updates and table refreshes"
+            "Given apps/gateway/package.json, when running pnpm install from root, then gateway deps are installed",
+            "Given apps/gateway/tsconfig.json, when extending tsconfig.base.json, then shared + specific options merge correctly",
+            "Given moved vitest.config.ts, when running pnpm test --filter=@llm-gateway/gateway, then tests are discovered from correct paths",
+            "Given apps/gateway/src/ structure preserved, when running pnpm build --filter=@llm-gateway/gateway, then tsc compiles successfully"
           ],
-          "technical_notes": "Use shadcn/ui DatePicker with Popover. Model and status filters use Select with 'All models'/'All statuses' placeholder options. Maintain existing state management (startDate, endDate, modelFilter, statusFilter).",
-          "status": "completed",
-          "dependencies": ["s12-feat-002"],
+          "technical_notes": "Use git mv to preserve history. The critical change is tsconfig.json — it must extend ../../tsconfig.base.json while overriding with Node16 module resolution and ES2024 target. The include path stays [\"src/**/*.ts\"] since it's relative to apps/gateway/. Do NOT update import paths within src/ — they use relative .js imports which work regardless of directory depth.",
+          "status": "pending",
+          "dependencies": ["s13-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
-            "admin/src/pages/audit.tsx"
+            "apps/gateway/package.json",
+            "apps/gateway/tsconfig.json",
+            "apps/gateway/vitest.config.ts",
+            "apps/gateway/config.example.toml"
           ]
         },
         {
-          "id": "s12-feat-004",
-          "category": "ui",
+          "id": "s13-feat-003",
+          "category": "infra",
           "priority": "high",
-          "title": "Enhance Log Detail drawer to show detailed PII information",
-          "description": "In admin/src/pages/audit/detail-drawer.tsx, enhance the PII display section. Currently it only shows 'Yes (EMAIL, PHONE)'. Enhance to: (1) Show PII types as a list with badges; (2) Show count of each PII type detected; (3) Add an expandable section showing the mapping structure (placeholder → type) for transparency. Note: actual PII values are not stored for security.",
+          "title": "Move admin to apps/admin/ and update configs",
+          "description": "Move the admin project into apps/admin/: (1) Move all admin/ contents (src/, index.html, vite.config.ts, tailwind.config.ts, postcss.config.js, components.json, tsconfig.json, tsconfig.node.json) to apps/admin/. Do NOT move e2e/ directory. (2) Update apps/admin/package.json: change name to @llm-gateway/admin, remove package-lock.json. (3) Update tsconfig.json baseUrl and paths to remain correct (paths alias @/* → ./src/* stays the same since it's relative). (4) vite.config.ts proxy to localhost:3000 stays unchanged. (5) Delete admin/package-lock.json and admin/tsconfig.tsbuildinfo if present.",
           "acceptance_criteria": [
-            "Given a log with pii_detected=true, when viewing Log Detail, then PII types are shown as individual badges",
-            "Given a log with multiple PII types, when viewing Log Detail, then the count of each type is shown",
-            "Given a log with pii_detected=false, when viewing Log Detail, then 'No' is shown (current behavior)",
-            "Given the PII section, when user wants more details, then an expandable section shows type breakdown"
+            "Given apps/admin/package.json, when running pnpm install from root, then admin deps are installed",
+            "Given apps/admin/vite.config.ts unchanged, when running pnpm dev --filter=@llm-gateway/admin, then Vite dev server starts",
+            "Given apps/admin/tsconfig.json, when tsc resolves @/* imports, then they map to ./src/* correctly",
+            "Given no package-lock.json in apps/admin/, then only root pnpm-lock.yaml exists"
           ],
-          "technical_notes": "Parse pii_types_found JSON array. Create a collapsible/expandable section using a simple button + conditional render (or use shadcn/ui Collapsible if available). Show types like: 'EMAIL: 2 detected', 'PHONE: 1 detected'. Note: actual values cannot be shown as they're not persisted.",
-          "status": "completed",
-          "dependencies": [],
+          "technical_notes": "Delete admin/node_modules/, admin/package-lock.json, admin/tsconfig.tsbuildinfo before/after move — these are generated files. The admin's tsconfig.json uses moduleResolution: bundler which is independent from the base config and should NOT extend tsconfig.base.json (different module system). Same for tsconfig.node.json.",
+          "status": "pending",
+          "dependencies": ["s13-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
-            "admin/src/pages/audit/detail-drawer.tsx"
+            "apps/admin/package.json",
+            "apps/admin/tsconfig.json",
+            "apps/admin/tsconfig.node.json",
+            "apps/admin/vite.config.ts",
+            "apps/admin/tailwind.config.ts",
+            "apps/admin/postcss.config.js",
+            "apps/admin/components.json",
+            "apps/admin/index.html"
           ]
         },
         {
-          "id": "s12-feat-005",
+          "id": "s13-feat-004",
+          "category": "infra",
+          "priority": "high",
+          "title": "Create apps/e2e/ workspace with Playwright tests",
+          "description": "Extract E2E tests into a dedicated workspace package: (1) Create apps/e2e/package.json with name @llm-gateway/e2e, private: true, scripts: { test:e2e: playwright test, test:e2e:ui: playwright test --ui }, devDependencies: { @playwright/test: ^1.59.1 }. (2) Move admin/e2e/*.spec.ts files to apps/e2e/admin/ (audit.spec.ts, keys.spec.ts, login.spec.ts, navigation.spec.ts, overview.spec.ts, providers.spec.ts, security.spec.ts, settings.spec.ts). (3) Move admin/e2e/fixtures/ to apps/e2e/admin/fixtures/ (index.ts, admin-server.ts). (4) Move admin/e2e/BUGS.md to apps/e2e/admin/BUGS.md. (5) Move root playwright.config.ts to apps/e2e/playwright.config.ts, update testDir from ./admin/e2e to ./admin, testMatch stays *.spec.ts, outputDir to ./admin/results. (6) CRITICAL: Update apps/e2e/admin/fixtures/admin-server.ts import paths: all ../../../src/... → ../../gateway/src/... and ../../../tests/helpers/... → ../../gateway/tests/helpers/.... This works because tsx resolves relative paths at runtime. (7) Update apps/e2e/admin/fixtures/index.ts if it references any paths.",
+          "acceptance_criteria": [
+            "Given apps/e2e/package.json, when running pnpm install from root, then @playwright/test is installed",
+            "Given apps/e2e/playwright.config.ts, when running pnpm test:e2e --filter=@llm-gateway/e2e, then specs are discovered from apps/e2e/admin/",
+            "Given admin-server.ts updated imports, when tsx resolves them, then gateway src modules load correctly from ../../gateway/src/",
+            "Given all spec files moved, when playwright runs, then all E2E test files are found"
+          ],
+          "technical_notes": "The import path change in admin-server.ts is the most critical part: from apps/e2e/admin/fixtures/admin-server.ts to apps/gateway/src/... requires ../../gateway/src/... (up from fixtures→admin→e2e→apps, then into gateway/src). Same for tests/helpers: ../../gateway/tests/helpers/.... These are relative file paths resolved by tsx at runtime, not package imports, so pnpm workspace isolation doesn't apply.",
+          "status": "pending",
+          "dependencies": ["s13-feat-002", "s13-feat-003"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "apps/e2e/package.json",
+            "apps/e2e/playwright.config.ts",
+            "apps/e2e/admin/fixtures/admin-server.ts",
+            "apps/e2e/admin/fixtures/index.ts",
+            "apps/e2e/admin/audit.spec.ts",
+            "apps/e2e/admin/keys.spec.ts",
+            "apps/e2e/admin/login.spec.ts",
+            "apps/e2e/admin/navigation.spec.ts",
+            "apps/e2e/admin/overview.spec.ts",
+            "apps/e2e/admin/providers.spec.ts",
+            "apps/e2e/admin/security.spec.ts",
+            "apps/e2e/admin/settings.spec.ts",
+            "apps/e2e/admin/BUGS.md"
+          ]
+        },
+        {
+          "id": "s13-feat-005",
+          "category": "core",
+          "priority": "high",
+          "title": "Update serve-admin.ts for monorepo admin/dist path",
+          "description": "Update the serve-admin plugin to resolve admin/dist from the new monorepo layout. Currently: resolve(process.cwd(), \"admin\", \"dist\"). In monorepo, when running from apps/gateway/ (dev mode), admin dist is at ../../admin/dist. When running from project root with turbo, or in Docker production, the path differs. Solution: use import.meta.url + fileURLToPath to resolve relative to the source file location. From apps/gateway/src/plugins/serve-admin.ts, the path to apps/admin/dist is ../../../../admin/dist (plugins→src→gateway→apps→admin/dist). Also update the isApiRoute / prefix checks if they reference hardcoded paths. Update serve-admin.test.ts to match new path resolution.",
+          "acceptance_criteria": [
+            "Given serve-admin.ts with new path resolution, when gateway runs from apps/gateway/, then admin/dist is found at ../../admin/dist",
+            "Given serve-admin.ts with new path resolution, when gateway runs in Docker production, then admin/dist is accessible",
+            "Given updated serve-admin.test.ts, when tests run, then all serve-admin tests pass",
+            "Given admin is built (apps/admin/dist exists), when gateway starts, then /admin/ serves the SPA"
+          ],
+          "technical_notes": "Use: resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', 'admin', 'dist'). Add import { fileURLToPath } from 'node:url' and import { dirname, resolve } from 'node:path'. For compiled output (dist/), the path from dist/plugins/serve-admin.js to apps/admin/dist is: ../../admin/dist (dist→gateway→apps→admin/dist) = ../../../admin/dist. Consider using process.cwd() approach with monorepo-aware fallback: try ../../admin/dist relative to cwd, then fall back to monorepo root. Actually, simplest: always resolve relative to file location using import.meta.url.",
+          "status": "pending",
+          "dependencies": ["s13-feat-002", "s13-feat-003"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/gateway/src/plugins/serve-admin.ts",
+            "apps/gateway/src/plugins/serve-admin.test.ts"
+          ]
+        },
+        {
+          "id": "s13-feat-006",
           "category": "infra",
           "priority": "medium",
-          "title": "Run typecheck and build to verify all changes",
-          "description": "After implementing all features, run pnpm build in admin/ directory and pnpm typecheck at root to ensure no TypeScript errors. Fix any issues that arise.",
+          "title": "Update Dockerfile and docker-compose.yml for monorepo build",
+          "description": "Rewrite Dockerfile for Turborepo monorepo: Builder stage: (1) COPY pnpm-lock.yaml pnpm-workspace.yaml turbo.json package.json (root) + apps/gateway/package.json + apps/admin/package.json. (2) RUN pnpm install --frozen-lockfile. (3) COPY apps/ apps/ + migrations/ to apps/gateway/migrations/ + turbo.json. (4) RUN pnpm turbo build --filter=@llm-gateway/gateway... (builds admin first as gateway dependency, then gateway). Production stage: (1) COPY root + gateway package.json. (2) RUN pnpm install --frozen-lockfile --prod --filter=@llm-gateway/gateway. (3) COPY built dist from both apps: gateway dist + admin dist. (4) COPY migrations/ and config.example.toml. Ensure the admin/dist path is accessible from gateway's perspective (both under /app/apps/). Update docker-compose.yml build context if needed (should remain \".\" for root context).",
           "acceptance_criteria": [
-            "Given all features implemented, when running pnpm build in admin/, then build succeeds with 0 errors",
-            "Given all features implemented, when running pnpm typecheck at root, then 0 errors"
+            "Given Dockerfile, when docker build runs, then both admin and gateway are built",
+            "Given Dockerfile production stage, when container starts, then gateway serves both API and admin SPA",
+            "Given docker-compose.yml, when docker compose up runs, then gateway starts with admin UI accessible at /admin/",
+            "Given turbo build order, when gateway builds, then admin build has already completed"
           ],
-          "technical_notes": "Run: cd admin && pnpm build && cd .. && pnpm typecheck. This validates the frontend changes compile correctly.",
-          "status": "completed",
-          "dependencies": ["s12-feat-001", "s12-feat-003", "s12-feat-004"],
-          "estimated_complexity": "small",
-          "files_affected": []
-        }
-      ]
-    },
-    {
-      "id": "sprint-011",
-      "name": "Phase 11 - Add /api Prefix to All Backend API Routes",
-      "goal": "Unify all backend API routes under /api prefix (/api/v1/* for OpenAI-compatible routes, /api/admin/* for admin routes), fix existing V1 prefix doubling bug, update all tests and frontend API client. /health, /docs, and /admin/ static serving remain unchanged.",
-      "status": "completed",
-      "created_at": "2026-04-18",
-      "features": [
-        {
-          "id": "s11-feat-001",
-          "category": "infra",
-          "priority": "high",
-          "title": "Restructure route registration in index.ts with /api prefix scope",
-          "description": "In src/index.ts: (1) Remove the existing { prefix: \"/v1\" } from V1 scope registration — this fixes the prefix doubling bug where production routes become /v1/v1/chat/completions. (2) Wrap both V1 routes and admin route plugins inside a new { prefix: \"/api\" } scope. The V1 scope stays as a nested scope for hook isolation (auth, rate-limit, security) but with no prefix. Admin plugins (keys, audit, config) move inside the /api scope alongside V1. serveAdminPlugin stays outside the /api scope (static files at /admin/).",
-          "acceptance_criteria": [
-            "Given the restructured registration, when server starts, then /api/v1/chat/completions resolves correctly (not /v1/v1/chat/completions)",
-            "Given the restructured registration, when server starts, then /api/admin/keys resolves correctly",
-            "Given the restructured registration, when server starts, then /health and /docs remain at root level",
-            "Given the restructured registration, when server starts, then /admin/ static assets still serve at /admin/ (not /api/admin/)"
-          ],
-          "technical_notes": "The V1 scope must remain as a nested registration for hook isolation — auth, rate-limit, security hooks are added to v1Scope, not to the /api scope. Admin plugins have their own onRequest auth hooks so they don't need V1 scope hooks. New structure:\nawait server.register(async (apiScope) => {\n  await apiScope.register(async (v1Scope) => { /* hooks + routes */ }); // no prefix\n  await apiScope.register(adminKeysPlugin);\n  await apiScope.register(adminAuditPlugin);\n  await apiScope.register(adminConfigPlugin);\n}, { prefix: \"/api\" });",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "src/index.ts"
-          ]
-        },
-        {
-          "id": "s11-feat-002",
-          "category": "core",
-          "priority": "high",
-          "title": "Update audit logger URL filter and serve-admin plugin",
-          "description": "Two changes: (1) In src/audit/logger.ts, change the URL filter from startsWith(\"/v1/\") to startsWith(\"/api/v1/\") so audit logs are only generated for V1 proxy routes. (2) In src/plugins/serve-admin.ts, remove the API_PREFIXES array and isApiRoute() function. Since API routes now live under /api/admin/* (not /admin/*), there is no longer a conflict between API routes and static asset routes — the onRequest hook and upgrade handler can simply check !request.url.startsWith(\"/api\") instead of maintaining a prefix list.",
-          "acceptance_criteria": [
-            "Given a request to /api/v1/chat/completions, when onResponse fires, then an audit log entry is created",
-            "Given a request to /api/admin/keys, when onResponse fires, then NO audit log entry is created (only /api/v1/ is audited)",
-            "Given dev mode, when /admin/ is requested (non-API, non-/api), then it proxies to Vite",
-            "Given dev mode, when /api/admin/keys is requested, then it is NOT proxied to Vite (handled by Fastify)"
-          ],
-          "technical_notes": "For serve-admin.ts: replace the isApiRoute() check with !request.url.startsWith(\"/api\"). The API_PREFIXES array and isApiRoute function become unnecessary. The rest of the proxy logic stays the same.",
-          "status": "completed",
-          "dependencies": ["s11-feat-001"],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "src/audit/logger.ts",
-            "src/plugins/serve-admin.ts"
-          ]
-        },
-        {
-          "id": "s11-feat-003",
-          "category": "infra",
-          "priority": "high",
-          "title": "Update test helpers (setup.ts and admin-server.ts) with /api prefix",
-          "description": "Update both test server setup files to match the new route registration structure: (1) tests/helpers/setup.ts — remove the { prefix: \"/v1\" } from V1 scope (or don't add one — the current test setup doesn't have it, just confirm it stays without prefix scope), then wrap V1 routes + admin plugins in { prefix: \"/api\" }. (2) admin/e2e/fixtures/admin-server.ts — same restructure. Also update the seedAuditLog default endpoint from \"/v1/chat/completions\" to \"/api/v1/chat/completions\".",
-          "acceptance_criteria": [
-            "Given updated setup.ts, when tests run, then /api/v1/chat/completions resolves in test server",
-            "Given updated setup.ts, when tests run, then /api/admin/keys resolves in test server",
-            "Given updated admin-server.ts, when E2E tests run, then /api/v1/chat/completions resolves",
-            "Given updated admin-server.ts, seedAuditLog default endpoint is /api/v1/chat/completions"
-          ],
-          "technical_notes": "setup.ts currently has NO prefix on V1 scope (routes use their own /v1/ prefix). After change: wrap everything in { prefix: \"/api\" }, keep V1 scope without prefix. admin-server.ts has the same structure. Note: current test URLs in tests already use /v1/chat/completions (not /v1/v1/...) because tests don't add the prefix scope.",
-          "status": "completed",
-          "dependencies": ["s11-feat-001"],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "tests/helpers/setup.ts",
-            "admin/e2e/fixtures/admin-server.ts"
-          ]
-        },
-        {
-          "id": "s11-feat-004",
-          "category": "core",
-          "priority": "high",
-          "title": "Update all unit tests for new /api prefix paths",
-          "description": "Update URL paths in unit test files: (1) src/routes/v1/chat-completions.test.ts — all /v1/chat/completions → /api/v1/chat/completions. (2) src/routes/v1/embeddings.test.ts — all /v1/embeddings → /api/v1/embeddings. (3) src/routes/v1/models.test.ts — all /v1/models → /api/v1/models. (4) src/plugins/serve-admin.test.ts — rewrite tests that check API route detection: /admin/keys is no longer an API route in the serve-admin sense (API routes are now /api/admin/keys), so /admin/keys should be proxied to Vite in dev mode. Update assertions accordingly. (5) src/db/audit-store.test.ts — endpoint strings like \"/v1/chat/completions\" → \"/api/v1/chat/completions\".",
-          "acceptance_criteria": [
-            "Given updated tests, when pnpm vitest run src/routes/v1/ passes, then all V1 unit tests pass with /api/v1/ URLs",
-            "Given updated serve-admin.test.ts, when tests run, then /admin/keys is treated as a non-API route (proxied to Vite in dev mode)",
-            "Given updated serve-admin.test.ts, when tests run, then /api/admin/keys is recognized as API route (not proxied)",
-            "Given updated audit-store.test.ts, when tests run, then endpoint assertions use /api/v1/ prefix"
-          ],
-          "technical_notes": "For serve-admin.test.ts this is a significant change — the concept of 'API route' in serve-admin changes from 'URLs matching /admin/keys, /admin/audit, etc.' to 'URLs starting with /api'. The test for 'does NOT proxy /admin/keys' should become 'DOES proxy /admin/keys' since it's no longer an API route in the serve-admin context. Add new test: 'does NOT proxy /api/admin/keys'.",
-          "status": "completed",
-          "dependencies": ["s11-feat-003"],
+          "technical_notes": "Key: use turbo --filter to build only needed packages. The --filter=@llm-gateway/gateway... (with trailing ...) means 'gateway and all its dependencies'. In monorepo, migrations/ and config.example.toml live inside apps/gateway/. Docker build context is the repo root. Consider using turbo prune for optimized Docker builds (copies only needed packages).",
+          "status": "pending",
+          "dependencies": ["s13-feat-002", "s13-feat-003", "s13-feat-005"],
           "estimated_complexity": "medium",
           "files_affected": [
-            "src/routes/v1/chat-completions.test.ts",
-            "src/routes/v1/embeddings.test.ts",
-            "src/routes/v1/models.test.ts",
-            "src/plugins/serve-admin.test.ts",
-            "src/db/audit-store.test.ts"
+            "Dockerfile",
+            "docker-compose.yml"
           ]
         },
         {
-          "id": "s11-feat-005",
-          "category": "core",
-          "priority": "high",
-          "title": "Update all integration tests for new /api prefix paths",
-          "description": "Update URL paths in all integration test files under tests/integration/. Every occurrence of /v1/ in request URLs becomes /api/v1/. Every occurrence of /admin/ in request URLs (for API calls, not browser navigation) becomes /api/admin/. Also update endpoint assertion values (e.g., expect(log.endpoint).toBe(\"/api/v1/chat/completions\")). Files: audit.test.ts, admin-keys.test.ts, admin-config.test.ts, openapi.test.ts, security.test.ts, pii-redact.test.ts, metrics.test.ts, retry-failover.test.ts, models.test.ts, rate-limit.test.ts, streaming.test.ts, hooks.test.ts, auth.test.ts.",
-          "acceptance_criteria": [
-            "Given updated tests, when pnpm vitest run tests/integration/ passes, then all integration tests pass with /api/ prefixed URLs",
-            "Given updated openapi.test.ts, when spec is fetched, then paths include /api/v1/chat/completions, /api/v1/embeddings, /api/v1/models, /api/admin/keys, etc.",
-            "Given updated audit.test.ts, when audit log endpoint is asserted, then it equals /api/v1/chat/completions",
-            "Given updated retry-failover.test.ts, when audit log endpoint is asserted, then it equals /api/v1/chat/completions"
-          ],
-          "technical_notes": "This is the largest change by file count. Use search-and-replace carefully — only replace URL paths in inject() calls and endpoint assertions. Do NOT change browser navigation URLs in E2E tests (those are SPA routes, not API routes). OpenAPI spec test will need special attention — the path keys in the spec will now be /api/v1/... and /api/admin/...",
-          "status": "completed",
-          "dependencies": ["s11-feat-003"],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "tests/integration/audit.test.ts",
-            "tests/integration/admin-keys.test.ts",
-            "tests/integration/admin-config.test.ts",
-            "tests/integration/openapi.test.ts",
-            "tests/integration/security.test.ts",
-            "tests/integration/pii-redact.test.ts",
-            "tests/integration/metrics.test.ts",
-            "tests/integration/retry-failover.test.ts",
-            "tests/integration/models.test.ts",
-            "tests/integration/rate-limit.test.ts",
-            "tests/integration/streaming.test.ts",
-            "tests/integration/hooks.test.ts",
-            "tests/integration/auth.test.ts"
-          ]
-        },
-        {
-          "id": "s11-feat-006",
-          "category": "ui",
-          "priority": "high",
-          "title": "Update frontend API client BASE_URL to include /api prefix",
-          "description": "In admin/src/lib/api-client.ts, change the BASE_URL default from \"\" to \"/api\". This way all frontend API calls (which use paths like /admin/keys, /admin/audit/logs, etc.) will resolve to /api/admin/keys, /api/admin/audit/logs, etc. No changes needed in individual hooks — they all use apiClient.get/post/patch/del with relative paths that will be appended to /api.",
-          "acceptance_criteria": [
-            "Given updated api-client.ts, when frontend calls apiClient.get(\"/admin/keys\"), then the request goes to /api/admin/keys",
-            "Given updated api-client.ts, when VITE_API_BASE env var is set, then it overrides the default /api prefix"
-          ],
-          "technical_notes": "Change: const BASE_URL = import.meta.env.VITE_API_BASE ?? \"/api\";. All hooks already use paths like \"/admin/keys\", \"/admin/audit/logs\", etc. — these become \"/api/admin/keys\", \"/api/admin/audit/logs\" when prepended with BASE_URL. No other frontend files need changes.",
-          "status": "completed",
-          "dependencies": [],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "admin/src/lib/api-client.ts"
-          ]
-        },
-        {
-          "id": "s11-feat-007",
+          "id": "s13-feat-007",
           "category": "infra",
           "priority": "medium",
-          "title": "Update openapi plugin descriptions and E2E test fixtures",
-          "description": "Two minor updates: (1) src/plugins/openapi.ts — update security scheme description strings from '/v1/* endpoints' to '/api/v1/* endpoints' and from '/admin/* endpoints' to '/api/admin/* endpoints'. (2) admin/e2e/fixtures/index.ts — if it contains any URL paths that reference API endpoints, update them. The E2E browser navigation URLs (/admin/keys, /admin/audit, etc.) are SPA routes and should NOT change.",
+          "title": "Clean up old root files and update AGENTS.md",
+          "description": "Remove old root-level files that have been moved to apps/: (1) Delete root src/ directory (moved to apps/gateway/src/). (2) Delete root tests/ directory (moved to apps/gateway/tests/). (3) Delete root admin/ directory (moved to apps/admin/ and apps/e2e/). (4) Delete root vitest.config.ts (moved to apps/gateway/). (5) Delete root tsconfig.json (replaced by tsconfig.base.json + apps/gateway/tsconfig.json). (6) Delete root playwright.config.ts (moved to apps/e2e/). (7) Delete root .npmrc.yml (replaced by .npmrc). (8) Update .gitignore for monorepo (add .turbo/, ensure apps/*/dist/ patterns). (9) Update AGENTS.md with new monorepo structure, updated commands (pnpm --filter, turbo run), and new directory layout. (10) Ensure pnpm-lock.yaml is at root only.",
           "acceptance_criteria": [
-            "Given updated openapi.ts, when /docs is accessed, then security scheme descriptions reference /api/v1/* and /api/admin/*",
-            "Given E2E tests, when browser navigates to /admin/keys, then the SPA page loads correctly (route unchanged)"
+            "Given old root files deleted, when listing root directory, then only monorepo config + apps/ + docs/ remain",
+            "Given updated .gitignore, when git status runs, then .turbo/ and dist/ directories are ignored",
+            "Given updated AGENTS.md, when reading project docs, then monorepo commands and structure are accurate",
+            "Given root cleanup complete, when running git status, then only intended changes appear"
           ],
-          "technical_notes": "This is a minor cleanup feature. The openapi.ts descriptions are just documentation strings. E2E browser URLs are client-side SPA routes served from /admin/ static files — they don't go through /api prefix.",
-          "status": "completed",
-          "dependencies": ["s11-feat-001"],
+          "technical_notes": "Use git rm for tracked files to preserve history. The root directory after cleanup should contain: apps/, docs/, .agent-harness/, .agents/, .git/, .gitignore, .npmrc, AGENTS.md, Dockerfile, docker-compose.yml, config.toml (gitignored), features.json, migrations (if kept at root), opencode.json, package.json, pnpm-lock.yaml, pnpm-workspace.yaml, progress.md, README.md, turbo.json, tsconfig.base.json. Note: migrations/ should be inside apps/gateway/ now.",
+          "status": "pending",
+          "dependencies": ["s13-feat-002", "s13-feat-003", "s13-feat-004"],
           "estimated_complexity": "small",
           "files_affected": [
-            "src/plugins/openapi.ts",
-            "admin/e2e/fixtures/index.ts"
+            ".gitignore",
+            "AGENTS.md"
           ]
         },
         {
-          "id": "s11-feat-008",
+          "id": "s13-feat-008",
           "category": "infra",
           "priority": "high",
-          "title": "Final verification: typecheck + full test suite pass",
-          "description": "After all features are implemented, run the full verification pipeline: pnpm typecheck && pnpm test. This ensures all 646+ tests pass with the new /api prefix. Fix any remaining issues. This is a validation gate, not implementation.",
+          "title": "Install dependencies and full verification",
+          "description": "Final verification gate: (1) Run pnpm install from root — verify all workspace packages are recognized and deps resolve correctly. (2) Run pnpm turbo build — verify admin builds first (Vite), then gateway builds (tsc). (3) Run pnpm turbo typecheck — verify both packages typecheck. (4) Run pnpm turbo test — verify gateway unit + integration tests pass. (5) Fix any path issues, import errors, or missing dependencies that arise. This is the validation gate that ensures the monorepo restructuring is complete and working.",
           "acceptance_criteria": [
-            "Given all features implemented, when pnpm typecheck runs, then 0 errors",
-            "Given all features implemented, when pnpm test runs, then all tests pass (0 failures)"
+            "Given pnpm install runs, when workspace resolves, then all 3 packages (@llm-gateway/gateway, @llm-gateway/admin, @llm-gateway/e2e) are installed",
+            "Given pnpm turbo build runs, when admin build completes, then apps/admin/dist/ contains built assets",
+            "Given pnpm turbo build runs, when gateway build completes, then apps/gateway/dist/ contains compiled JS",
+            "Given pnpm turbo typecheck runs, then 0 TypeScript errors across all packages",
+            "Given pnpm turbo test runs, then all gateway unit + integration tests pass",
+            "Given pnpm dev --filter=@llm-gateway/gateway runs, when gateway starts, then /health endpoint responds"
           ],
-          "technical_notes": "Run: pnpm typecheck && pnpm test. This should be the last step. If tests fail, investigate and fix — likely missed URL path references in test files.",
-          "status": "completed",
-          "dependencies": ["s11-feat-004", "s11-feat-005", "s11-feat-006", "s11-feat-007"],
-          "estimated_complexity": "small",
+          "technical_notes": "Run: pnpm install && pnpm turbo build && pnpm turbo typecheck && pnpm turbo test. The first pnpm install may take time as it regenerates the lockfile for the new workspace structure. If tests fail due to path issues, fix and re-run. The turbo cache will speed up subsequent runs.",
+          "status": "pending",
+          "dependencies": ["s13-feat-001", "s13-feat-002", "s13-feat-003", "s13-feat-004", "s13-feat-005", "s13-feat-006", "s13-feat-007"],
+          "estimated_complexity": "medium",
           "files_affected": []
         }
       ]
     }
   ],
-"metadata": {
+  "metadata": {
     "version": "1.0.0",
     "last_updated": "2026-04-19"
   }
