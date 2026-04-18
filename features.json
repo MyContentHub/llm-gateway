@@ -34,7 +34,7 @@
       "id": "sprint-012",
       "name": "Phase 12 - Admin UI Polish: Sidebar Branding, Standard Filters, Enhanced PII Display",
       "goal": "Three UI improvements: (1) Change sidebar header from 'Navigation' to 'LLM Gateway'; (2) Replace audit page filter inputs with standard shadcn/ui components; (3) Enhance Log Detail drawer to show PII type details with counts and expandable sections.",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-19",
       "features": [
         {
@@ -92,7 +92,7 @@
             "Given a model/status is selected via Select, when the value changes, then the filter updates and table refreshes"
           ],
           "technical_notes": "Use shadcn/ui DatePicker with Popover. Model and status filters use Select with 'All models'/'All statuses' placeholder options. Maintain existing state management (startDate, endDate, modelFilter, statusFilter).",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s12-feat-002"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -112,7 +112,7 @@
             "Given the PII section, when user wants more details, then an expandable section shows type breakdown"
           ],
           "technical_notes": "Parse pii_types_found JSON array. Create a collapsible/expandable section using a simple button + conditional render (or use shadcn/ui Collapsible if available). Show types like: 'EMAIL: 2 detected', 'PHONE: 1 detected'. Note: actual values cannot be shown as they're not persisted.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -130,7 +130,7 @@
             "Given all features implemented, when running pnpm typecheck at root, then 0 errors"
           ],
           "technical_notes": "Run: cd admin && pnpm build && cd .. && pnpm typecheck. This validates the frontend changes compile correctly.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s12-feat-001", "s12-feat-003", "s12-feat-004"],
           "estimated_complexity": "small",
           "files_affected": []
