@@ -410,6 +410,7 @@ $RECYCLE.BIN/
 
 ptemp.json
 opencode.json
+.turbo/
 
 # Database files
 data/
