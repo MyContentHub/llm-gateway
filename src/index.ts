@@ -71,8 +71,8 @@ async function main() {
   const healthTracker = new KeyHealthTracker();
   server.decorate("healthTracker", healthTracker);
 
-  await server.register(
-    async (v1Scope) => {
+  await server.register(async (apiScope) => {
+    await apiScope.register(async (v1Scope) => {
       v1Scope.addHook("onRequest", createAuthMiddleware(server.db));
       v1Scope.addHook("preHandler", createRateLimitMiddleware(rateLimiter));
       v1Scope.addHook("preHandler", createSecurityMiddleware(config.security));
@@ -91,14 +91,13 @@ async function main() {
       await v1Scope.register(chatCompletionsPlugin);
       await v1Scope.register(embeddingsPlugin);
       await v1Scope.register(modelsPlugin);
-    },
-    { prefix: "/v1" },
-  );
+    });
+    await apiScope.register(adminKeysPlugin);
+    await apiScope.register(adminAuditPlugin);
+    await apiScope.register(adminConfigPlugin);
+  }, { prefix: "/api" });
 
   await server.register(serveAdminPlugin);
-  await server.register(adminKeysPlugin);
-  await server.register(adminAuditPlugin);
-  await server.register(adminConfigPlugin);
 
   await server.listen({ port: config.port, host: config.host });
 
