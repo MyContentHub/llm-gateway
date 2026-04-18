@@ -4,59 +4,84 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 ---
 
-## 996 Orchestration - 2026-04-15
-**Agent**: 996 Orchestrator
-**Sprint**: sprint-010
-**Max Parallelism**: 1 (sequential due to dependency)
+## Session Template
 
-### Execution Summary
-| Feature | Status | Result |
-|---------|--------|--------|
-| s10-feat-001 | completed | Vite dev proxy in serve-admin.ts |
-| s10-feat-002 | completed | 12 integration tests in serve-admin.test.ts |
+```markdown
+## Session N - YYYY-MM-DD
+**Agent**: Sprint | Coding
+**Sprint**: [Sprint ID if applicable]
+**Feature**: [Feature ID if applicable]
 
-### Statistics
-- Total features: 2
-- Completed: 2
-- Blocked: 0
-- Success rate: 100%
+### Work Completed
+- [What was implemented or done]
 
-### Files Changed
-- src/plugins/serve-admin.ts — HTTP proxy via fetch() + WebSocket upgrade for HMR
-- src/plugins/serve-admin.test.ts — 12 tests: dev proxy, API passthrough, 502 on Vite down, static mode
+### Tests Performed
+- [How changes were verified]
 
-### Notes
-- 2 pre-existing flaky test failures (shutdown.test.ts, audit.test.ts) unrelated to changes
-- typecheck passes, all 12 new tests pass, 684/686 total tests pass
+### Issues Encountered
+- [Any blockers, bugs, or challenges]
+
+### Decisions Made
+- [Architectural or design choices]
+
+### Next Steps
+- [Recommended next actions]
+```
 
 ---
 
-## Sprint Planning - 2026-04-14
+## Sprint Planning - 2026-04-18
 **Agent**: Sprint Agent
-**Sprint**: sprint-010 - Phase 10 - Admin Dev Proxy for Frontend-Backend Co-development
+**Sprint**: sprint-011 - Phase 11 - Add /api Prefix to All Backend API Routes
 
 ### Requirements Received
-- Implement reverse proxy in Fastify dev server so that /admin routes proxy to Vite dev server on port 5173
-- Enable single-origin development at http://localhost:3000/admin/ during `pnpm dev`
-- API routes must continue to be handled by Fastify directly
-- Production mode (admin/dist exists) must remain unchanged
+- Add /api prefix to all backend API routes (/v1/* → /api/v1/*, /admin/* API → /api/admin/*)
+- Fix existing V1 prefix doubling bug (index.ts registers with { prefix: "/v1" } but route files already include /v1/)
+- Keep /health, /docs, and /admin/ static serving at root level
+- Update all tests and frontend API client to match
 
 ### Features Planned
-- Total: 2 features
-- High priority: 1 (s10-feat-001)
-- Medium priority: 1 (s10-feat-002)
+- Total: 8 features
+- High priority: 6 (core route changes + test updates + verification)
+- Medium priority: 2 (openapi descriptions, E2E fixtures)
+- Low priority: 0
 
 ### Sprint Goal
-When running `pnpm dev`, accessing http://localhost:3000/admin/ proxies to Vite dev server (5173) for frontend assets while API routes remain handled by Fastify. Production mode unchanged.
+All backend API routes unified under /api prefix. /api/v1/* for OpenAI-compatible routes, /api/admin/* for admin routes. V1 prefix doubling bug fixed. All 646+ tests pass.
 
 ### Implementation Order
-1. s10-feat-001 - Add Vite dev proxy in serve-admin plugin (medium)
-2. s10-feat-002 - Add dev proxy integration test (medium)
+1. s11-feat-001 - Restructure route registration in index.ts (small)
+2. s11-feat-002 - Update audit logger URL filter and serve-admin plugin (small)
+3. s11-feat-003 - Update test helpers (setup.ts and admin-server.ts) (small)
+4. s11-feat-006 - Update frontend API client BASE_URL (small)
+5. s11-feat-007 - Update openapi descriptions and E2E fixtures (small)
+6. s11-feat-004 - Update all unit tests (medium)
+7. s11-feat-005 - Update all integration tests (medium)
+8. s11-feat-008 - Final verification: typecheck + full test suite (small)
+
+### Route Mapping
+| Current Path | New Path |
+|-------------|----------|
+| /v1/chat/completions (bugged: /v1/v1/...) | /api/v1/chat/completions |
+| /v1/embeddings | /api/v1/embeddings |
+| /v1/models | /api/v1/models |
+| /admin/keys (CRUD) | /api/admin/keys |
+| /admin/audit/* | /api/admin/audit/* |
+| /admin/config, /admin/providers | /api/admin/* |
+| /health | /health (unchanged) |
+| /docs | /docs (unchanged) |
+| /admin/ (static) | /admin/ (unchanged) |
+
+### Technical Decisions
+- Use Fastify scoped registration with { prefix: "/api" } wrapping both V1 and admin plugins
+- V1 scope remains nested (no prefix) for hook isolation (auth, rate-limit, security)
+- serve-admin.ts simplified: API_PREFIXES array removed, check request.url.startsWith("/api") instead
+- Frontend: change BASE_URL default from "" to "/api" — hooks unchanged
 
 ### Notes
-- Only modifies src/plugins/serve-admin.ts — minimal footprint
-- Uses native fetch() for proxying, no new dependencies
-- WebSocket upgrade needed for Vite HMR support
+- ~22 files need changes across backend, frontend, tests, and E2E
+- No new dependencies required
+- E2E browser navigation URLs (/admin/keys, /admin/audit) are SPA routes — unchanged
 
 ---
 

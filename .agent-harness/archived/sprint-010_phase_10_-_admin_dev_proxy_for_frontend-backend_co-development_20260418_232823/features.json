@@ -1,0 +1,87 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser",
+      "@fastify/swagger",
+      "@fastify/swagger-ui",
+      "zod-to-json-schema",
+      "React 18",
+      "Vite 5",
+      "Tailwind CSS 3",
+      "shadcn/ui",
+      "@tanstack/react-query v5",
+      "@tanstack/react-table v8",
+      "recharts 2",
+      "react-router-dom v6",
+      "@playwright/test"
+    ],
+    "created_at": "2026-04-09"
+  },
+  "archived_sprint": {
+    "id": "sprint-010",
+    "name": "Phase 10 - Admin Dev Proxy for Frontend-Backend Co-development",
+    "goal": "Add reverse proxy in Fastify dev server to proxy admin frontend routes to Vite dev server (port 5173), enabling single-origin development at http://localhost:3000/admin/",
+    "status": "completed",
+    "created_at": "2026-04-14",
+    "features": [
+      {
+        "id": "s10-feat-001",
+        "category": "infra",
+        "priority": "high",
+        "title": "Add Vite dev proxy in serve-admin plugin",
+        "description": "When admin/dist does not exist (dev mode), modify serve-admin plugin to proxy all /admin requests (except API routes) to http://localhost:5173 using native fetch(). This includes: HTML pages, JS/CSS assets, HMR WebSocket upgrades, and Vite's /@vite/client and /@fs/ paths. API routes (/admin/keys, /admin/audit, /admin/config, /admin/providers) must NOT be proxied \u2014 they are handled by existing Fastify routes. The proxy must forward request headers (especially Cookie, Accept), request body, and stream back response headers and body (including SSE for HMR).",
+        "acceptance_criteria": [
+          "Given dev mode (no admin/dist), when accessing http://localhost:3000/admin/ in browser, then the admin SPA loads correctly via Vite dev server",
+          "Given dev mode, when API route /admin/keys is called, then it is handled by Fastify (not proxied to Vite)",
+          "Given dev mode, when Vite HMR triggers, then the browser receives HMR updates (WebSocket upgrade works)",
+          "Given production mode (admin/dist exists), when accessing /admin/, then static files are served as before (no proxy)",
+          "Given dev mode with Vite not running, when accessing /admin/, then a clear error message is returned (not a hang)"
+        ],
+        "technical_notes": "Modify src/plugins/serve-admin.ts. When admin/dist doesn't exist: (1) Add onRequest hook that checks if URL starts with /admin and is NOT an API route, then uses fetch() to proxy to http://localhost:5173 + request.url. (2) For WebSocket upgrades, use server.addHook('upgrade') or Fastify's raw server 'upgrade' event to pipe to Vite. (3) Stream response body back to client. API route detection: skip proxy for URLs matching /admin/keys, /admin/audit, /admin/config, /admin/providers. Vite HMR paths like /admin/@vite/client, /admin/src/*, /admin/@fs/* must be proxied.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/plugins/serve-admin.ts"
+        ]
+      },
+      {
+        "id": "s10-feat-002",
+        "category": "infra",
+        "priority": "medium",
+        "title": "Add dev proxy integration test",
+        "description": "Add a test to verify the dev proxy behavior: when admin/dist doesn't exist, non-API /admin requests are proxied to Vite; API routes are still handled by Fastify; when admin/dist exists, static serving works as before.",
+        "acceptance_criteria": [
+          "Given a test with no admin/dist, when /admin/ is requested and Vite mock returns HTML, then the proxy returns the HTML",
+          "Given a test with no admin/dist, when /admin/keys is requested, then Fastify handles it (not proxied)",
+          "Given a test with admin/dist present, when /admin/ is requested, then static index.html is served"
+        ],
+        "technical_notes": "Add test in src/plugins/serve-admin.test.ts. Use createTestServer helper. Mock Vite by starting a temporary HTTP server on a port. Test both dev proxy and static serving paths.",
+        "status": "completed",
+        "dependencies": [
+          "s10-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "src/plugins/serve-admin.test.ts"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-18 23:28:23",
+    "original_sprint_id": "sprint-010"
+  }
+}
