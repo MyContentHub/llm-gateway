@@ -20,5 +20,6 @@ export function useAuditStats(startDate?: string, endDate?: string) {
     queryKey: ["audit-stats", startDate, endDate],
     queryFn: () =>
       apiClient.get<AuditStats>(`/admin/audit/stats${qs ? `?${qs}` : ""}`),
+    refetchOnMount: "always",
   });
 }

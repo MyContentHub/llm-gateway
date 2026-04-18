@@ -224,7 +224,7 @@ export function OverviewPage() {
             PII Detection Rate
           </h2>
           <DonutChart
-            value={stats?.piiDetectionRate ?? 0}
+            value={(stats?.piiDetectionRate ?? 0) * 100}
             label="of requests flagged"
           />
         </div>

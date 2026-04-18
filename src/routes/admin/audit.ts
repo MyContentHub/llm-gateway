@@ -158,11 +158,17 @@ export const adminAuditPlugin: FastifyPluginCallback = (server, _opts, done) => 
 
     if (startDate) {
       conditions.push("timestamp >= ?");
-      params.push(startDate);
+      params.push(startDate.includes("T") ? startDate : `${startDate}T00:00:00.000Z`);
     }
     if (endDate) {
-      conditions.push("timestamp <= ?");
-      params.push(endDate);
+      conditions.push("timestamp < ?");
+      if (endDate.includes("T")) {
+        params.push(new Date(new Date(endDate).getTime() + 86400000).toISOString());
+      } else {
+        const d = new Date(`${endDate}T00:00:00.000Z`);
+        d.setUTCDate(d.getUTCDate() + 1);
+        params.push(d.toISOString());
+      }
     }
 
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";

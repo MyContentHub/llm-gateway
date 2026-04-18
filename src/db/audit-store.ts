@@ -130,11 +130,20 @@ export class AuditStore {
 
     if (filters.startDate) {
       conditions.push("timestamp >= ?");
-      params.push(filters.startDate);
+      const sd = filters.startDate;
+      params.push(sd.includes("T") ? sd : `${sd}T00:00:00.000Z`);
     }
     if (filters.endDate) {
-      conditions.push("timestamp <= ?");
-      params.push(filters.endDate);
+      const ed = filters.endDate;
+      if (ed.includes("T")) {
+        conditions.push("timestamp <= ?");
+        params.push(ed);
+      } else {
+        conditions.push("timestamp < ?");
+        const d = new Date(`${ed}T00:00:00.000Z`);
+        d.setUTCDate(d.getUTCDate() + 1);
+        params.push(d.toISOString());
+      }
     }
     if (filters.model) {
       conditions.push("model = ?");
@@ -181,11 +190,20 @@ export class AuditStore {
 
     if (filters.startDate) {
       conditions.push("timestamp >= ?");
-      params.push(filters.startDate);
+      const sd = filters.startDate;
+      params.push(sd.includes("T") ? sd : `${sd}T00:00:00.000Z`);
     }
     if (filters.endDate) {
-      conditions.push("timestamp <= ?");
-      params.push(filters.endDate);
+      const ed = filters.endDate;
+      if (ed.includes("T")) {
+        conditions.push("timestamp <= ?");
+        params.push(ed);
+      } else {
+        conditions.push("timestamp < ?");
+        const d = new Date(`${ed}T00:00:00.000Z`);
+        d.setUTCDate(d.getUTCDate() + 1);
+        params.push(d.toISOString());
+      }
     }
 
     const hasConditions = conditions.length > 0;
