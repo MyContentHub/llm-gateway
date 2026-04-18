@@ -31,10 +31,117 @@
   },
   "sprints": [
     {
+      "id": "sprint-012",
+      "name": "Phase 12 - Admin UI Polish: Sidebar Branding, Standard Filters, Enhanced PII Display",
+      "goal": "Three UI improvements: (1) Change sidebar header from 'Navigation' to 'LLM Gateway'; (2) Replace audit page filter inputs with standard shadcn/ui components; (3) Enhance Log Detail drawer to show PII type details with counts and expandable sections.",
+      "status": "planning",
+      "created_at": "2026-04-19",
+      "features": [
+        {
+          "id": "s12-feat-001",
+          "category": "ui",
+          "priority": "high",
+          "title": "Change sidebar header from 'Navigation' to 'LLM Gateway'",
+          "description": "In admin/src/components/layout/sidebar.tsx, change the sidebar header text from 'Navigation' to 'LLM Gateway'. This is a simple text change in the collapsed/expanded header area.",
+          "acceptance_criteria": [
+            "Given the sidebar is expanded, when user views the header, then they see 'LLM Gateway' instead of 'Navigation'",
+            "Given the sidebar is collapsed, when user views the header area, then no text is shown (current behavior preserved)"
+          ],
+          "technical_notes": "Single line change: replace 'Navigation' with 'LLM Gateway' in the span element at line 51-52 of sidebar.tsx.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/components/layout/sidebar.tsx"
+          ]
+        },
+        {
+          "id": "s12-feat-002",
+          "category": "ui",
+          "priority": "high",
+          "title": "Install shadcn/ui and add DatePicker, Select components",
+          "description": "Set up shadcn/ui in the admin project: (1) Install @radix-ui/react-popover, @radix-ui/react-select, date-fns dependencies; (2) Create admin/src/lib/utils.ts with cn() helper if not exists; (3) Add DatePicker component (Popover + Calendar); (4) Add Select component. Configure components.json for shadcn CLI compatibility.",
+          "acceptance_criteria": [
+            "Given shadcn/ui is installed, when running pnpm dev, then no dependency errors occur",
+            "Given DatePicker component exists, when imported, then it renders a calendar popover",
+            "Given Select component exists, when imported, then it renders a styled dropdown"
+          ],
+          "technical_notes": "Follow shadcn/ui installation guide for Vite + Tailwind. Create components in admin/src/components/ui/. Use existing clsx and tailwind-merge dependencies. DatePicker needs date-fns for date formatting.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "admin/package.json",
+            "admin/src/components/ui/popover.tsx",
+            "admin/src/components/ui/calendar.tsx",
+            "admin/src/components/ui/select.tsx",
+            "admin/src/components/ui/button.tsx",
+            "admin/src/lib/utils.ts"
+          ]
+        },
+        {
+          "id": "s12-feat-003",
+          "category": "ui",
+          "priority": "high",
+          "title": "Replace audit page filter inputs with shadcn/ui components",
+          "description": "In admin/src/pages/audit.tsx, replace the native HTML date inputs and select elements with shadcn/ui DatePicker and Select components. Maintain the same filter functionality (startDate, endDate, model, status) but with consistent styling.",
+          "acceptance_criteria": [
+            "Given the audit page loads, when viewing filters, then DatePicker components replace native date inputs",
+            "Given the audit page loads, when viewing filters, then Select components replace native dropdowns",
+            "Given a date is selected via DatePicker, when the value changes, then the filter updates and table refreshes",
+            "Given a model/status is selected via Select, when the value changes, then the filter updates and table refreshes"
+          ],
+          "technical_notes": "Use shadcn/ui DatePicker with Popover. Model and status filters use Select with 'All models'/'All statuses' placeholder options. Maintain existing state management (startDate, endDate, modelFilter, statusFilter).",
+          "status": "pending",
+          "dependencies": ["s12-feat-002"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "admin/src/pages/audit.tsx"
+          ]
+        },
+        {
+          "id": "s12-feat-004",
+          "category": "ui",
+          "priority": "high",
+          "title": "Enhance Log Detail drawer to show detailed PII information",
+          "description": "In admin/src/pages/audit/detail-drawer.tsx, enhance the PII display section. Currently it only shows 'Yes (EMAIL, PHONE)'. Enhance to: (1) Show PII types as a list with badges; (2) Show count of each PII type detected; (3) Add an expandable section showing the mapping structure (placeholder → type) for transparency. Note: actual PII values are not stored for security.",
+          "acceptance_criteria": [
+            "Given a log with pii_detected=true, when viewing Log Detail, then PII types are shown as individual badges",
+            "Given a log with multiple PII types, when viewing Log Detail, then the count of each type is shown",
+            "Given a log with pii_detected=false, when viewing Log Detail, then 'No' is shown (current behavior)",
+            "Given the PII section, when user wants more details, then an expandable section shows type breakdown"
+          ],
+          "technical_notes": "Parse pii_types_found JSON array. Create a collapsible/expandable section using a simple button + conditional render (or use shadcn/ui Collapsible if available). Show types like: 'EMAIL: 2 detected', 'PHONE: 1 detected'. Note: actual values cannot be shown as they're not persisted.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "admin/src/pages/audit/detail-drawer.tsx"
+          ]
+        },
+        {
+          "id": "s12-feat-005",
+          "category": "infra",
+          "priority": "medium",
+          "title": "Run typecheck and build to verify all changes",
+          "description": "After implementing all features, run pnpm build in admin/ directory and pnpm typecheck at root to ensure no TypeScript errors. Fix any issues that arise.",
+          "acceptance_criteria": [
+            "Given all features implemented, when running pnpm build in admin/, then build succeeds with 0 errors",
+            "Given all features implemented, when running pnpm typecheck at root, then 0 errors"
+          ],
+          "technical_notes": "Run: cd admin && pnpm build && cd .. && pnpm typecheck. This validates the frontend changes compile correctly.",
+          "status": "pending",
+          "dependencies": ["s12-feat-001", "s12-feat-003", "s12-feat-004"],
+          "estimated_complexity": "small",
+          "files_affected": []
+        }
+      ]
+    },
+    {
       "id": "sprint-011",
       "name": "Phase 11 - Add /api Prefix to All Backend API Routes",
       "goal": "Unify all backend API routes under /api prefix (/api/v1/* for OpenAI-compatible routes, /api/admin/* for admin routes), fix existing V1 prefix doubling bug, update all tests and frontend API client. /health, /docs, and /admin/ static serving remain unchanged.",
-      "status": "in_progress",
+      "status": "completed",
       "created_at": "2026-04-18",
       "features": [
         {
@@ -211,8 +318,8 @@
       ]
     }
   ],
-  "metadata": {
+"metadata": {
     "version": "1.0.0",
-    "last_updated": "2026-04-18"
+    "last_updated": "2026-04-19"
   }
 }

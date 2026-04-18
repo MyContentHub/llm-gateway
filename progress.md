@@ -120,4 +120,42 @@ All backend API routes unified under /api prefix. /api/v1/* for OpenAI-compatibl
 - Pre-existing flaky test in shutdown.test.ts (passes in isolation, fails in full suite due to MaxListenersExceeded)
 - admin/dist rebuilt for static mode tests
 
+## Sprint Planning - 2026-04-19
+**Agent**: Sprint Agent
+**Sprint**: sprint-012 - Phase 12 - Admin UI Polish: Sidebar Branding, Standard Filters, Enhanced PII Display
+
+### Requirements Received
+1. Change sidebar header from 'Navigation' to 'LLM Gateway'
+2. Replace Audit Logs filter components with standard shadcn/ui components
+3. Enhance Log Detail to show detailed PII information (types with counts, expandable section)
+
+### Features Planned
+- Total: 5 features
+- High priority: 4 (sidebar branding, shadcn setup, filter replacement, PII enhancement)
+- Medium priority: 1 (build verification)
+- Low priority: 0
+
+### Sprint Goal
+Polish Admin UI with consistent branding, standard component library, and enhanced security information display.
+
+### Implementation Order
+1. s12-feat-001 - Change sidebar header to 'LLM Gateway' (small)
+2. s12-feat-002 - Install shadcn/ui and add DatePicker, Select (medium)
+3. s12-feat-004 - Enhance Log Detail PII display (small, parallel with feat-002)
+4. s12-feat-003 - Replace audit page filters with shadcn components (medium)
+5. s12-feat-005 - Build verification (small)
+
+### Technical Decisions
+- Use shadcn/ui for consistent component styling (not currently installed despite being in tech_stack)
+- DatePicker: Popover + Calendar pattern from shadcn/ui
+- Select: Radix-based Select component from shadcn/ui
+- PII display: Show types with counts in expandable section (actual values not stored for security)
+
+### Notes
+- Actual PII values are intentionally NOT persisted in audit logs for security reasons
+- shadcn/ui is listed in tech_stack but components not actually installed yet
+- Existing clsx and tailwind-merge deps will be reused for shadcn/ui
+
+---
+
 <!-- New sessions should be added above this line -->
