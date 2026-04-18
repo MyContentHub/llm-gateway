@@ -7,7 +7,8 @@ import {
   type CellContext,
   type AccessorFn,
 } from "@tanstack/react-table";
-import { ChevronLeft, ChevronRight, Download, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Loader2, CalendarIcon, AlertCircle, AlertTriangle } from "lucide-react";
+import { format } from "date-fns";
 import { PageHeader } from "@/components/layout/page-header";
 import {
   useAuditLogs,
@@ -15,12 +16,21 @@ import {
   type AuditLogRow,
   type AuditFilters,
 } from "@/hooks/use-audit-logs";
-import { formatDate, formatUsd, formatMs } from "@/lib/utils";
+import { formatDate, formatUsd, formatMs, cn } from "@/lib/utils";
 import { StatusBadge } from "@/components/status-badge";
 import { InjectionScoreBar } from "@/components/injection-score-bar";
 import { DetailDrawer } from "./audit/detail-drawer";
 import { exportAuditCsv } from "./audit/export";
-import { AlertCircle, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const PAGE_SIZE = 50;
 
@@ -46,8 +56,8 @@ function PiiBadge({ detected, types }: { detected: 0 | 1; types: string | null }
 
 export function AuditPage() {
   const [page, setPage] = useState(0);
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [modelFilter, setModelFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedLog, setSelectedLog] = useState<AuditLogRow | null>(null);
@@ -60,8 +70,8 @@ export function AuditPage() {
     () => ({
       offset: page * PAGE_SIZE,
       limit: PAGE_SIZE,
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
+      startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+      endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
       model: modelFilter || undefined,
       status: statusFilter || undefined,
     }),
@@ -70,8 +80,8 @@ export function AuditPage() {
 
   const { data, isLoading } = useAuditLogs(filters);
   const { data: modelsData } = useAuditModels(
-    startDate || undefined,
-    endDate || undefined,
+    startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+    endDate ? format(endDate, "yyyy-MM-dd") : undefined,
   );
 
   const columnHelper = createColumnHelper<AuditLogRow>();
@@ -173,8 +183,8 @@ export function AuditPage() {
 
   const exportFilters: Record<string, string | undefined> = useMemo(
     () => ({
-      startDate: startDate || undefined,
-      endDate: endDate || undefined,
+      startDate: startDate ? format(startDate, "yyyy-MM-dd") : undefined,
+      endDate: endDate ? format(endDate, "yyyy-MM-dd") : undefined,
       model: modelFilter || undefined,
       status: statusFilter || undefined,
     }),
@@ -205,66 +215,102 @@ export function AuditPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
           <div className="space-y-1">
-            <label htmlFor="audit-start-date" className="text-xs font-medium text-muted-foreground">Start Date</label>
-            <input
-              id="audit-start-date"
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setPage(0);
-              }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-            />
+            <label className="text-xs font-medium text-muted-foreground">Start Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-9 w-[180px] justify-start text-left font-normal",
+                    !startDate && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {startDate ? format(startDate, "MMM dd, yyyy") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={(date) => {
+                    setStartDate(date);
+                    setPage(0);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-1">
-            <label htmlFor="audit-end-date" className="text-xs font-medium text-muted-foreground">End Date</label>
-            <input
-              id="audit-end-date"
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setPage(0);
-              }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
-            />
+            <label className="text-xs font-medium text-muted-foreground">End Date</label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "h-9 w-[180px] justify-start text-left font-normal",
+                    !endDate && "text-muted-foreground",
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {endDate ? format(endDate, "MMM dd, yyyy") : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={(date) => {
+                    setEndDate(date);
+                    setPage(0);
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="space-y-1">
-            <label htmlFor="audit-model" className="text-xs font-medium text-muted-foreground">Model</label>
-            <select
-              id="audit-model"
-              value={modelFilter}
-              onChange={(e) => {
-                setModelFilter(e.target.value);
+            <label className="text-xs font-medium text-muted-foreground">Model</label>
+            <Select
+              value={modelFilter || "__all__"}
+              onValueChange={(value) => {
+                setModelFilter(value === "__all__" ? "" : value);
                 setPage(0);
               }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
             >
-              <option value="">All models</option>
-              {modelsData?.models?.map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-9 w-[180px]">
+                <SelectValue placeholder="All models" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All models</SelectItem>
+                {modelsData?.models?.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {m}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <div className="space-y-1">
-            <label htmlFor="audit-status" className="text-xs font-medium text-muted-foreground">Status</label>
-            <select
-              id="audit-status"
-              value={statusFilter}
-              onChange={(e) => {
-                setStatusFilter(e.target.value);
+            <label className="text-xs font-medium text-muted-foreground">Status</label>
+            <Select
+              value={statusFilter || "__all__"}
+              onValueChange={(value) => {
+                setStatusFilter(value === "__all__" ? "" : value);
                 setPage(0);
               }}
-              className="h-9 rounded-md border border-input bg-background px-3 text-sm text-foreground"
             >
-              <option value="">All statuses</option>
-              <option value="success">Success</option>
-              <option value="error">Error</option>
-              <option value="blocked">Blocked</option>
-            </select>
+              <SelectTrigger className="h-9 w-[180px]">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All statuses</SelectItem>
+                <SelectItem value="success">Success</SelectItem>
+                <SelectItem value="error">Error</SelectItem>
+                <SelectItem value="blocked">Blocked</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <button
             onClick={handleExport}
