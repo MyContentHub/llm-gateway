@@ -38,9 +38,11 @@ describe("db migrations", () => {
     runMigrations(db, MIGRATIONS_DIR);
 
     const applied = getAppliedMigrations(db);
-    expect(applied).toHaveLength(1);
+    expect(applied).toHaveLength(2);
     expect(applied[0].name).toBe("001-init.sql");
     expect(applied[0].id).toBe(1);
+    expect(applied[1].name).toBe("002-add-audit-body.sql");
+    expect(applied[1].id).toBe(2);
   });
 
   it("is idempotent — does not re-run migrations", () => {
@@ -48,13 +50,15 @@ describe("db migrations", () => {
     runMigrations(db, MIGRATIONS_DIR);
 
     const applied = getAppliedMigrations(db);
-    expect(applied).toHaveLength(1);
+    expect(applied).toHaveLength(2);
   });
 
   it("parses migration files correctly", () => {
     const files = getMigrationFiles(MIGRATIONS_DIR);
     expect(files.has(1)).toBe(true);
     expect(files.get(1)!.name).toBe("001-init.sql");
+    expect(files.has(2)).toBe(true);
+    expect(files.get(2)!.name).toBe("002-add-audit-body.sql");
   });
 });
 

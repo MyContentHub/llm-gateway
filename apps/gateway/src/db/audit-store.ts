@@ -15,6 +15,10 @@ export interface AuditLogEntry {
   pii_types_found?: string | null;
   prompt_injection_score?: number;
   content_hash_sha256?: string | null;
+  request_body?: string | null;
+  response_body?: string | null;
+  request_body_truncated?: number;
+  response_body_truncated?: number;
 }
 
 export interface AuditLogRow {
@@ -33,6 +37,10 @@ export interface AuditLogRow {
   pii_types_found: string | null;
   prompt_injection_score: number;
   content_hash_sha256: string | null;
+  request_body: string | null;
+  response_body: string | null;
+  request_body_truncated: number;
+  response_body_truncated: number;
 }
 
 export interface AuditLogFilters {
