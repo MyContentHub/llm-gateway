@@ -1,0 +1,468 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser",
+      "@fastify/swagger",
+      "@fastify/swagger-ui",
+      "zod-to-json-schema",
+      "React 18",
+      "Vite 5",
+      "Tailwind CSS 3",
+      "shadcn/ui",
+      "@tanstack/react-query v5",
+      "@tanstack/react-table v8",
+      "recharts 2",
+      "react-router-dom v6",
+      "@playwright/test",
+      "Turborepo",
+      "pnpm 10 (workspaces)"
+    ],
+    "created_at": "2025-01-15"
+  },
+  "archived_sprint": {
+    "id": "sprint-015",
+    "name": "Admin Internationalization",
+    "goal": "Add full i18n support to admin dashboard with English and Chinese translations, enabling language switching via UI toggle",
+    "status": "completed",
+    "created_at": "2026-04-20",
+    "features": [
+      {
+        "id": "s15-feat-001",
+        "category": "infra",
+        "priority": "high",
+        "title": "Setup i18n infrastructure",
+        "description": "Install react-i18next and i18next packages. Create i18n configuration file with initialization. Set up translation file structure (locales/en/translation.json, locales/zh-CN/translation.json). Initialize i18next in main.tsx with language detection and fallback to English.",
+        "acceptance_criteria": [
+          "react-i18next and i18next installed in apps/admin",
+          "i18n.ts config file created with proper initialization",
+          "Translation files created for en and zh-CN",
+          "i18next initialized in main.tsx before React renders",
+          "useTranslation hook works in components"
+        ],
+        "technical_notes": "Use i18next-browser-languagedetector for automatic language detection. Store preference in localStorage. Use 'en' as fallback language.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/package.json",
+          "apps/admin/src/i18n.ts",
+          "apps/admin/src/locales/en/translation.json",
+          "apps/admin/src/locales/zh-CN/translation.json",
+          "apps/admin/src/main.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-002",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate core layout components",
+        "description": "Add translations to Sidebar (nav labels), Navbar (logout button), and DataTable (pagination, empty message). Create translation keys for all hardcoded strings.",
+        "acceptance_criteria": [
+          "Sidebar nav items (Home, Keys, Audit, Security, Providers, Settings) use translation keys",
+          "Navbar logout button uses translation key",
+          "DataTable pagination (Page X of Y) uses translation keys",
+          "DataTable empty message uses translation key",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use useTranslation hook in components. Follow i18next best practices with nested keys (e.g., 'nav.home', 'nav.keys').",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/components/layout/sidebar.tsx",
+          "apps/admin/src/components/layout/navbar.tsx",
+          "apps/admin/src/components/data-table.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-003",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Login page",
+        "description": "Add translations to LoginPage component including title, form labels, placeholder, button text, and error message.",
+        "acceptance_criteria": [
+          "Page title 'LLM Gateway Admin' translated",
+          "Label 'Admin Token' translated",
+          "Placeholder 'Enter admin token' translated",
+          "Button 'Sign In' translated",
+          "Error 'Token invalid' translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use t() function for all user-visible text. Keep API error messages in English (technical).",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/pages/login.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-004",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Overview page",
+        "description": "Add translations to OverviewPage including KPI card labels, chart titles, table headers, and empty state message.",
+        "acceptance_criteria": [
+          "Page title 'Overview' translated",
+          "KPI labels (Total Requests, Token Usage, Total Cost, Avg Latency) translated",
+          "Chart titles (Requests by Model, Requests by Status, Recent Activity, PII Detection Rate) translated",
+          "Table headers (Time, Model, Tokens, Cost, Status) translated",
+          "'No recent activity' message translated",
+          "'of requests flagged' label translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use nested keys like 'overview.kpis.totalRequests', 'overview.charts.byModel'. formatRelativeDate may need i18n-friendly alternative.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/pages/overview.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-005",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Keys page and dialogs",
+        "description": "Add translations to KeysPage, CreateKeyDialog, EditKeySheet, KeyDisplayDialog, and RevokeDialog. Includes table columns, form labels, buttons, and messages.",
+        "acceptance_criteria": [
+          "Page title 'API Keys' translated",
+          "Table headers (Name, Prefix, Rate Limits, Created, Status) translated",
+          "Status badges (Active, Revoked) translated",
+          "'Create Key' button translated",
+          "CreateDialog: title, labels, placeholders, buttons translated",
+          "EditSheet: title, labels, buttons translated",
+          "KeyDisplayDialog: title, copy instructions, buttons translated",
+          "RevokeDialog: title, confirmation message, buttons translated",
+          "'No keys found' message translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Rate limit abbreviations (RPM, TPM, RPD) can stay as-is (technical terms). Use nested keys like 'keys.table.name', 'keys.dialogs.create.title'.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/pages/keys.tsx",
+          "apps/admin/src/pages/keys/create-dialog.tsx",
+          "apps/admin/src/pages/keys/edit-sheet.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-002",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate core layout components",
+        "description": "Add translations to Sidebar (nav labels), Navbar (logout button), and DataTable (pagination, empty message). Create translation keys for all hardcoded strings.",
+        "acceptance_criteria": [
+          "Sidebar nav items (Home, Keys, Audit, Security, Providers, Settings) use translation keys",
+          "Navbar logout button uses translation key",
+          "DataTable pagination (Page X of Y) uses translation keys",
+          "DataTable empty message uses translation key",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use useTranslation hook in components. Follow i18next best practices with nested keys (e.g., 'nav.home', 'nav.keys').",
+        "status": "pending",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/components/layout/sidebar.tsx",
+          "apps/admin/src/components/layout/navbar.tsx",
+          "apps/admin/src/components/data-table.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-003",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Login page",
+        "description": "Add translations to LoginPage component including title, form labels, placeholder, button text, and error message.",
+        "acceptance_criteria": [
+          "Page title 'LLM Gateway Admin' translated",
+          "Label 'Admin Token' translated",
+          "Placeholder 'Enter admin token' translated",
+          "Button 'Sign In' translated",
+          "Error 'Token invalid' translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use t() function for all user-visible text. Keep API error messages in English (technical).",
+        "status": "pending",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/pages/login.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-004",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Overview page",
+        "description": "Add translations to OverviewPage including KPI card labels, chart titles, table headers, and empty state message.",
+        "acceptance_criteria": [
+          "Page title 'Overview' translated",
+          "KPI labels (Total Requests, Token Usage, Total Cost, Avg Latency) translated",
+          "Chart titles (Requests by Model, Requests by Status, Recent Activity, PII Detection Rate) translated",
+          "Table headers (Time, Model, Tokens, Cost, Status) translated",
+          "'No recent activity' message translated",
+          "'of requests flagged' label translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use nested keys like 'overview.kpis.totalRequests', 'overview.charts.byModel'. formatRelativeDate may need i18n-friendly alternative.",
+        "status": "pending",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/pages/overview.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-005",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Keys page and dialogs",
+        "description": "Add translations to KeysPage, CreateKeyDialog, EditKeySheet, KeyDisplayDialog, and RevokeDialog. Includes table columns, form labels, buttons, and messages.",
+        "acceptance_criteria": [
+          "Page title 'API Keys' translated",
+          "Table headers (Name, Prefix, Rate Limits, Created, Status) translated",
+          "Status badges (Active, Revoked) translated",
+          "'Create Key' button translated",
+          "CreateDialog: title, labels, placeholders, buttons translated",
+          "EditSheet: title, labels, buttons translated",
+          "KeyDisplayDialog: title, copy instructions, buttons translated",
+          "RevokeDialog: title, confirmation message, buttons translated",
+          "'No keys found' message translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Rate limit abbreviations (RPM, TPM, RPD) can stay as-is (technical terms). Use nested keys like 'keys.table.name', 'keys.dialogs.create.title'.",
+        "status": "pending",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/pages/keys.tsx",
+          "apps/admin/src/pages/keys/create-dialog.tsx",
+          "apps/admin/src/pages/keys/edit-sheet.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-006",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Audit page",
+        "description": "Add translations to AuditPage including filter labels, table headers, export button, pagination, and empty state. Includes date picker placeholders.",
+        "acceptance_criteria": [
+          "Page title 'Audit Logs' translated",
+          "Filter labels (Start Date, End Date, Model, Status) translated",
+          "Date picker placeholder 'Pick a date' translated",
+          "Status filter options (All statuses, Success, Error, Blocked) translated",
+          "'All models' option translated",
+          "Table headers (Time, Request ID, Key, Model, Tokens, Cost, Latency, Status, PII, Injection) translated",
+          "'Export CSV' button translated",
+          "Pagination (Showing X-Y of Z, Previous, Next, Page X of Y) translated",
+          "'No audit logs found' message translated",
+          "Export error/warning messages translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use nested keys like 'audit.filters.startDate', 'audit.table.time'. Calendar component from shadcn may need locale prop.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/pages/audit.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-007",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Detail Drawer and JSON Modal",
+        "description": "Add translations to DetailDrawer and JsonModal components. Replace mixed Chinese/English text with translation keys. Includes field labels, section titles, button text, and null state messages.",
+        "acceptance_criteria": [
+          "Drawer title 'Log Detail' translated",
+          "All field labels (Request ID, Timestamp, Status, API Key ID, Model, Endpoint, etc.) translated",
+          "PII display (Yes, No, types found, Show/Hide details, Type breakdown) translated",
+          "Body sections (Request Body, Response Body) translated",
+          "Expand/collapse buttons (\u5c55\u5f00\u9884\u89c8/\u6536\u8d77) translated",
+          "Truncation warning translated",
+          "'View full content' button translated",
+          "Null messages (Content expired, Request blocked) translated",
+          "JSON Modal title and copy button translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Replace hardcoded Chinese strings with translation keys. Use nested keys like 'audit.detail.field.requestId', 'audit.detail.body.viewFull'.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001",
+          "s15-feat-006"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/pages/audit/detail-drawer.tsx",
+          "apps/admin/src/pages/audit/json-modal.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-008",
+        "category": "ui",
+        "priority": "high",
+        "title": "Translate Security page",
+        "description": "Add translations to SecurityPage including KPI cards, chart titles, table headers, and empty state messages.",
+        "acceptance_criteria": [
+          "Page title 'Security Monitor' translated",
+          "KPI labels (Blocked Requests, PII Detections, Injection Attempts, Content Filter) translated",
+          "KPI sub-labels (X types, avg score X%, X flagged, X allowed) translated",
+          "Chart titles (PII Detection by Type, Injection Score Distribution) translated",
+          "'Threat Feed' title and subtitle translated",
+          "Table headers (Time, Request ID, Model, PII, Injection Score) translated",
+          "Empty state messages translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use nested keys like 'security.kpis.blockedRequests', 'security.charts.piiByType'.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/pages/security.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-009",
+        "category": "ui",
+        "priority": "medium",
+        "title": "Translate Providers page",
+        "description": "Add translations to ProvidersPage including provider card labels, health status labels, and key count text.",
+        "acceptance_criteria": [
+          "Page title 'Providers' translated",
+          "'Default' badge translated",
+          "'keys' (singular/plural) translated",
+          "'avg' latency label translated",
+          "'Key Health' label translated",
+          "'Model Mappings' label translated",
+          "Table headers (Alias, Model) translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use nested keys like 'providers.card.default', 'providers.card.keys'. Key strategy names (round-robin, random, least-latency) can stay as-is.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/pages/providers.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-010",
+        "category": "ui",
+        "priority": "medium",
+        "title": "Translate Settings page",
+        "description": "Add translations to SettingsPage including card titles, field labels, section headers, and empty state messages.",
+        "acceptance_criteria": [
+          "Page title 'Settings' translated",
+          "Card titles (General, Security Rules, Retry Policy, Provider Config, TOML Preview) translated",
+          "All field labels (Port, Host, Log Level, Default RPM/TPM/RPD, etc.) translated",
+          "'Blocked PII Types' and 'Flagged PII Types' labels translated",
+          "'None' placeholder translated",
+          "'default' badge translated",
+          "'Base URL', 'Key Strategy', 'Key Count' labels translated",
+          "'Model Mappings' label translated",
+          "'No providers configured' message translated",
+          "'Loading...' message translated",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Use nested keys like 'settings.cards.general', 'settings.fields.port'. TOML preview title should be translated but content stays as-is.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/pages/settings.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-011",
+        "category": "ui",
+        "priority": "high",
+        "title": "Add Language Switcher component",
+        "description": "Create a LanguageSwitcher component that allows users to toggle between English and Chinese. Add to Navbar. Persist language preference to localStorage.",
+        "acceptance_criteria": [
+          "LanguageSwitcher component created with dropdown or toggle button",
+          "Shows current language (EN / \u4e2d\u6587)",
+          "Clicking switches language immediately",
+          "Language preference persisted to localStorage",
+          "Component added to Navbar",
+          "Works with i18next instance",
+          "Both English and Chinese flag icons or labels"
+        ],
+        "technical_notes": "Use i18next's changeLanguage() method. Can use a simple dropdown or a toggle button. Consider using lucide-react Globe icon.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/components/language-switcher.tsx",
+          "apps/admin/src/components/layout/navbar.tsx"
+        ]
+      },
+      {
+        "id": "s15-feat-012",
+        "category": "ui",
+        "priority": "medium",
+        "title": "Translate StatusBadge and InjectionScoreBar",
+        "description": "Add translations to StatusBadge and InjectionScoreBar components for status labels and tooltip text.",
+        "acceptance_criteria": [
+          "StatusBadge labels (success, error, blocked) translated",
+          "InjectionScoreBar tooltip or labels translated if any",
+          "All strings have both English and Chinese translations"
+        ],
+        "technical_notes": "Check if InjectionScoreBar has any user-visible text. StatusBadge should map status values to translation keys.",
+        "status": "completed",
+        "dependencies": [
+          "s15-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/components/status-badge.tsx",
+          "apps/admin/src/components/injection-score-bar.tsx"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-20 02:33:33",
+    "original_sprint_id": "sprint-015"
+  }
+}
