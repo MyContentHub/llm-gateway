@@ -37,5 +37,5 @@ async function auditCleanup(server: FastifyInstance) {
 
 export const auditCleanupPlugin = fp(auditCleanup, {
   name: "audit-cleanup",
-  dependencies: ["db-plugin"],
+  dependencies: ["db"],
 });

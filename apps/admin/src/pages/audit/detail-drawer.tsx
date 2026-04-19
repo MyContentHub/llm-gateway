@@ -231,7 +231,7 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
   const responseBodyNullMessage =
     log.status === "blocked"
       ? "请求被拦截，无响应内容"
-      : "内容已过期清理（超过 7 天保留期）";
+      : "Content expired (retained for 7 days)";
 
   return (
     <>
@@ -288,7 +288,7 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
             body={log.request_body}
             truncated={log.request_body_truncated}
             endpoint={log.endpoint}
-            nullMessage="内容已过期清理（超过 7 天保留期）"
+            nullMessage="Content expired (retained for 7 days)"
             onOpenModal={() => openModal("request")}
           />
           <BodySection
