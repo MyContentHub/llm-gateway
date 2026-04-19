@@ -58,6 +58,15 @@ export function useAuditLogs(filters: AuditFilters) {
   });
 }
 
+export function useAuditLogDetail(requestId: string | null) {
+  return useQuery({
+    queryKey: ["audit-log-detail", requestId],
+    queryFn: () =>
+      apiClient.get<AuditLogRow>(`/admin/audit/logs/${requestId}`),
+    enabled: !!requestId,
+  });
+}
+
 export function useAuditModels(startDate?: string, endDate?: string) {
   const params = new URLSearchParams();
   if (startDate) params.set("startDate", startDate);

@@ -1,6 +1,7 @@
 import { useRef, useState, useCallback } from "react";
-import { X, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
+import { X, ChevronDown, ChevronRight, AlertTriangle, Loader2 } from "lucide-react";
 import type { AuditLogRow } from "@/hooks/use-audit-logs";
+import { useAuditLogDetail } from "@/hooks/use-audit-logs";
 import { formatDate, formatUsd, formatMs } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -212,10 +213,15 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
   useFocusTrap(drawerRef, open, onClose);
   const [modalTarget, setModalTarget] = useState<ModalTarget>(null);
 
+  const { data: detail } = useAuditLogDetail(open ? log?.request_id ?? null : null);
+
   const openModal = useCallback((target: ModalTarget) => setModalTarget(target), []);
   const closeModal = useCallback(() => setModalTarget(null), []);
 
   if (!log || !open) return null;
+
+  const fullLog = detail ?? log;
+  const loadingBody = open && !detail;
 
   let piiTypes: string[] = [];
   if (log.pii_types_found) {
@@ -287,21 +293,29 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
           <Field label={t("audit.detail.field.injectionScore")}>
             <InjectionScoreBar score={log.prompt_injection_score} />
           </Field>
-          <BodySection
-            title={t("audit.detail.body.requestBody")}
-            body={log.request_body}
-            truncated={log.request_body_truncated}
-            endpoint={log.endpoint}
-            nullMessage={t("audit.detail.body.contentExpired")}
-            onOpenModal={() => openModal("request")}
-          />
-          <BodySection
-            title={t("audit.detail.body.responseBody")}
-            body={log.response_body}
-            truncated={log.response_body_truncated}
-            nullMessage={responseBodyNullMessage}
-            onOpenModal={() => openModal("response")}
-          />
+          {loadingBody ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <>
+              <BodySection
+                title={t("audit.detail.body.requestBody")}
+                body={fullLog.request_body}
+                truncated={fullLog.request_body_truncated}
+                endpoint={fullLog.endpoint}
+                nullMessage={t("audit.detail.body.contentExpired")}
+                onOpenModal={() => openModal("request")}
+              />
+              <BodySection
+                title={t("audit.detail.body.responseBody")}
+                body={fullLog.response_body}
+                truncated={fullLog.response_body_truncated}
+                nullMessage={responseBodyNullMessage}
+                onOpenModal={() => openModal("response")}
+              />
+            </>
+          )}
           <Field label={t("audit.detail.field.contentHash")}>
             <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">
               {log.content_hash_sha256}
@@ -313,13 +327,13 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
         open={modalTarget === "request"}
         onClose={closeModal}
         title={t("audit.detail.body.requestBody")}
-        content={log.request_body ?? null}
+        content={fullLog.request_body ?? null}
       />
       <JsonModal
         open={modalTarget === "response"}
         onClose={closeModal}
         title={t("audit.detail.body.responseBody")}
-        content={log.response_body ?? null}
+        content={fullLog.response_body ?? null}
       />
     </>
   );
