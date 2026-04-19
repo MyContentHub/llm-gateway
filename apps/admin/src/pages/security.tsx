@@ -9,6 +9,7 @@ import {
   Cell,
 } from "recharts";
 import { Shield, Eye, AlertTriangle, Filter, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/layout/page-header";
 import { Histogram } from "@/components/charts/histogram";
 import {
@@ -66,7 +67,7 @@ function KpiCard({
   );
 }
 
-function PiiBarChart({ byType }: { byType: Record<string, number> }) {
+function PiiBarChart({ byType, emptyText }: { byType: Record<string, number>; emptyText: string }) {
   const data = useMemo(() => {
     const entries = Object.entries(byType).sort((a, b) => b[1] - a[1]);
     return entries.map(([name, value]) => ({ name, value }));
@@ -75,7 +76,7 @@ function PiiBarChart({ byType }: { byType: Record<string, number> }) {
   if (data.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
-        No PII detection data
+        {emptyText}
       </p>
     );
   }
@@ -114,11 +115,18 @@ function PiiBarChart({ byType }: { byType: Record<string, number> }) {
   );
 }
 
-function ThreatFeedTable({ logs }: { logs: BlockedLog[] }) {
+function ThreatFeedTable({ logs, translations }: { logs: BlockedLog[]; translations: {
+  time: string;
+  requestId: string;
+  model: string;
+  pii: string;
+  injectionScore: string;
+  empty: string;
+} }) {
   if (logs.length === 0) {
     return (
       <p className="text-sm text-muted-foreground text-center py-8">
-        No blocked events
+        {translations.empty}
       </p>
     );
   }
@@ -129,19 +137,19 @@ function ThreatFeedTable({ logs }: { logs: BlockedLog[] }) {
         <thead>
           <tr className="border-b border-border bg-muted/50">
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-              Time
+              {translations.time}
             </th>
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-              Request ID
+              {translations.requestId}
             </th>
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-              Model
+              {translations.model}
             </th>
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-              PII
+              {translations.pii}
             </th>
             <th className="px-4 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-              Injection Score
+              {translations.injectionScore}
             </th>
           </tr>
         </thead>
@@ -181,6 +189,7 @@ function ThreatFeedTable({ logs }: { logs: BlockedLog[] }) {
 }
 
 export function SecurityPage() {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useSecurityStats();
   const { data: blockedData, isLoading: blockedLoading } = useBlockedLogs();
 
@@ -201,52 +210,55 @@ export function SecurityPage() {
 
   return (
     <div>
-      <PageHeader title="Security Monitor" />
+      <PageHeader title={t("security.title")} />
       <div className="space-y-6">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <KpiCard
             icon={Shield}
-            label="Blocked Requests"
+            label={t("security.kpis.blockedRequests")}
             value={formatNumber(stats?.blockedRequests ?? 0)}
             color="bg-red-500"
           />
           <KpiCard
             icon={Eye}
-            label="PII Detections"
+            label={t("security.kpis.piiDetections")}
             value={formatNumber(stats?.piiDetections.total ?? 0)}
-            sub={`${Object.keys(stats?.piiDetections.byType ?? {}).length} types`}
+            sub={t("security.subLabels.types", { count: Object.keys(stats?.piiDetections.byType ?? {}).length })}
             color="bg-amber-500"
           />
           <KpiCard
             icon={AlertTriangle}
-            label="Injection Attempts"
+            label={t("security.kpis.injectionAttempts")}
             value={formatNumber(stats?.injectionAttempts.total ?? 0)}
-            sub={`avg score ${((stats?.injectionAttempts.avgScore ?? 0) * 100).toFixed(0)}%`}
+            sub={t("security.subLabels.avgScore", { score: ((stats?.injectionAttempts.avgScore ?? 0) * 100).toFixed(0) })}
             color="bg-orange-500"
           />
           <KpiCard
             icon={Filter}
-            label="Content Filter"
+            label={t("security.kpis.contentFilter")}
             value={formatNumber(stats?.contentFilter.blocked ?? 0)}
-            sub={`${formatNumber(stats?.contentFilter.flagged ?? 0)} flagged · ${formatNumber(stats?.contentFilter.allowed ?? 0)} allowed`}
+            sub={t("security.subLabels.flaggedAllowed", { 
+              flagged: formatNumber(stats?.contentFilter.flagged ?? 0), 
+              allowed: formatNumber(stats?.contentFilter.allowed ?? 0) 
+            })}
             color="bg-purple-500"
           />
         </div>
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <div className="rounded-lg border border-border bg-card p-5">
-            <h2 className="text-lg font-semibold mb-4">PII Detection by Type</h2>
-            <PiiBarChart byType={stats?.piiDetections.byType ?? {}} />
+            <h2 className="text-lg font-semibold mb-4">{t("security.charts.piiByType")}</h2>
+            <PiiBarChart byType={stats?.piiDetections.byType ?? {}} emptyText={t("security.empty.noPiiData")} />
           </div>
           <div className="rounded-lg border border-border bg-card p-5">
             <h2 className="text-lg font-semibold mb-4">
-              Injection Score Distribution
+              {t("security.charts.injectionScore")}
             </h2>
             {scoreData.length > 0 ? (
               <Histogram data={scoreData} />
             ) : (
               <p className="text-sm text-muted-foreground text-center py-8">
-                No injection data
+                {t("security.empty.noInjectionData")}
               </p>
             )}
           </div>
@@ -254,9 +266,9 @@ export function SecurityPage() {
 
         <div className="rounded-lg border border-border bg-card">
           <div className="p-5 border-b border-border">
-            <h2 className="text-lg font-semibold">Threat Feed</h2>
+            <h2 className="text-lg font-semibold">{t("security.threatFeed.title")}</h2>
             <p className="text-sm text-muted-foreground mt-1">
-              Recent blocked events
+              {t("security.threatFeed.subtitle")}
             </p>
           </div>
           {blockedLoading ? (
@@ -264,7 +276,17 @@ export function SecurityPage() {
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <ThreatFeedTable logs={blockedData?.logs ?? []} />
+            <ThreatFeedTable 
+              logs={blockedData?.logs ?? []} 
+              translations={{
+                time: t("security.table.time"),
+                requestId: t("security.table.requestId"),
+                model: t("security.table.model"),
+                pii: t("security.table.pii"),
+                injectionScore: t("security.table.injectionScore"),
+                empty: t("security.empty.noBlockedEvents"),
+              }}
+            />
           )}
         </div>
       </div>
