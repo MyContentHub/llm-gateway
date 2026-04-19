@@ -142,7 +142,51 @@
       "next": "Next",
       "page": "Page {{current}} of {{total}}"
     },
-    "empty": "No audit logs found"
+    "empty": "No audit logs found",
+    "detail": {
+      "title": "Log Detail",
+      "field": {
+        "requestId": "Request ID",
+        "timestamp": "Timestamp",
+        "status": "Status",
+        "apiKeyId": "API Key ID",
+        "model": "Model",
+        "endpoint": "Endpoint",
+        "promptTokens": "Prompt Tokens",
+        "completionTokens": "Completion Tokens",
+        "cost": "Cost",
+        "latency": "Latency",
+        "piiDetected": "PII Detected",
+        "injectionScore": "Injection Score",
+        "contentHash": "Content Hash"
+      },
+      "pii": {
+        "yes": "Yes",
+        "no": "No",
+        "typesFound": "{{count}} type",
+        "typesFound_other": "{{count}} types",
+        "showDetails": "Show details",
+        "hideDetails": "Hide details",
+        "typeBreakdown": "Type breakdown",
+        "occurrence": "{{count}} occurrence",
+        "occurrence_other": "{{count}} occurrences",
+        "securityNote": "Note: Actual PII values are not stored for security reasons."
+      },
+      "body": {
+        "requestBody": "Request Body",
+        "responseBody": "Response Body",
+        "expandPreview": "Expand preview",
+        "collapse": "Collapse",
+        "truncationWarning": "Content truncated (exceeds 128KB)",
+        "viewFull": "View full content",
+        "contentExpired": "Content expired (retained for 7 days)",
+        "requestBlocked": "Request blocked, no response content"
+      }
+    },
+    "jsonModal": {
+      "copy": "Copy",
+      "copied": "Copied"
+    }
   },
   "components": {
     "statusBadge": {

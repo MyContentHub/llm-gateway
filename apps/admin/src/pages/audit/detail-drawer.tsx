@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { InjectionScoreBar } from "@/components/injection-score-bar";
 import { JsonModal } from "./json-modal";
+import { useTranslation } from "react-i18next";
 
 interface DetailDrawerProps {
   log: AuditLogRow | null;
@@ -49,6 +50,7 @@ function PIITypeBadge({ type }: { type: string }) {
 }
 
 function PIIDetectedDisplay({ piiTypes }: { piiTypes: string[] }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const typeCounts = piiTypes.reduce(
     (acc, type) => {
@@ -63,11 +65,11 @@ function PIIDetectedDisplay({ piiTypes }: { piiTypes: string[] }) {
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium">
-          Yes
+          {t("audit.detail.pii.yes")}
         </span>
         {uniqueTypes.length > 0 && (
           <span className="text-xs text-muted-foreground">
-            {uniqueTypes.length} type{uniqueTypes.length !== 1 ? "s" : ""} found
+            {t("audit.detail.pii.typesFound", { count: uniqueTypes.length })}
           </span>
         )}
       </div>
@@ -88,12 +90,12 @@ function PIIDetectedDisplay({ piiTypes }: { piiTypes: string[] }) {
             ) : (
               <ChevronRight className="h-3 w-3" />
             )}
-            {expanded ? "Hide details" : "Show details"}
+            {expanded ? t("audit.detail.pii.hideDetails") : t("audit.detail.pii.showDetails")}
           </button>
           {expanded && (
             <div className="bg-muted/50 rounded-md p-3 space-y-1.5">
               <p className="text-xs font-medium text-muted-foreground">
-                Type breakdown
+                {t("audit.detail.pii.typeBreakdown")}
               </p>
               <div className="space-y-1">
                 {uniqueTypes.map((type) => (
@@ -103,13 +105,13 @@ function PIIDetectedDisplay({ piiTypes }: { piiTypes: string[] }) {
                   >
                     <PIITypeBadge type={type} />
                     <span className="text-muted-foreground">
-                      {typeCounts[type]} occurrence{typeCounts[type] !== 1 ? "s" : ""}
+                      {t("audit.detail.pii.occurrence", { count: typeCounts[type] })}
                     </span>
                   </div>
                 ))}
               </div>
               <p className="text-[10px] text-muted-foreground/70 italic mt-2">
-                Note: Actual PII values are not stored for security reasons.
+                {t("audit.detail.pii.securityNote")}
               </p>
             </div>
           )}
@@ -136,6 +138,7 @@ function BodySection({
   nullMessage: string;
   onOpenModal: () => void;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
 
   if (body === null || body === undefined) {
@@ -173,14 +176,14 @@ function BodySection({
           ) : (
             <ChevronRight className="h-3 w-3" />
           )}
-          {expanded ? "收起" : "展开预览"}
+          {expanded ? t("audit.detail.body.collapse") : t("audit.detail.body.expandPreview")}
         </button>
         {expanded && (
           <div className="space-y-2">
             {truncated === 1 && (
               <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
                 <AlertTriangle className="h-3 w-3" />
-                <span>内容已被截断（超过 128KB）</span>
+                <span>{t("audit.detail.body.truncationWarning")}</span>
               </div>
             )}
             <pre className="bg-muted/50 rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
@@ -194,7 +197,7 @@ function BodySection({
           onClick={onOpenModal}
           className="text-xs text-primary hover:underline"
         >
-          查看完整内容
+          {t("audit.detail.body.viewFull")}
         </button>
       </dd>
     </div>
@@ -204,6 +207,7 @@ function BodySection({
 type ModalTarget = "request" | "response" | null;
 
 export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
+  const { t } = useTranslation();
   const drawerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(drawerRef, open, onClose);
   const [modalTarget, setModalTarget] = useState<ModalTarget>(null);
@@ -230,8 +234,8 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
 
   const responseBodyNullMessage =
     log.status === "blocked"
-      ? "请求被拦截，无响应内容"
-      : "Content expired (retained for 7 days)";
+      ? t("audit.detail.body.requestBlocked")
+      : t("audit.detail.body.contentExpired");
 
   return (
     <>
@@ -241,7 +245,7 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
       />
       <div ref={drawerRef} className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-card shadow-xl border-l border-border overflow-y-auto">
         <div className="sticky top-0 flex items-center justify-between p-4 border-b border-border bg-card">
-          <h2 className="text-lg font-semibold text-foreground">Log Detail</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t("audit.detail.title")}</h2>
           <button
             onClick={onClose}
             className="p-1 rounded-md hover:bg-muted text-muted-foreground"
@@ -250,11 +254,11 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
           </button>
         </div>
         <dl className="p-4 space-y-4">
-          <Field label="Request ID">
+          <Field label={t("audit.detail.field.requestId")}>
             <code className="text-xs bg-muted px-1 py-0.5 rounded">{log.request_id}</code>
           </Field>
-          <Field label="Timestamp">{formatDate(log.timestamp)}</Field>
-          <Field label="Status">
+          <Field label={t("audit.detail.field.timestamp")}>{formatDate(log.timestamp)}</Field>
+          <Field label={t("audit.detail.field.status")}>
             <span
               className={cn(
                 "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
@@ -264,41 +268,41 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
               {log.status}
             </span>
           </Field>
-          <Field label="API Key ID">
+          <Field label={t("audit.detail.field.apiKeyId")}>
             <code className="text-xs bg-muted px-1 py-0.5 rounded">{log.api_key_id}</code>
           </Field>
-          <Field label="Model">{log.model}</Field>
-          <Field label="Endpoint">{log.endpoint}</Field>
-          <Field label="Prompt Tokens">{log.prompt_tokens.toLocaleString()}</Field>
-          <Field label="Completion Tokens">{log.completion_tokens.toLocaleString()}</Field>
-          <Field label="Cost">{formatUsd(log.cost_usd)}</Field>
-          <Field label="Latency">{formatMs(log.latency_ms)}</Field>
-          <Field label="PII Detected">
+          <Field label={t("audit.detail.field.model")}>{log.model}</Field>
+          <Field label={t("audit.detail.field.endpoint")}>{log.endpoint}</Field>
+          <Field label={t("audit.detail.field.promptTokens")}>{log.prompt_tokens.toLocaleString()}</Field>
+          <Field label={t("audit.detail.field.completionTokens")}>{log.completion_tokens.toLocaleString()}</Field>
+          <Field label={t("audit.detail.field.cost")}>{formatUsd(log.cost_usd)}</Field>
+          <Field label={t("audit.detail.field.latency")}>{formatMs(log.latency_ms)}</Field>
+          <Field label={t("audit.detail.field.piiDetected")}>
             {log.pii_detected ? (
               <PIIDetectedDisplay piiTypes={piiTypes} />
             ) : (
-              <span className="text-muted-foreground">No</span>
+              <span className="text-muted-foreground">{t("audit.detail.pii.no")}</span>
             )}
           </Field>
-          <Field label="Injection Score">
+          <Field label={t("audit.detail.field.injectionScore")}>
             <InjectionScoreBar score={log.prompt_injection_score} />
           </Field>
           <BodySection
-            title="Request Body"
+            title={t("audit.detail.body.requestBody")}
             body={log.request_body}
             truncated={log.request_body_truncated}
             endpoint={log.endpoint}
-            nullMessage="Content expired (retained for 7 days)"
+            nullMessage={t("audit.detail.body.contentExpired")}
             onOpenModal={() => openModal("request")}
           />
           <BodySection
-            title="Response Body"
+            title={t("audit.detail.body.responseBody")}
             body={log.response_body}
             truncated={log.response_body_truncated}
             nullMessage={responseBodyNullMessage}
             onOpenModal={() => openModal("response")}
           />
-          <Field label="Content Hash">
+          <Field label={t("audit.detail.field.contentHash")}>
             <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">
               {log.content_hash_sha256}
             </code>
@@ -308,13 +312,13 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
       <JsonModal
         open={modalTarget === "request"}
         onClose={closeModal}
-        title="Request Body"
+        title={t("audit.detail.body.requestBody")}
         content={log.request_body ?? null}
       />
       <JsonModal
         open={modalTarget === "response"}
         onClose={closeModal}
-        title="Response Body"
+        title={t("audit.detail.body.responseBody")}
         content={log.response_body ?? null}
       />
     </>

@@ -142,7 +142,51 @@
       "next": "下一页",
       "page": "第 {{current}} 页，共 {{total}} 页"
     },
-    "empty": "未找到审计日志"
+    "empty": "未找到审计日志",
+    "detail": {
+      "title": "日志详情",
+      "field": {
+        "requestId": "请求 ID",
+        "timestamp": "时间戳",
+        "status": "状态",
+        "apiKeyId": "API 密钥 ID",
+        "model": "模型",
+        "endpoint": "端点",
+        "promptTokens": "提示 Token",
+        "completionTokens": "补全 Token",
+        "cost": "费用",
+        "latency": "延迟",
+        "piiDetected": "检测到 PII",
+        "injectionScore": "注入分数",
+        "contentHash": "内容哈希"
+      },
+      "pii": {
+        "yes": "是",
+        "no": "否",
+        "typesFound": "{{count}} 种类型",
+        "typesFound_other": "{{count}} 种类型",
+        "showDetails": "显示详情",
+        "hideDetails": "隐藏详情",
+        "typeBreakdown": "类型统计",
+        "occurrence": "{{count}} 次",
+        "occurrence_other": "{{count}} 次",
+        "securityNote": "注意：出于安全考虑，实际 PII 值不会被存储。"
+      },
+      "body": {
+        "requestBody": "请求体",
+        "responseBody": "响应体",
+        "expandPreview": "展开预览",
+        "collapse": "收起",
+        "truncationWarning": "内容已被截断（超过 128KB）",
+        "viewFull": "查看完整内容",
+        "contentExpired": "内容已过期（保留 7 天）",
+        "requestBlocked": "请求被拦截，无响应内容"
+      }
+    },
+    "jsonModal": {
+      "copy": "复制",
+      "copied": "已复制"
+    }
   },
   "components": {
     "statusBadge": {

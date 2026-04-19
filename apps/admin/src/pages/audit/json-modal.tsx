@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { X, Copy, Check } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 interface JsonModalProps {
   open: boolean;
@@ -36,6 +37,7 @@ function formatContent(content: string): string {
 }
 
 export function JsonModal({ open, onClose, title, content }: JsonModalProps) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -68,12 +70,12 @@ export function JsonModal({ open, onClose, title, content }: JsonModalProps) {
               {copied ? (
                 <>
                   <Check className="h-4 w-4 text-green-600" />
-                  Copied
+                  {t("audit.jsonModal.copied")}
                 </>
               ) : (
                 <>
                   <Copy className="h-4 w-4" />
-                  Copy
+                  {t("audit.jsonModal.copy")}
                 </>
               )}
             </button>
