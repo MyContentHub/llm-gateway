@@ -36,7 +36,7 @@
       "id": "sprint-014",
       "name": "Audit Log Body Storage & Retention",
       "goal": "Store full request/response body in audit logs, display in Detail Drawer with JSON preview, and implement two-layer TTL cleanup (7-day body, 30-day metadata)",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-20",
       "features": [
         {
@@ -53,7 +53,7 @@
             "Existing tests pass after type changes"
           ],
           "technical_notes": "Migration goes in apps/gateway/migrations/. Types in apps/gateway/src/db/audit-store.ts. Fields are optional/nullable since existing rows won't have body data.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -78,7 +78,7 @@
             "Existing audit tests pass"
           ],
           "technical_notes": "The onSend hook already captures response body in (request as any)._auditResponseBody. Extend the onResponse hook to serialize and truncate both bodies. Use String.prototype.slice or Buffer.byteLength for truncation at UTF-8 byte level.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s14-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -101,7 +101,7 @@
             "Plugin registered in index.ts"
           ],
           "technical_notes": "Install fastify-cron package. Cleanup SQL uses SQLite datetime('now', '-N days') for date math. Plugin wraps both cleanup statements in a single db.transaction(). Register after DB plugin.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s14-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
@@ -124,7 +124,7 @@
             "Existing admin audit tests pass"
           ],
           "technical_notes": "Only stmtGetByRequestId in AuditStore needs updating. The list query already uses explicit column names so no change needed there.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s14-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
@@ -147,7 +147,7 @@
             "Modal only renders when body content is non-null"
           ],
           "technical_notes": "Follow existing Modal/Drawer patterns in the codebase. Use existing shadcn/ui dialog or custom overlay. For syntax highlighting, consider a lightweight approach (CSS classes for JSON keys/strings/numbers) rather than a full library like prism.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -172,7 +172,7 @@
             "AuditLogRow type updated with 4 optional body fields in use-audit-logs.ts"
           ],
           "technical_notes": "Update AuditLogRow in use-audit-logs.ts to add request_body?, response_body?, request_body_truncated?, response_body_truncated?. Import and use JsonModal from ./json-modal. Follow existing collapsible pattern from PIIDetectedDisplay.",
-          "status": "pending",
+          "status": "completed",
           "dependencies": ["s14-feat-004", "s14-feat-005"],
           "estimated_complexity": "medium",
           "files_affected": [
