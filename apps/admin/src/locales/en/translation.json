@@ -102,5 +102,86 @@
       "edit": "Edit",
       "revoke": "Revoke"
     }
+  },
+  "audit": {
+    "title": "Audit Logs",
+    "filters": {
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "model": "Model",
+      "status": "Status",
+      "pickDate": "Pick a date",
+      "allModels": "All models",
+      "allStatuses": "All statuses"
+    },
+    "statusOptions": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked"
+    },
+    "table": {
+      "time": "Time",
+      "requestId": "Request ID",
+      "key": "Key",
+      "model": "Model",
+      "tokens": "Tokens",
+      "cost": "Cost",
+      "latency": "Latency",
+      "status": "Status",
+      "pii": "PII",
+      "injection": "Injection"
+    },
+    "export": {
+      "button": "Export CSV",
+      "error": "Export failed. Please try again.",
+      "warning": "Export capped at {{maxRows}} rows. Apply tighter filters to export all results."
+    },
+    "pagination": {
+      "showing": "Showing {{start}}-{{end}} of {{total}}",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page {{current}} of {{total}}"
+    },
+    "empty": "No audit logs found"
+  },
+  "components": {
+    "statusBadge": {
+      "success": "Success",
+      "error": "Error",
+      "blocked": "Blocked"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "loading": "Loading...",
+    "cards": {
+      "general": "General",
+      "securityRules": "Security Rules",
+      "retryPolicy": "Retry Policy",
+      "providerConfig": "Provider Config",
+      "tomlPreview": "TOML Preview"
+    },
+    "fields": {
+      "port": "Port",
+      "host": "Host",
+      "logLevel": "Log Level",
+      "defaultRpm": "Default RPM",
+      "defaultTpm": "Default TPM",
+      "defaultRpd": "Default RPD",
+      "injectionThreshold": "Injection Threshold",
+      "maxRetries": "Max Retries",
+      "initialDelay": "Initial Delay",
+      "maxDelay": "Max Delay",
+      "backoffMultiplier": "Backoff Multiplier",
+      "blockedPiiTypes": "Blocked PII Types",
+      "flaggedPiiTypes": "Flagged PII Types",
+      "baseUrl": "Base URL",
+      "keyStrategy": "Key Strategy",
+      "keyCount": "Key Count",
+      "modelMappings": "Model Mappings"
+    },
+    "none": "None",
+    "default": "default",
+    "noProviders": "No providers configured"
   }
 }
