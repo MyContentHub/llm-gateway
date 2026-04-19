@@ -3,5 +3,44 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success"
+  },
+  "nav": {
+    "home": "Home",
+    "keys": "Keys",
+    "audit": "Audit",
+    "security": "Security",
+    "providers": "Providers",
+    "settings": "Settings"
+  },
+  "navbar": {
+    "logout": "Logout"
+  },
+  "dataTable": {
+    "page": "Page {{page}} of {{total}}",
+    "empty": "No data found"
+  },
+  "overview": {
+    "title": "Overview",
+    "kpis": {
+      "totalRequests": "Total Requests",
+      "tokenUsage": "Token Usage",
+      "totalCost": "Total Cost",
+      "avgLatency": "Avg Latency"
+    },
+    "charts": {
+      "byModel": "Requests by Model",
+      "byStatus": "Requests by Status",
+      "recentActivity": "Recent Activity",
+      "piiDetectionRate": "PII Detection Rate"
+    },
+    "table": {
+      "time": "Time",
+      "model": "Model",
+      "tokens": "Tokens",
+      "cost": "Cost",
+      "status": "Status"
+    },
+    "noActivity": "No recent activity",
+    "ofRequestsFlagged": "of requests flagged"
   }
 }

@@ -3,5 +3,44 @@
     "loading": "加载中...",
     "error": "错误",
     "success": "成功"
+  },
+  "nav": {
+    "home": "首页",
+    "keys": "密钥",
+    "audit": "审计",
+    "security": "安全",
+    "providers": "提供商",
+    "settings": "设置"
+  },
+  "navbar": {
+    "logout": "退出登录"
+  },
+  "dataTable": {
+    "page": "第 {{page}} 页，共 {{total}} 页",
+    "empty": "暂无数据"
+  },
+  "overview": {
+    "title": "概览",
+    "kpis": {
+      "totalRequests": "总请求数",
+      "tokenUsage": "Token 用量",
+      "totalCost": "总费用",
+      "avgLatency": "平均延迟"
+    },
+    "charts": {
+      "byModel": "按模型请求数",
+      "byStatus": "按状态请求数",
+      "recentActivity": "近期活动",
+      "piiDetectionRate": "PII 检测率"
+    },
+    "table": {
+      "time": "时间",
+      "model": "模型",
+      "tokens": "Token",
+      "cost": "费用",
+      "status": "状态"
+    },
+    "noActivity": "暂无近期活动",
+    "ofRequestsFlagged": "请求被标记"
   }
 }

@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface DataTableProps<T> {
   data: T[];
@@ -26,6 +27,7 @@ export function DataTable<T>({
   onPageChange,
   emptyMessage,
 }: DataTableProps<T>) {
+  const { t } = useTranslation();
   const table = useReactTable({
     data,
     columns,
@@ -85,7 +87,7 @@ export function DataTable<T>({
                   colSpan={columns.length}
                   className="px-4 py-8 text-center text-sm text-muted-foreground"
                 >
-                  {emptyMessage ?? "No data found"}
+                  {emptyMessage ?? t("dataTable.empty")}
                 </td>
               </tr>
             )}
@@ -95,7 +97,7 @@ export function DataTable<T>({
       {totalPages > 1 && (
         <div className="flex items-center justify-between px-2 py-4">
           <span className="text-sm text-muted-foreground">
-            Page {page + 1} of {totalPages}
+            {t("dataTable.page", { page: page + 1, total: totalPages })}
           </span>
           <div className="flex gap-1">
             <button

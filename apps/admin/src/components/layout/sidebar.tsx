@@ -11,14 +11,15 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 const navItems = [
-  { to: "/", icon: LayoutDashboard, label: "Home" },
-  { to: "/keys", icon: Key, label: "Keys" },
-  { to: "/audit", icon: ScrollText, label: "Audit" },
-  { to: "/security", icon: Shield, label: "Security" },
-  { to: "/providers", icon: Server, label: "Providers" },
-  { to: "/settings", icon: Settings, label: "Settings" },
+  { to: "/", icon: LayoutDashboard, key: "home" },
+  { to: "/keys", icon: Key, key: "keys" },
+  { to: "/audit", icon: ScrollText, key: "audit" },
+  { to: "/security", icon: Shield, key: "security" },
+  { to: "/providers", icon: Server, key: "providers" },
+  { to: "/settings", icon: Settings, key: "settings" },
 ];
 
 interface SidebarProps {
@@ -34,6 +35,8 @@ export function Sidebar({
   mobileOpen,
   onMobileClose,
 }: SidebarProps) {
+  const { t } = useTranslation();
+
   const sidebarContent = (
     <div
       className={cn(
@@ -82,7 +85,7 @@ export function Sidebar({
             }
           >
             <item.icon className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>{item.label}</span>}
+            {!collapsed && <span>{t(`nav.${item.key}`)}</span>}
           </NavLink>
         ))}
       </nav>
