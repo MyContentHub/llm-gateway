@@ -93,6 +93,11 @@ export async function createTestServer(options?: TestServerOptions): Promise<Tes
       max_delay_ms: 10000,
       backoff_multiplier: 2,
     },
+    audit: {
+      retention_days: 30,
+      body_retention_days: 7,
+      cleanup_cron: "0 * * * *",
+    },
   };
 
   const server = Fastify({ logger: false });

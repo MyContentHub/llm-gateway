@@ -10,6 +10,7 @@ import { createAuthMiddleware } from "./middleware/auth.js";
 import { createSecurityMiddleware } from "./middleware/security.js";
 import { adminKeysPlugin } from "./routes/admin/keys.js";
 import { createAuditLogger } from "./audit/logger.js";
+import { auditCleanupPlugin } from "./audit/cleanup.js";
 import { setupMetrics, createMetrics } from "./audit/metrics.js";
 import { adminAuditPlugin } from "./routes/admin/audit.js";
 import { adminConfigPlugin } from "./routes/admin/config.js";
@@ -58,6 +59,7 @@ async function main() {
   server.decorate("config", config);
 
   await server.register(createDbPlugin, { databasePath: config.database_path });
+  await server.register(auditCleanupPlugin);
 
   const rateLimiter = new RateLimiter({ rpm: config.default_rpm, tpm: config.default_tpm, rpd: config.default_rpd });
   server.decorate("rateLimiter", rateLimiter);

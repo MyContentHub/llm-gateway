@@ -26,6 +26,16 @@ export type RetryConfig = z.infer<typeof RetrySchema>;
 
 export const DEFAULT_RETRY_CONFIG: RetryConfig = RetrySchema.parse({});
 
+export const AuditSchema = z.object({
+  retention_days: z.number().int().positive().default(30),
+  body_retention_days: z.number().int().positive().default(7),
+  cleanup_cron: z.string().default("0 * * * *"),
+});
+
+export type AuditConfig = z.infer<typeof AuditSchema>;
+
+export const DEFAULT_AUDIT_CONFIG: AuditConfig = AuditSchema.parse({});
+
 export const AppConfigSchema = z.object({
   port: z.number().int().positive().default(3000),
   host: z.string().default("0.0.0.0"),
@@ -39,6 +49,7 @@ export const AppConfigSchema = z.object({
   default_rpd: z.number().int().positive().default(1000),
   security: SecuritySchema.default(() => SecuritySchema.parse({})),
   retry: RetrySchema.default(() => RetrySchema.parse({})),
+  audit: AuditSchema.default(() => AuditSchema.parse({})),
 });
 
 export type AppConfig = z.infer<typeof AppConfigSchema>;

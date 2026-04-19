@@ -47,6 +47,7 @@ function createServer(): Fastify.FastifyInstance {
     default_rpd: 1000,
     security: DEFAULT_SECURITY_CONFIG,
     retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
+    audit: { retention_days: 30, body_retention_days: 7, cleanup_cron: "0 * * * *" },
   } satisfies AppConfig);
   server.register(chatCompletionsPlugin);
   return server;
@@ -285,6 +286,7 @@ describe("POST /v1/chat/completions", () => {
       default_rpd: 1000,
       security: DEFAULT_SECURITY_CONFIG,
       retry: { max_retries: 2, initial_delay_ms: 1000, max_delay_ms: 10000, backoff_multiplier: 2 },
+      audit: { retention_days: 30, body_retention_days: 7, cleanup_cron: "0 * * * *" },
     } satisfies AppConfig);
     server.register(chatCompletionsPlugin);
 
