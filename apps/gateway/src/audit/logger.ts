@@ -81,18 +81,53 @@ export function createAuditLogger(db: Database.Database, config: AppConfig): Fas
       const apiKeyId = (request as any).apiKey?.id ?? null;
 
       const MAX_BODY_BYTES = 131072;
+      const MAX_STRING_LEN = 10000;
+
+      function truncateStrings(value: unknown, maxLen: number): unknown {
+        if (typeof value === "string") {
+          if (value.length <= maxLen) return value;
+          return value.slice(0, maxLen) + `… [truncated ${value.length - maxLen} chars]`;
+        }
+        if (Array.isArray(value)) return value.map((v) => truncateStrings(v, maxLen));
+        if (value !== null && typeof value === "object") {
+          const out: Record<string, unknown> = {};
+          for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+            out[k] = truncateStrings(v, maxLen);
+          }
+          return out;
+        }
+        return value;
+      }
+
+      function safeTruncateBody(raw: string): { body: string; truncated: number } {
+        const buf = Buffer.from(raw, "utf-8");
+        if (buf.length <= MAX_BODY_BYTES) return { body: raw, truncated: 0 };
+
+        try {
+          const parsed = JSON.parse(raw);
+          let maxLen = MAX_STRING_LEN;
+          let result: string | undefined;
+          for (let i = 0; i < 4; i++) {
+            result = JSON.stringify(truncateStrings(parsed, maxLen));
+            if (Buffer.byteLength(result, "utf-8") <= MAX_BODY_BYTES) {
+              return { body: result, truncated: 1 };
+            }
+            maxLen = Math.floor(maxLen / 2);
+          }
+          return { body: result!, truncated: 1 };
+        } catch {
+          const safe = buf.slice(0, MAX_BODY_BYTES).toString("utf-8");
+          return { body: safe, truncated: 1 };
+        }
+      }
 
       let requestBody: string | null = null;
       let requestBodyTruncated = 0;
       if (request.body) {
         const raw = JSON.stringify(request.body);
-        const buf = Buffer.from(raw, "utf-8");
-        if (buf.length > MAX_BODY_BYTES) {
-          requestBody = buf.slice(0, MAX_BODY_BYTES).toString("utf-8");
-          requestBodyTruncated = 1;
-        } else {
-          requestBody = raw;
-        }
+        const r = safeTruncateBody(raw);
+        requestBody = r.body;
+        requestBodyTruncated = r.truncated;
       }
 
       let responseBodyField: string | null = null;
@@ -100,13 +135,9 @@ export function createAuditLogger(db: Database.Database, config: AppConfig): Fas
       if (securityScan?.action === "block") {
         responseBodyField = null;
       } else if (responseBody) {
-        const buf = Buffer.from(responseBody, "utf-8");
-        if (buf.length > MAX_BODY_BYTES) {
-          responseBodyField = buf.slice(0, MAX_BODY_BYTES).toString("utf-8");
-          responseBodyTruncated = 1;
-        } else {
-          responseBodyField = responseBody;
-        }
+        const r = safeTruncateBody(responseBody);
+        responseBodyField = r.body;
+        responseBodyTruncated = r.truncated;
       }
 
       const entry: AuditLogEntry = {
