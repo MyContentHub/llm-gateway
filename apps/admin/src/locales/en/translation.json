@@ -185,7 +185,8 @@
     },
     "jsonModal": {
       "copy": "Copy",
-      "copied": "Copied"
+      "copied": "Copied",
+      "wrap": "Wrap"
     }
   },
   "components": {
