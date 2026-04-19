@@ -1,0 +1,197 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser",
+      "@fastify/swagger",
+      "@fastify/swagger-ui",
+      "zod-to-json-schema",
+      "React 18",
+      "Vite 5",
+      "Tailwind CSS 3",
+      "shadcn/ui",
+      "@tanstack/react-query v5",
+      "@tanstack/react-table v8",
+      "recharts 2",
+      "react-router-dom v6",
+      "@playwright/test",
+      "Turborepo",
+      "pnpm 10 (workspaces)"
+    ],
+    "created_at": "2026-04-09"
+  },
+  "archived_sprint": {
+    "id": "sprint-014",
+    "name": "Audit Log Body Storage & Retention",
+    "goal": "Store full request/response body in audit logs, display in Detail Drawer with JSON preview, and implement two-layer TTL cleanup (7-day body, 30-day metadata)",
+    "status": "completed",
+    "created_at": "2026-04-20",
+    "features": [
+      {
+        "id": "s14-feat-001",
+        "category": "data",
+        "priority": "high",
+        "title": "Add body columns to audit_logs via migration",
+        "description": "Create migration 002-add-audit-body.sql adding request_body, response_body (TEXT), request_body_truncated, response_body_truncated (INTEGER DEFAULT 0) to audit_logs table. Update AuditLogEntry and AuditLogRow types in audit-store.ts to include these 4 fields.",
+        "acceptance_criteria": [
+          "Migration file 002-add-audit-body.sql created and runs successfully",
+          "audit_logs table has 4 new columns",
+          "AuditLogEntry interface includes request_body, response_body, request_body_truncated, response_body_truncated",
+          "AuditLogRow interface includes the same 4 fields",
+          "Existing tests pass after type changes"
+        ],
+        "technical_notes": "Migration goes in apps/gateway/migrations/. Types in apps/gateway/src/db/audit-store.ts. Fields are optional/nullable since existing rows won't have body data.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/gateway/migrations/002-add-audit-body.sql",
+          "apps/gateway/src/db/audit-store.ts"
+        ]
+      },
+      {
+        "id": "s14-feat-002",
+        "category": "core",
+        "priority": "high",
+        "title": "Write request/response body in audit logger",
+        "description": "Update audit/logger.ts to capture and store request body and response body as JSON strings, with 128KB truncation per field. Set *_truncated=1 when content exceeds the limit. Blocked requests should have response_body=null.",
+        "acceptance_criteria": [
+          "request_body stores JSON.stringify(request.body) capped at 128KB",
+          "response_body stores response payload capped at 128KB",
+          "request_body_truncated set to 1 when request body exceeds 128KB",
+          "response_body_truncated set to 1 when response body exceeds 128KB",
+          "Blocked requests have response_body=null",
+          "Streaming responses capture accumulated body",
+          "128KB = 131072 bytes",
+          "Existing audit tests pass"
+        ],
+        "technical_notes": "The onSend hook already captures response body in (request as any)._auditResponseBody. Extend the onResponse hook to serialize and truncate both bodies. Use String.prototype.slice or Buffer.byteLength for truncation at UTF-8 byte level.",
+        "status": "completed",
+        "dependencies": [
+          "s14-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/gateway/src/audit/logger.ts"
+        ]
+      },
+      {
+        "id": "s14-feat-003",
+        "category": "core",
+        "priority": "high",
+        "title": "Add audit config schema and cleanup cron plugin",
+        "description": "Add [audit] config section to config.toml schema with retention_days (default 30), body_retention_days (default 7), cleanup_cron (default '0 * * * *'). Create audit/cleanup.ts as a Fastify plugin using fastify-cron to run the two-layer TTL cleanup on schedule.",
+        "acceptance_criteria": [
+          "config.toml schema supports [audit] section with 3 fields",
+          "All 3 fields have sensible defaults (30, 7, '0 * * * *')",
+          "cleanup.ts plugin registers cron job via fastify-cron",
+          "Cleanup step 1: SET body fields to NULL for rows older than body_retention_days",
+          "Cleanup step 2: DELETE rows older than retention_days",
+          "Cleanup runs once on server start, then on cron schedule",
+          "Plugin registered in index.ts"
+        ],
+        "technical_notes": "Install fastify-cron package. Cleanup SQL uses SQLite datetime('now', '-N days') for date math. Plugin wraps both cleanup statements in a single db.transaction(). Register after DB plugin.",
+        "status": "completed",
+        "dependencies": [
+          "s14-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/gateway/src/config/index.ts",
+          "apps/gateway/src/audit/cleanup.ts",
+          "apps/gateway/src/index.ts",
+          "apps/gateway/package.json"
+        ]
+      },
+      {
+        "id": "s14-feat-004",
+        "category": "api",
+        "priority": "high",
+        "title": "Return body fields in audit detail API",
+        "description": "Update the detail endpoint GET /admin/audit/logs/:requestId to include the 4 new body columns in the SQL SELECT. The list endpoint remains unchanged (no body columns in SELECT).",
+        "acceptance_criteria": [
+          "GET /admin/audit/logs/:requestId returns request_body, response_body, request_body_truncated, response_body_truncated",
+          "GET /admin/audit/logs (list) does NOT return body columns",
+          "AuditStore.getAuditLogById SELECT includes the 4 new columns",
+          "Existing admin audit tests pass"
+        ],
+        "technical_notes": "Only stmtGetByRequestId in AuditStore needs updating. The list query already uses explicit column names so no change needed there.",
+        "status": "completed",
+        "dependencies": [
+          "s14-feat-001"
+        ],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/gateway/src/db/audit-store.ts",
+          "apps/gateway/src/routes/admin/audit.ts"
+        ]
+      },
+      {
+        "id": "s14-feat-005",
+        "category": "ui",
+        "priority": "high",
+        "title": "Create JSON preview Modal component",
+        "description": "Create a new json-modal.tsx component in pages/audit/ for full-screen JSON preview. Shows request or response body with syntax highlighting, monospace font, scrollable content, copy-to-clipboard button, and close button. Only opens when body is non-null.",
+        "acceptance_criteria": [
+          "json-modal.tsx created in apps/admin/src/pages/audit/",
+          "Modal displays JSON with monospace font and syntax highlighting",
+          "Content is horizontally and vertically scrollable",
+          "Copy-to-clipboard button works",
+          "Close button and overlay click dismiss the modal",
+          "Modal only renders when body content is non-null"
+        ],
+        "technical_notes": "Follow existing Modal/Drawer patterns in the codebase. Use existing shadcn/ui dialog or custom overlay. For syntax highlighting, consider a lightweight approach (CSS classes for JSON keys/strings/numbers) rather than a full library like prism.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "small",
+        "files_affected": [
+          "apps/admin/src/pages/audit/json-modal.tsx"
+        ]
+      },
+      {
+        "id": "s14-feat-006",
+        "category": "ui",
+        "priority": "high",
+        "title": "Add body sections to Detail Drawer",
+        "description": "Update detail-drawer.tsx to show collapsible Request Body and Response Body sections after Injection Score, before Content Hash. Each section has a collapsed state showing endpoint, an expanded state with JSON preview (capped at 2000 chars), truncation warning, and a button to open the full JSON Modal. Handle null body states (expired vs blocked).",
+        "acceptance_criteria": [
+          "Request Body section appears after Injection Score field",
+          "Response Body section appears after Request Body section",
+          "Collapsed state shows endpoint label and '\u67e5\u770b\u5b8c\u6574\u5185\u5bb9' button",
+          "Expanded state shows JSON preview capped at 2000 chars",
+          "Truncated warning shown when *_truncated === 1: '\u5185\u5bb9\u5df2\u88ab\u622a\u65ad\uff08\u8d85\u8fc7 128KB\uff09'",
+          "Null body for blocked response: '\u8bf7\u6c42\u88ab\u62e6\u622a\uff0c\u65e0\u54cd\u5e94\u5185\u5bb9'",
+          "Null body for expired: '\u5185\u5bb9\u5df2\u8fc7\u671f\u6e05\u7406\uff08\u8d85\u8fc7 7 \u5929\u4fdd\u7559\u671f\uff09'",
+          "'\u67e5\u770b\u5b8c\u6574\u5185\u5bb9' button opens JSON Modal",
+          "AuditLogRow type updated with 4 optional body fields in use-audit-logs.ts"
+        ],
+        "technical_notes": "Update AuditLogRow in use-audit-logs.ts to add request_body?, response_body?, request_body_truncated?, response_body_truncated?. Import and use JsonModal from ./json-modal. Follow existing collapsible pattern from PIIDetectedDisplay.",
+        "status": "completed",
+        "dependencies": [
+          "s14-feat-004",
+          "s14-feat-005"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "apps/admin/src/hooks/use-audit-logs.ts",
+          "apps/admin/src/pages/audit/detail-drawer.tsx"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-20 00:54:27",
+    "original_sprint_id": "sprint-014"
+  }
+}

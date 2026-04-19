@@ -29,155 +29,308 @@
       "Turborepo",
       "pnpm 10 (workspaces)"
     ],
-    "created_at": "2026-04-09"
+    "created_at": "2025-01-15"
   },
   "sprints": [
     {
-      "id": "sprint-014",
-      "name": "Audit Log Body Storage & Retention",
-      "goal": "Store full request/response body in audit logs, display in Detail Drawer with JSON preview, and implement two-layer TTL cleanup (7-day body, 30-day metadata)",
-      "status": "completed",
+      "id": "sprint-015",
+      "name": "Admin Internationalization",
+      "goal": "Add full i18n support to admin dashboard with English and Chinese translations, enabling language switching via UI toggle",
+      "status": "planning",
       "created_at": "2026-04-20",
       "features": [
         {
-          "id": "s14-feat-001",
-          "category": "data",
+          "id": "s15-feat-001",
+          "category": "infra",
           "priority": "high",
-          "title": "Add body columns to audit_logs via migration",
-          "description": "Create migration 002-add-audit-body.sql adding request_body, response_body (TEXT), request_body_truncated, response_body_truncated (INTEGER DEFAULT 0) to audit_logs table. Update AuditLogEntry and AuditLogRow types in audit-store.ts to include these 4 fields.",
+          "title": "Setup i18n infrastructure",
+          "description": "Install react-i18next and i18next packages. Create i18n configuration file with initialization. Set up translation file structure (locales/en/translation.json, locales/zh-CN/translation.json). Initialize i18next in main.tsx with language detection and fallback to English.",
           "acceptance_criteria": [
-            "Migration file 002-add-audit-body.sql created and runs successfully",
-            "audit_logs table has 4 new columns",
-            "AuditLogEntry interface includes request_body, response_body, request_body_truncated, response_body_truncated",
-            "AuditLogRow interface includes the same 4 fields",
-            "Existing tests pass after type changes"
+            "react-i18next and i18next installed in apps/admin",
+            "i18n.ts config file created with proper initialization",
+            "Translation files created for en and zh-CN",
+            "i18next initialized in main.tsx before React renders",
+            "useTranslation hook works in components"
           ],
-          "technical_notes": "Migration goes in apps/gateway/migrations/. Types in apps/gateway/src/db/audit-store.ts. Fields are optional/nullable since existing rows won't have body data.",
-          "status": "completed",
+          "technical_notes": "Use i18next-browser-languagedetector for automatic language detection. Store preference in localStorage. Use 'en' as fallback language.",
+          "status": "pending",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
-            "apps/gateway/migrations/002-add-audit-body.sql",
-            "apps/gateway/src/db/audit-store.ts"
+            "apps/admin/package.json",
+            "apps/admin/src/i18n.ts",
+            "apps/admin/src/locales/en/translation.json",
+            "apps/admin/src/locales/zh-CN/translation.json",
+            "apps/admin/src/main.tsx"
           ]
         },
         {
-          "id": "s14-feat-002",
-          "category": "core",
-          "priority": "high",
-          "title": "Write request/response body in audit logger",
-          "description": "Update audit/logger.ts to capture and store request body and response body as JSON strings, with 128KB truncation per field. Set *_truncated=1 when content exceeds the limit. Blocked requests should have response_body=null.",
-          "acceptance_criteria": [
-            "request_body stores JSON.stringify(request.body) capped at 128KB",
-            "response_body stores response payload capped at 128KB",
-            "request_body_truncated set to 1 when request body exceeds 128KB",
-            "response_body_truncated set to 1 when response body exceeds 128KB",
-            "Blocked requests have response_body=null",
-            "Streaming responses capture accumulated body",
-            "128KB = 131072 bytes",
-            "Existing audit tests pass"
-          ],
-          "technical_notes": "The onSend hook already captures response body in (request as any)._auditResponseBody. Extend the onResponse hook to serialize and truncate both bodies. Use String.prototype.slice or Buffer.byteLength for truncation at UTF-8 byte level.",
-          "status": "completed",
-          "dependencies": ["s14-feat-001"],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "apps/gateway/src/audit/logger.ts"
-          ]
-        },
-        {
-          "id": "s14-feat-003",
-          "category": "core",
-          "priority": "high",
-          "title": "Add audit config schema and cleanup cron plugin",
-          "description": "Add [audit] config section to config.toml schema with retention_days (default 30), body_retention_days (default 7), cleanup_cron (default '0 * * * *'). Create audit/cleanup.ts as a Fastify plugin using fastify-cron to run the two-layer TTL cleanup on schedule.",
-          "acceptance_criteria": [
-            "config.toml schema supports [audit] section with 3 fields",
-            "All 3 fields have sensible defaults (30, 7, '0 * * * *')",
-            "cleanup.ts plugin registers cron job via fastify-cron",
-            "Cleanup step 1: SET body fields to NULL for rows older than body_retention_days",
-            "Cleanup step 2: DELETE rows older than retention_days",
-            "Cleanup runs once on server start, then on cron schedule",
-            "Plugin registered in index.ts"
-          ],
-          "technical_notes": "Install fastify-cron package. Cleanup SQL uses SQLite datetime('now', '-N days') for date math. Plugin wraps both cleanup statements in a single db.transaction(). Register after DB plugin.",
-          "status": "completed",
-          "dependencies": ["s14-feat-001"],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "apps/gateway/src/config/index.ts",
-            "apps/gateway/src/audit/cleanup.ts",
-            "apps/gateway/src/index.ts",
-            "apps/gateway/package.json"
-          ]
-        },
-        {
-          "id": "s14-feat-004",
-          "category": "api",
-          "priority": "high",
-          "title": "Return body fields in audit detail API",
-          "description": "Update the detail endpoint GET /admin/audit/logs/:requestId to include the 4 new body columns in the SQL SELECT. The list endpoint remains unchanged (no body columns in SELECT).",
-          "acceptance_criteria": [
-            "GET /admin/audit/logs/:requestId returns request_body, response_body, request_body_truncated, response_body_truncated",
-            "GET /admin/audit/logs (list) does NOT return body columns",
-            "AuditStore.getAuditLogById SELECT includes the 4 new columns",
-            "Existing admin audit tests pass"
-          ],
-          "technical_notes": "Only stmtGetByRequestId in AuditStore needs updating. The list query already uses explicit column names so no change needed there.",
-          "status": "completed",
-          "dependencies": ["s14-feat-001"],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "apps/gateway/src/db/audit-store.ts",
-            "apps/gateway/src/routes/admin/audit.ts"
-          ]
-        },
-        {
-          "id": "s14-feat-005",
+          "id": "s15-feat-002",
           "category": "ui",
           "priority": "high",
-          "title": "Create JSON preview Modal component",
-          "description": "Create a new json-modal.tsx component in pages/audit/ for full-screen JSON preview. Shows request or response body with syntax highlighting, monospace font, scrollable content, copy-to-clipboard button, and close button. Only opens when body is non-null.",
+          "title": "Translate core layout components",
+          "description": "Add translations to Sidebar (nav labels), Navbar (logout button), and DataTable (pagination, empty message). Create translation keys for all hardcoded strings.",
           "acceptance_criteria": [
-            "json-modal.tsx created in apps/admin/src/pages/audit/",
-            "Modal displays JSON with monospace font and syntax highlighting",
-            "Content is horizontally and vertically scrollable",
-            "Copy-to-clipboard button works",
-            "Close button and overlay click dismiss the modal",
-            "Modal only renders when body content is non-null"
+            "Sidebar nav items (Home, Keys, Audit, Security, Providers, Settings) use translation keys",
+            "Navbar logout button uses translation key",
+            "DataTable pagination (Page X of Y) uses translation keys",
+            "DataTable empty message uses translation key",
+            "All strings have both English and Chinese translations"
           ],
-          "technical_notes": "Follow existing Modal/Drawer patterns in the codebase. Use existing shadcn/ui dialog or custom overlay. For syntax highlighting, consider a lightweight approach (CSS classes for JSON keys/strings/numbers) rather than a full library like prism.",
-          "status": "completed",
-          "dependencies": [],
+          "technical_notes": "Use useTranslation hook in components. Follow i18next best practices with nested keys (e.g., 'nav.home', 'nav.keys').",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
+            "apps/admin/src/components/layout/sidebar.tsx",
+            "apps/admin/src/components/layout/navbar.tsx",
+            "apps/admin/src/components/data-table.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-003",
+          "category": "ui",
+          "priority": "high",
+          "title": "Translate Login page",
+          "description": "Add translations to LoginPage component including title, form labels, placeholder, button text, and error message.",
+          "acceptance_criteria": [
+            "Page title 'LLM Gateway Admin' translated",
+            "Label 'Admin Token' translated",
+            "Placeholder 'Enter admin token' translated",
+            "Button 'Sign In' translated",
+            "Error 'Token invalid' translated",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Use t() function for all user-visible text. Keep API error messages in English (technical).",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/pages/login.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-004",
+          "category": "ui",
+          "priority": "high",
+          "title": "Translate Overview page",
+          "description": "Add translations to OverviewPage including KPI card labels, chart titles, table headers, and empty state message.",
+          "acceptance_criteria": [
+            "Page title 'Overview' translated",
+            "KPI labels (Total Requests, Token Usage, Total Cost, Avg Latency) translated",
+            "Chart titles (Requests by Model, Requests by Status, Recent Activity, PII Detection Rate) translated",
+            "Table headers (Time, Model, Tokens, Cost, Status) translated",
+            "'No recent activity' message translated",
+            "'of requests flagged' label translated",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Use nested keys like 'overview.kpis.totalRequests', 'overview.charts.byModel'. formatRelativeDate may need i18n-friendly alternative.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "apps/admin/src/pages/overview.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-005",
+          "category": "ui",
+          "priority": "high",
+          "title": "Translate Keys page and dialogs",
+          "description": "Add translations to KeysPage, CreateKeyDialog, EditKeySheet, KeyDisplayDialog, and RevokeDialog. Includes table columns, form labels, buttons, and messages.",
+          "acceptance_criteria": [
+            "Page title 'API Keys' translated",
+            "Table headers (Name, Prefix, Rate Limits, Created, Status) translated",
+            "Status badges (Active, Revoked) translated",
+            "'Create Key' button translated",
+            "CreateDialog: title, labels, placeholders, buttons translated",
+            "EditSheet: title, labels, buttons translated",
+            "KeyDisplayDialog: title, copy instructions, buttons translated",
+            "RevokeDialog: title, confirmation message, buttons translated",
+            "'No keys found' message translated",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Rate limit abbreviations (RPM, TPM, RPD) can stay as-is (technical terms). Use nested keys like 'keys.table.name', 'keys.dialogs.create.title'.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "apps/admin/src/pages/keys.tsx",
+            "apps/admin/src/pages/keys/create-dialog.tsx",
+            "apps/admin/src/pages/keys/edit-sheet.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-006",
+          "category": "ui",
+          "priority": "high",
+          "title": "Translate Audit page",
+          "description": "Add translations to AuditPage including filter labels, table headers, export button, pagination, and empty state. Includes date picker placeholders.",
+          "acceptance_criteria": [
+            "Page title 'Audit Logs' translated",
+            "Filter labels (Start Date, End Date, Model, Status) translated",
+            "Date picker placeholder 'Pick a date' translated",
+            "Status filter options (All statuses, Success, Error, Blocked) translated",
+            "'All models' option translated",
+            "Table headers (Time, Request ID, Key, Model, Tokens, Cost, Latency, Status, PII, Injection) translated",
+            "'Export CSV' button translated",
+            "Pagination (Showing X-Y of Z, Previous, Next, Page X of Y) translated",
+            "'No audit logs found' message translated",
+            "Export error/warning messages translated",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Use nested keys like 'audit.filters.startDate', 'audit.table.time'. Calendar component from shadcn may need locale prop.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "apps/admin/src/pages/audit.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-007",
+          "category": "ui",
+          "priority": "high",
+          "title": "Translate Detail Drawer and JSON Modal",
+          "description": "Add translations to DetailDrawer and JsonModal components. Replace mixed Chinese/English text with translation keys. Includes field labels, section titles, button text, and null state messages.",
+          "acceptance_criteria": [
+            "Drawer title 'Log Detail' translated",
+            "All field labels (Request ID, Timestamp, Status, API Key ID, Model, Endpoint, etc.) translated",
+            "PII display (Yes, No, types found, Show/Hide details, Type breakdown) translated",
+            "Body sections (Request Body, Response Body) translated",
+            "Expand/collapse buttons (展开预览/收起) translated",
+            "Truncation warning translated",
+            "'View full content' button translated",
+            "Null messages (Content expired, Request blocked) translated",
+            "JSON Modal title and copy button translated",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Replace hardcoded Chinese strings with translation keys. Use nested keys like 'audit.detail.field.requestId', 'audit.detail.body.viewFull'.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001", "s15-feat-006"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "apps/admin/src/pages/audit/detail-drawer.tsx",
             "apps/admin/src/pages/audit/json-modal.tsx"
           ]
         },
         {
-          "id": "s14-feat-006",
+          "id": "s15-feat-008",
           "category": "ui",
           "priority": "high",
-          "title": "Add body sections to Detail Drawer",
-          "description": "Update detail-drawer.tsx to show collapsible Request Body and Response Body sections after Injection Score, before Content Hash. Each section has a collapsed state showing endpoint, an expanded state with JSON preview (capped at 2000 chars), truncation warning, and a button to open the full JSON Modal. Handle null body states (expired vs blocked).",
+          "title": "Translate Security page",
+          "description": "Add translations to SecurityPage including KPI cards, chart titles, table headers, and empty state messages.",
           "acceptance_criteria": [
-            "Request Body section appears after Injection Score field",
-            "Response Body section appears after Request Body section",
-            "Collapsed state shows endpoint label and '查看完整内容' button",
-            "Expanded state shows JSON preview capped at 2000 chars",
-            "Truncated warning shown when *_truncated === 1: '内容已被截断（超过 128KB）'",
-            "Null body for blocked response: '请求被拦截，无响应内容'",
-            "Null body for expired: '内容已过期清理（超过 7 天保留期）'",
-            "'查看完整内容' button opens JSON Modal",
-            "AuditLogRow type updated with 4 optional body fields in use-audit-logs.ts"
+            "Page title 'Security Monitor' translated",
+            "KPI labels (Blocked Requests, PII Detections, Injection Attempts, Content Filter) translated",
+            "KPI sub-labels (X types, avg score X%, X flagged, X allowed) translated",
+            "Chart titles (PII Detection by Type, Injection Score Distribution) translated",
+            "'Threat Feed' title and subtitle translated",
+            "Table headers (Time, Request ID, Model, PII, Injection Score) translated",
+            "Empty state messages translated",
+            "All strings have both English and Chinese translations"
           ],
-          "technical_notes": "Update AuditLogRow in use-audit-logs.ts to add request_body?, response_body?, request_body_truncated?, response_body_truncated?. Import and use JsonModal from ./json-modal. Follow existing collapsible pattern from PIIDetectedDisplay.",
-          "status": "completed",
-          "dependencies": ["s14-feat-004", "s14-feat-005"],
+          "technical_notes": "Use nested keys like 'security.kpis.blockedRequests', 'security.charts.piiByType'.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
-            "apps/admin/src/hooks/use-audit-logs.ts",
-            "apps/admin/src/pages/audit/detail-drawer.tsx"
+            "apps/admin/src/pages/security.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-009",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Translate Providers page",
+          "description": "Add translations to ProvidersPage including provider card labels, health status labels, and key count text.",
+          "acceptance_criteria": [
+            "Page title 'Providers' translated",
+            "'Default' badge translated",
+            "'keys' (singular/plural) translated",
+            "'avg' latency label translated",
+            "'Key Health' label translated",
+            "'Model Mappings' label translated",
+            "Table headers (Alias, Model) translated",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Use nested keys like 'providers.card.default', 'providers.card.keys'. Key strategy names (round-robin, random, least-latency) can stay as-is.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/pages/providers.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-010",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Translate Settings page",
+          "description": "Add translations to SettingsPage including card titles, field labels, section headers, and empty state messages.",
+          "acceptance_criteria": [
+            "Page title 'Settings' translated",
+            "Card titles (General, Security Rules, Retry Policy, Provider Config, TOML Preview) translated",
+            "All field labels (Port, Host, Log Level, Default RPM/TPM/RPD, etc.) translated",
+            "'Blocked PII Types' and 'Flagged PII Types' labels translated",
+            "'None' placeholder translated",
+            "'default' badge translated",
+            "'Base URL', 'Key Strategy', 'Key Count' labels translated",
+            "'Model Mappings' label translated",
+            "'No providers configured' message translated",
+            "'Loading...' message translated",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Use nested keys like 'settings.cards.general', 'settings.fields.port'. TOML preview title should be translated but content stays as-is.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/pages/settings.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-011",
+          "category": "ui",
+          "priority": "high",
+          "title": "Add Language Switcher component",
+          "description": "Create a LanguageSwitcher component that allows users to toggle between English and Chinese. Add to Navbar. Persist language preference to localStorage.",
+          "acceptance_criteria": [
+            "LanguageSwitcher component created with dropdown or toggle button",
+            "Shows current language (EN / 中文)",
+            "Clicking switches language immediately",
+            "Language preference persisted to localStorage",
+            "Component added to Navbar",
+            "Works with i18next instance",
+            "Both English and Chinese flag icons or labels"
+          ],
+          "technical_notes": "Use i18next's changeLanguage() method. Can use a simple dropdown or a toggle button. Consider using lucide-react Globe icon.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/components/language-switcher.tsx",
+            "apps/admin/src/components/layout/navbar.tsx"
+          ]
+        },
+        {
+          "id": "s15-feat-012",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Translate StatusBadge and InjectionScoreBar",
+          "description": "Add translations to StatusBadge and InjectionScoreBar components for status labels and tooltip text.",
+          "acceptance_criteria": [
+            "StatusBadge labels (success, error, blocked) translated",
+            "InjectionScoreBar tooltip or labels translated if any",
+            "All strings have both English and Chinese translations"
+          ],
+          "technical_notes": "Check if InjectionScoreBar has any user-visible text. StatusBadge should map status values to translation keys.",
+          "status": "pending",
+          "dependencies": ["s15-feat-001"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/components/status-badge.tsx",
+            "apps/admin/src/components/injection-score-bar.tsx"
           ]
         }
       ]

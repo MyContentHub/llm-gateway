@@ -34,79 +34,43 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 <!-- New sessions should be added above this line -->
 
-## 996 Orchestration - 2026-04-20
-**Agent**: 996 Orchestrator
-**Sprint**: sprint-014
-**Max Parallelism**: 3
-
-### Execution Summary
-| Feature | Status | Result |
-|---------|--------|--------|
-| s14-feat-001 | completed | migration + types |
-| s14-feat-002 | completed | body capture + truncation in logger |
-| s14-feat-003 | completed | config schema + fastify-cron cleanup |
-| s14-feat-004 | completed | detail API returns body fields |
-| s14-feat-005 | completed | JSON preview modal component |
-| s14-feat-006 | completed | body sections in detail drawer |
-
-### Statistics
-- Total features: 6
-- Completed: 6
-- Blocked: 0
-- Success rate: 100%
-
-### Batch Execution
-**Batch 1** (parallel): s14-feat-001 + s14-feat-005 — no deps, no file conflicts
-**Batch 2** (parallel): s14-feat-002 + s14-feat-003 + s14-feat-004 — depend on feat-001
-**Batch 3** (single): s14-feat-006 — depends on feat-004 + feat-005
-
-### Files Changed
-- apps/gateway/migrations/002-add-audit-body.sql — new migration
-- apps/gateway/src/db/audit-store.ts — types + insert + detail query
-- apps/gateway/src/audit/logger.ts — body capture + truncation
-- apps/gateway/src/audit/cleanup.ts — fastify-cron cleanup plugin
-- apps/gateway/src/config/index.ts — [audit] config schema
-- apps/gateway/src/index.ts — register cleanup plugin
-- apps/gateway/package.json — added fastify-cron
-- apps/admin/src/pages/audit/json-modal.tsx — new modal component
-- apps/admin/src/pages/audit/detail-drawer.tsx — body sections + modal integration
-- apps/admin/src/hooks/use-audit-logs.ts — AuditLogRow type update
-
-### Verification
-- Full monorepo typecheck: PASS
-- Pre-existing test failures (serve-admin, shutdown): unrelated to sprint changes
-
 ## Sprint Planning - 2026-04-20
 **Agent**: Sprint Agent
-**Sprint**: sprint-014 - Audit Log Body Storage & Retention
+**Sprint**: sprint-015 - Admin Internationalization
 
 ### Requirements Received
-- Store full request/response body in audit logs for debugging PII/injection issues
-- Display body content in Detail Drawer with collapsible sections + JSON preview Modal
-- Two-layer TTL: body fields cleared after 7 days, metadata rows deleted after 30 days
-- Scheduled cleanup via fastify-cron instead of setInterval
-- 128KB truncation limit per body field with truncation flag
-- Content stored as-is (no encryption/desensitization), protected by admin token auth
+- Add internationalization (i18n) support to admin dashboard
+- Support English and Chinese (zh-CN) languages
+- Enable language switching via UI toggle
+- Replace all hardcoded text with translation keys
 
 ### Features Planned
-- Total: 6 features
-- High priority: 6
-- Medium priority: 0
+- Total: 12 features
+- High priority: 8
+- Medium priority: 4
 - Low priority: 0
 
 ### Sprint Goal
-Store full request/response body in audit logs, display in Detail Drawer with JSON preview Modal, and implement two-layer TTL cleanup (7-day body, 30-day metadata) via fastify-cron.
+Add full i18n support to admin dashboard with English and Chinese translations, enabling language switching via UI toggle.
 
 ### Implementation Order
-1. s14-feat-001 - Add body columns to audit_logs via migration (data) - no deps
-2. s14-feat-005 - Create JSON preview Modal component (ui) - no deps
-3. s14-feat-002 - Write request/response body in audit logger (core) - depends on 001
-4. s14-feat-003 - Add audit config schema and cleanup cron plugin (core) - depends on 001
-5. s14-feat-004 - Return body fields in audit detail API (api) - depends on 001
-6. s14-feat-006 - Add body sections to Detail Drawer (ui) - depends on 004, 005
+1. s15-feat-001 - Setup i18n infrastructure (infra) - no deps
+2. s15-feat-002 - Translate core layout components (ui) - depends on 001
+3. s15-feat-003 - Translate Login page (ui) - depends on 001
+4. s15-feat-004 - Translate Overview page (ui) - depends on 001
+5. s15-feat-005 - Translate Keys page and dialogs (ui) - depends on 001
+6. s15-feat-006 - Translate Audit page (ui) - depends on 001
+7. s15-feat-007 - Translate Detail Drawer and JSON Modal (ui) - depends on 001, 006
+8. s15-feat-008 - Translate Security page (ui) - depends on 001
+9. s15-feat-009 - Translate Providers page (ui) - depends on 001
+10. s15-feat-010 - Translate Settings page (ui) - depends on 001
+11. s15-feat-011 - Add Language Switcher component (ui) - depends on 001
+12. s15-feat-012 - Translate StatusBadge and InjectionScoreBar (ui) - depends on 001
 
 ### Notes
-- Features 001 and 005 have no dependencies and can run in parallel
-- Features 002, 003, 004 all depend only on 001 (migration + types)
-- Feature 006 is the final integration piece, depends on API (004) and Modal (005)
-- Design spec: docs/superpowers/specs/2026-04-20-audit-body-storage-design.md
+- Feature 001 (infrastructure) is the foundation - all others depend on it
+- Features 002-006, 008-012 can run in parallel after 001 is complete
+- Feature 007 (Detail Drawer) depends on 006 (Audit page) for shared translation keys
+- Current code has mixed Chinese/English in detail-drawer.tsx - will be unified
+- Using react-i18next as the i18n library (standard for React apps)
+- Translation files: JSON format, nested structure for organization
