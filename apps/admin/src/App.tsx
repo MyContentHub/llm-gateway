@@ -66,7 +66,7 @@ function DashboardLayout() {
           collapsed ? "lg:pl-16" : "lg:pl-60"
         }`}
       >
-        <Navbar onMobileMenuToggle={openMobile} />
+        <Navbar onMobileMenuToggle={openMobile} sidebarCollapsed={collapsed} />
         <main className="p-4 pt-20">
           <AuthGuard />
         </main>

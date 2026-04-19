@@ -5,9 +5,10 @@ import { LanguageSwitcher } from "../language-switcher";
 
 interface NavbarProps {
   onMobileMenuToggle: () => void;
+  sidebarCollapsed: boolean;
 }
 
-export function Navbar({ onMobileMenuToggle }: NavbarProps) {
+export function Navbar({ onMobileMenuToggle, sidebarCollapsed }: NavbarProps) {
   const { logout } = useAuth();
   const { t } = useTranslation();
 
@@ -22,6 +23,11 @@ export function Navbar({ onMobileMenuToggle }: NavbarProps) {
           >
             <Menu className="h-5 w-5" />
           </button>
+          {sidebarCollapsed && (
+            <span className="hidden lg:inline text-sm font-semibold text-foreground">
+              LLM Gateway
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />

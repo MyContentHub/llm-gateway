@@ -57,7 +57,14 @@ function formatUpstreamError(status: number, body: unknown): UpstreamError {
     typeof (body as { error: unknown }).error === "object" &&
     (body as { error: unknown }).error !== null
   ) {
-    return body as UpstreamError;
+    const err = (body as { error: Record<string, unknown> }).error;
+    return {
+      error: {
+        message: typeof err.message === "string" ? err.message : String(err.message ?? JSON.stringify(err)),
+        type: typeof err.type === "string" ? err.type : "upstream_error",
+        code: typeof err.code === "string" ? err.code : `upstream_${status}`,
+      },
+    };
   }
 
   const message = typeof body === "string" ? body : JSON.stringify(body);
