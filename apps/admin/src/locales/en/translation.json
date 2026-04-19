@@ -2,7 +2,9 @@
   "common": {
     "loading": "Loading...",
     "error": "Error",
-    "success": "Success"
+    "success": "Success",
+    "cancel": "Cancel",
+    "done": "Done"
   },
   "login": {
     "title": "LLM Gateway Admin",
@@ -49,5 +51,56 @@
     },
     "noActivity": "No recent activity",
     "ofRequestsFlagged": "of requests flagged"
+  },
+  "keys": {
+    "title": "API Keys",
+    "createButton": "Create Key",
+    "table": {
+      "name": "Name",
+      "prefix": "Prefix",
+      "rateLimits": "Rate Limits",
+      "created": "Created",
+      "status": "Status"
+    },
+    "status": {
+      "active": "Active",
+      "revoked": "Revoked"
+    },
+    "empty": "No keys found",
+    "dialogs": {
+      "create": {
+        "title": "Create API Key",
+        "nameLabel": "Name",
+        "namePlaceholder": "e.g. Production API",
+        "rateLimitsLabel": "Rate Limits",
+        "optional": "optional",
+        "createButton": "Create Key",
+        "error": "Failed to create key"
+      },
+      "edit": {
+        "title": "Edit Key",
+        "prefix": "Prefix",
+        "nameLabel": "Name",
+        "rateLimitsLabel": "Rate Limits",
+        "saveButton": "Save Changes",
+        "error": "Failed to update key"
+      },
+      "display": {
+        "title": "API Key Created",
+        "copyInstruction": "Copy this key now. You won't be able to see it again.",
+        "copyButton": "Copy key"
+      },
+      "revoke": {
+        "title": "Revoke API Key",
+        "confirmMessage": "Are you sure you want to revoke {{name}}?",
+        "cannotUndo": "This action cannot be undone.",
+        "revokeButton": "Revoke",
+        "error": "Failed to revoke key"
+      }
+    },
+    "actions": {
+      "edit": "Edit",
+      "revoke": "Revoke"
+    }
   }
 }

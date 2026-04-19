@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
 import { Loader2, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useCreateKey } from "@/hooks/use-keys";
 import type { VirtualKey } from "@/hooks/use-keys";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -15,6 +16,7 @@ export function CreateKeyDialog({
   onOpenChange,
   onCreated,
 }: CreateDialogProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [rpm, setRpm] = useState("");
   const [tpm, setTpm] = useState("");
@@ -66,7 +68,7 @@ export function CreateKeyDialog({
       <div ref={dialogRef} className="relative z-50 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Create API Key
+            {t("keys.dialogs.create.title")}
           </h2>
           <button
             onClick={() => onOpenChange(false)}
@@ -78,14 +80,14 @@ export function CreateKeyDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="create-key-name" className="text-sm font-medium text-foreground">
-              Name <span className="text-red-500">*</span>
+              {t("keys.dialogs.create.nameLabel")} <span className="text-red-500">*</span>
             </label>
             <input
               id="create-key-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Production API"
+              placeholder={t("keys.dialogs.create.namePlaceholder")}
               className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               autoFocus
               required
@@ -93,9 +95,9 @@ export function CreateKeyDialog({
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
-              Rate Limits{" "}
+              {t("keys.dialogs.create.rateLimitsLabel")}{" "}
               <span className="text-muted-foreground font-normal">
-                (optional)
+                ({t("keys.dialogs.create.optional")})
               </span>
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -139,7 +141,7 @@ export function CreateKeyDialog({
           </div>
           {createKey.isError && (
             <p className="text-sm text-red-500">
-              {(createKey.error as Error)?.message || "Failed to create key"}
+              {(createKey.error as Error)?.message || t("keys.dialogs.create.error")}
             </p>
           )}
           <div className="flex justify-end gap-3">
@@ -148,7 +150,7 @@ export function CreateKeyDialog({
               onClick={() => onOpenChange(false)}
               className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -158,7 +160,7 @@ export function CreateKeyDialog({
               {createKey.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mx-auto" />
               ) : (
-                "Create Key"
+                t("keys.dialogs.create.createButton")
               )}
             </button>
           </div>

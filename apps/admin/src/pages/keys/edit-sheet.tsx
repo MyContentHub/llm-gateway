@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Loader2, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useUpdateKey } from "@/hooks/use-keys";
 import type { VirtualKey } from "@/hooks/use-keys";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
@@ -11,6 +12,7 @@ interface EditSheetProps {
 }
 
 export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const [rpm, setRpm] = useState("");
   const [tpm, setTpm] = useState("");
@@ -62,7 +64,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
       />
       <div ref={sheetRef} className="relative z-50 w-full max-w-md h-full border-l border-border bg-card p-6 shadow-lg overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-foreground">Edit Key</h2>
+          <h2 className="text-lg font-semibold text-foreground">{t("keys.dialogs.edit.title")}</h2>
           <button
             onClick={() => onOpenChange(false)}
             className="text-muted-foreground hover:text-foreground transition-colors"
@@ -72,7 +74,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
         </div>
         <div className="mb-4">
           <p className="text-sm text-muted-foreground">
-            Prefix:{" "}
+            {t("keys.dialogs.edit.prefix")}:{" "}
             <span className="font-mono text-foreground">
               {virtualKey.key_prefix ?? "gwk_****"}
             </span>
@@ -80,7 +82,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <label htmlFor="edit-key-name" className="text-sm font-medium text-foreground">Name</label>
+            <label htmlFor="edit-key-name" className="text-sm font-medium text-foreground">{t("keys.dialogs.edit.nameLabel")}</label>
             <input
               id="edit-key-name"
               type="text"
@@ -91,7 +93,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
           </div>
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
-              Rate Limits
+              {t("keys.dialogs.edit.rateLimitsLabel")}
             </label>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -134,7 +136,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
           </div>
           {updateKey.isError && (
             <p className="text-sm text-red-500">
-              {(updateKey.error as Error)?.message || "Failed to update key"}
+              {(updateKey.error as Error)?.message || t("keys.dialogs.edit.error")}
             </p>
           )}
           <div className="flex justify-end gap-3 pt-4">
@@ -143,7 +145,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
               onClick={() => onOpenChange(false)}
               className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
             >
-              Cancel
+              {t("common.cancel")}
             </button>
             <button
               type="submit"
@@ -153,7 +155,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
               {updateKey.isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin mx-auto" />
               ) : (
-                "Save Changes"
+                t("keys.dialogs.edit.saveButton")
               )}
             </button>
           </div>

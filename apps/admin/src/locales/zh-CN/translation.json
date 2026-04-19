@@ -2,7 +2,9 @@
   "common": {
     "loading": "加载中...",
     "error": "错误",
-    "success": "成功"
+    "success": "成功",
+    "cancel": "取消",
+    "done": "完成"
   },
   "login": {
     "title": "LLM Gateway 管理后台",
@@ -49,5 +51,56 @@
     },
     "noActivity": "暂无近期活动",
     "ofRequestsFlagged": "请求被标记"
+  },
+  "keys": {
+    "title": "API 密钥",
+    "createButton": "创建密钥",
+    "table": {
+      "name": "名称",
+      "prefix": "前缀",
+      "rateLimits": "速率限制",
+      "created": "创建时间",
+      "status": "状态"
+    },
+    "status": {
+      "active": "有效",
+      "revoked": "已撤销"
+    },
+    "empty": "未找到密钥",
+    "dialogs": {
+      "create": {
+        "title": "创建 API 密钥",
+        "nameLabel": "名称",
+        "namePlaceholder": "例如：生产环境 API",
+        "rateLimitsLabel": "速率限制",
+        "optional": "可选",
+        "createButton": "创建密钥",
+        "error": "创建密钥失败"
+      },
+      "edit": {
+        "title": "编辑密钥",
+        "prefix": "前缀",
+        "nameLabel": "名称",
+        "rateLimitsLabel": "速率限制",
+        "saveButton": "保存更改",
+        "error": "更新密钥失败"
+      },
+      "display": {
+        "title": "API 密钥已创建",
+        "copyInstruction": "请立即复制此密钥。您将无法再次查看。",
+        "copyButton": "复制密钥"
+      },
+      "revoke": {
+        "title": "撤销 API 密钥",
+        "confirmMessage": "确定要撤销 {{name}} 吗？",
+        "cannotUndo": "此操作无法撤销。",
+        "revokeButton": "撤销",
+        "error": "撤销密钥失败"
+      }
+    },
+    "actions": {
+      "edit": "编辑",
+      "revoke": "撤销"
+    }
   }
 }

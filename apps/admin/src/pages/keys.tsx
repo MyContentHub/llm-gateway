@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Plus, Pencil, Trash2, Copy, Check, Loader2, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/layout/page-header";
 import { DataTable } from "@/components/data-table";
 import {
@@ -20,6 +21,7 @@ function KeyDisplayDialog({
   keyValue: string;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, true, onClose);
@@ -40,7 +42,7 @@ function KeyDisplayDialog({
       <div ref={dialogRef} className="relative z-50 w-full max-w-md rounded-lg border border-border bg-card p-6 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-foreground">
-            API Key Created
+            {t("keys.dialogs.display.title")}
           </h2>
           <button
             onClick={onClose}
@@ -50,7 +52,7 @@ function KeyDisplayDialog({
           </button>
         </div>
         <p className="text-sm text-muted-foreground mb-3">
-          Copy this key now. You won&apos;t be able to see it again.
+          {t("keys.dialogs.display.copyInstruction")}
         </p>
         <div className="flex items-center gap-2 rounded-md border border-border bg-muted/50 p-3">
           <code className="flex-1 text-sm font-mono text-foreground break-all">
@@ -58,7 +60,7 @@ function KeyDisplayDialog({
           </code>
           <button
             onClick={handleCopy}
-            aria-label="Copy key"
+            aria-label={t("keys.dialogs.display.copyButton")}
             className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           >
             {copied ? (
@@ -73,7 +75,7 @@ function KeyDisplayDialog({
             onClick={onClose}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            Done
+            {t("common.done")}
           </button>
         </div>
       </div>
@@ -90,6 +92,7 @@ function RevokeDialog({
   onOpenChange: (open: boolean) => void;
   virtualKey: VirtualKey | null;
 }) {
+  const { t } = useTranslation();
   const revokeKey = useRevokeKey();
   const dialogRef = useRef<HTMLDivElement>(null);
   useFocusTrap(dialogRef, open, () => onOpenChange(false));
@@ -110,18 +113,23 @@ function RevokeDialog({
       <div className="fixed inset-0 bg-black/50" onClick={() => onOpenChange(false)} />
       <div ref={dialogRef} className="relative z-50 w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-lg">
         <h2 className="text-lg font-semibold text-foreground mb-2">
-          Revoke API Key
+          {t("keys.dialogs.revoke.title")}
         </h2>
         <p className="text-sm text-muted-foreground mb-1">
-          Are you sure you want to revoke{" "}
-          <span className="font-medium text-foreground">{virtualKey.name}</span>?
+          {t("keys.dialogs.revoke.confirmMessage", { name: virtualKey.name }).split(virtualKey.name).map((part, i, arr) => (
+            i < arr.length - 1 ? (
+              <span key={i}>
+                {part}<span className="font-medium text-foreground">{virtualKey.name}</span>
+              </span>
+            ) : part
+          ))}
         </p>
         <p className="text-sm text-muted-foreground mb-6">
-          This action cannot be undone.
+          {t("keys.dialogs.revoke.cannotUndo")}
         </p>
         {revokeKey.isError && (
           <p className="text-sm text-red-500 mb-4">
-            {(revokeKey.error as Error)?.message || "Failed to revoke key"}
+            {(revokeKey.error as Error)?.message || t("keys.dialogs.revoke.error")}
           </p>
         )}
         <div className="flex justify-end gap-3">
@@ -129,7 +137,7 @@ function RevokeDialog({
             onClick={() => onOpenChange(false)}
             className="rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors"
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             onClick={handleRevoke}
@@ -139,7 +147,7 @@ function RevokeDialog({
             {revokeKey.isPending ? (
               <Loader2 className="h-4 w-4 animate-spin mx-auto" />
             ) : (
-              "Revoke"
+              t("keys.dialogs.revoke.revokeButton")
             )}
           </button>
         </div>
@@ -149,6 +157,7 @@ function RevokeDialog({
 }
 
 export function KeysPage() {
+  const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const pageSize = 20;
   const { data, isLoading } = useKeys(page * pageSize, pageSize);
@@ -161,14 +170,14 @@ export function KeysPage() {
   const columns: ColumnDef<VirtualKey>[] = [
     {
       accessorKey: "name",
-      header: "Name",
+      header: t("keys.table.name"),
       cell: ({ getValue }) => (
         <span className="font-medium text-foreground">{getValue() as string}</span>
       ),
     },
     {
       accessorKey: "key_prefix",
-      header: "Prefix",
+      header: t("keys.table.prefix"),
       cell: ({ getValue }) => {
         const prefix = getValue() as string | undefined;
         return (
@@ -180,7 +189,7 @@ export function KeysPage() {
     },
     {
       id: "rateLimits",
-      header: "Rate Limits",
+      header: t("keys.table.rateLimits"),
       cell: ({ row }) => {
         const rl = row.original.rateLimits;
         if (!rl || (!rl.rpm && !rl.tpm && !rl.rpd)) {
@@ -209,7 +218,7 @@ export function KeysPage() {
     },
     {
       accessorKey: "createdAt",
-      header: "Created",
+      header: t("keys.table.created"),
       cell: ({ getValue }) => (
         <span className="text-muted-foreground">
           {formatRelativeDate(getValue() as string)}
@@ -218,16 +227,16 @@ export function KeysPage() {
     },
     {
       id: "status",
-      header: "Status",
+      header: t("keys.table.status"),
       cell: ({ row }) => {
         const revoked = row.original.revokedAt;
         return revoked ? (
           <span className="inline-flex items-center rounded-full bg-red-500/10 px-2 py-0.5 text-xs font-medium text-red-500">
-            Revoked
+            {t("keys.status.revoked")}
           </span>
         ) : (
           <span className="inline-flex items-center rounded-full bg-green-500/10 px-2 py-0.5 text-xs font-medium text-green-600">
-            Active
+            {t("keys.status.active")}
           </span>
         );
       },
@@ -243,18 +252,18 @@ export function KeysPage() {
             <button
               onClick={() => setEditKey(k)}
               disabled={revoked}
-              aria-label="Edit key"
+              aria-label={t("keys.actions.edit")}
               className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted/50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              title="Edit"
+              title={t("keys.actions.edit")}
             >
               <Pencil className="h-3.5 w-3.5" />
             </button>
             {!revoked && (
               <button
                 onClick={() => setRevokeKey(k)}
-                aria-label="Revoke key"
+                aria-label={t("keys.actions.revoke")}
                 className="inline-flex items-center justify-center rounded-md p-1.5 text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition-colors"
-                title="Revoke"
+                title={t("keys.actions.revoke")}
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -268,13 +277,13 @@ export function KeysPage() {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <PageHeader title="API Keys" />
+        <PageHeader title={t("keys.title")} />
         <button
           onClick={() => setCreateOpen(true)}
           className="inline-flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
         >
           <Plus className="h-4 w-4" />
-          Create Key
+          {t("keys.createButton")}
         </button>
       </div>
 
@@ -290,7 +299,7 @@ export function KeysPage() {
           pageSize={pageSize}
           page={page}
           onPageChange={setPage}
-          emptyMessage="No keys found"
+          emptyMessage={t("keys.empty")}
         />
       )}
 
