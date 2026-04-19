@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { useRef, useState, useCallback } from "react";
+import { X, ChevronDown, ChevronRight, AlertTriangle } from "lucide-react";
 import type { AuditLogRow } from "@/hooks/use-audit-logs";
 import { formatDate, formatUsd, formatMs } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { InjectionScoreBar } from "@/components/injection-score-bar";
+import { JsonModal } from "./json-modal";
 
 interface DetailDrawerProps {
   log: AuditLogRow | null;
@@ -118,9 +119,97 @@ function PIIDetectedDisplay({ piiTypes }: { piiTypes: string[] }) {
   );
 }
 
+const PREVIEW_CAP = 2000;
+
+function BodySection({
+  title,
+  body,
+  truncated,
+  endpoint,
+  nullMessage,
+  onOpenModal,
+}: {
+  title: string;
+  body: string | null | undefined;
+  truncated: number | undefined;
+  endpoint?: string;
+  nullMessage: string;
+  onOpenModal: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+
+  if (body === null || body === undefined) {
+    return (
+      <div className="space-y-1">
+        <dt className="text-xs font-medium text-muted-foreground">{title}</dt>
+        <dd className="text-sm text-muted-foreground/60 italic">{nullMessage}</dd>
+      </div>
+    );
+  }
+
+  let preview = body;
+  try {
+    preview = JSON.stringify(JSON.parse(body), null, 2);
+  } catch {}
+  const isOverCap = preview.length > PREVIEW_CAP;
+  const displayPreview = isOverCap ? preview.slice(0, PREVIEW_CAP) : preview;
+
+  return (
+    <div className="space-y-1">
+      <dt className="text-xs font-medium text-muted-foreground">{title}</dt>
+      <dd className="text-sm text-foreground space-y-2">
+        {endpoint && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs bg-muted px-1.5 py-0.5 rounded font-mono">{endpoint}</span>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          {expanded ? (
+            <ChevronDown className="h-3 w-3" />
+          ) : (
+            <ChevronRight className="h-3 w-3" />
+          )}
+          {expanded ? "收起" : "展开预览"}
+        </button>
+        {expanded && (
+          <div className="space-y-2">
+            {truncated === 1 && (
+              <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400">
+                <AlertTriangle className="h-3 w-3" />
+                <span>内容已被截断（超过 128KB）</span>
+              </div>
+            )}
+            <pre className="bg-muted/50 rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
+              {displayPreview}
+              {isOverCap && <span className="text-muted-foreground">...</span>}
+            </pre>
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={onOpenModal}
+          className="text-xs text-primary hover:underline"
+        >
+          查看完整内容
+        </button>
+      </dd>
+    </div>
+  );
+}
+
+type ModalTarget = "request" | "response" | null;
+
 export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
   const drawerRef = useRef<HTMLDivElement>(null);
   useFocusTrap(drawerRef, open, onClose);
+  const [modalTarget, setModalTarget] = useState<ModalTarget>(null);
+
+  const openModal = useCallback((target: ModalTarget) => setModalTarget(target), []);
+  const closeModal = useCallback(() => setModalTarget(null), []);
 
   if (!log || !open) return null;
 
@@ -138,6 +227,11 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
     error: "bg-red-100 text-red-800",
     blocked: "bg-orange-100 text-orange-800",
   };
+
+  const responseBodyNullMessage =
+    log.status === "blocked"
+      ? "请求被拦截，无响应内容"
+      : "内容已过期清理（超过 7 天保留期）";
 
   return (
     <>
@@ -189,6 +283,21 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
           <Field label="Injection Score">
             <InjectionScoreBar score={log.prompt_injection_score} />
           </Field>
+          <BodySection
+            title="Request Body"
+            body={log.request_body}
+            truncated={log.request_body_truncated}
+            endpoint={log.endpoint}
+            nullMessage="内容已过期清理（超过 7 天保留期）"
+            onOpenModal={() => openModal("request")}
+          />
+          <BodySection
+            title="Response Body"
+            body={log.response_body}
+            truncated={log.response_body_truncated}
+            nullMessage={responseBodyNullMessage}
+            onOpenModal={() => openModal("response")}
+          />
           <Field label="Content Hash">
             <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">
               {log.content_hash_sha256}
@@ -196,6 +305,18 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
           </Field>
         </dl>
       </div>
+      <JsonModal
+        open={modalTarget === "request"}
+        onClose={closeModal}
+        title="Request Body"
+        content={log.request_body ?? null}
+      />
+      <JsonModal
+        open={modalTarget === "response"}
+        onClose={closeModal}
+        title="Response Body"
+        content={log.response_body ?? null}
+      />
     </>
   );
 }
