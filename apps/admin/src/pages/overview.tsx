@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { Activity, Zap, DollarSign, Clock, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/layout/page-header";
 import { useAuditStats } from "@/hooks/use-audit-stats";
 import { useAuditLogs, type AuditLogRow } from "@/hooks/use-audit-logs";
@@ -47,6 +48,7 @@ function computeDelta(current: number, previous: number): number | undefined {
 }
 
 export function OverviewPage() {
+  const { t } = useTranslation();
   const now = useMemo(() => new Date(), []);
   const thirtyDaysAgo = useMemo(() => {
     const d = new Date(now);
@@ -89,7 +91,7 @@ export function OverviewPage() {
   if (statsLoading) {
     return (
       <div>
-        <PageHeader title="Overview" />
+        <PageHeader title={t("overview.title")} />
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
@@ -99,11 +101,11 @@ export function OverviewPage() {
 
   return (
     <div>
-      <PageHeader title="Overview" />
+      <PageHeader title={t("overview.title")} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard
-          label="Total Requests"
+          label={t("overview.kpis.totalRequests")}
           value={formatNumber(stats?.totalRequests ?? 0)}
           icon={<Activity className="h-4 w-4" />}
           delta={computeDelta(
@@ -112,7 +114,7 @@ export function OverviewPage() {
           )}
         />
         <KpiCard
-          label="Token Usage"
+          label={t("overview.kpis.tokenUsage")}
           value={formatNumber(stats?.totalTokens ?? 0)}
           icon={<Zap className="h-4 w-4" />}
           delta={computeDelta(
@@ -121,7 +123,7 @@ export function OverviewPage() {
           )}
         />
         <KpiCard
-          label="Total Cost"
+          label={t("overview.kpis.totalCost")}
           value={formatUsd(stats?.totalCostUsd ?? 0)}
           icon={<DollarSign className="h-4 w-4" />}
           delta={computeDelta(
@@ -130,7 +132,7 @@ export function OverviewPage() {
           )}
         />
         <KpiCard
-          label="Avg Latency"
+          label={t("overview.kpis.avgLatency")}
           value={formatMs(stats?.avgLatencyMs ?? 0)}
           icon={<Clock className="h-4 w-4" />}
           delta={computeDelta(
@@ -144,13 +146,13 @@ export function OverviewPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-lg border border-border bg-card p-4">
           <h2 className="mb-4 text-sm font-semibold text-foreground">
-            Requests by Model
+            {t("overview.charts.byModel")}
           </h2>
           <BarChartComponent data={modelChartData} />
         </div>
         <div className="rounded-lg border border-border bg-card p-4">
           <h2 className="mb-4 text-sm font-semibold text-foreground">
-            Requests by Status
+            {t("overview.charts.byStatus")}
           </h2>
           <PieChartComponent data={statusChartData} />
         </div>
@@ -159,7 +161,7 @@ export function OverviewPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className="lg:col-span-2 rounded-lg border border-border bg-card p-4">
           <h2 className="mb-4 text-sm font-semibold text-foreground">
-            Recent Activity
+            {t("overview.charts.recentActivity")}
           </h2>
           {logsLoading ? (
             <div className="flex items-center justify-center py-10">
@@ -167,7 +169,7 @@ export function OverviewPage() {
             </div>
           ) : !recentData?.logs.length ? (
             <div className="py-10 text-center text-sm text-muted-foreground">
-              No recent activity
+              {t("overview.noActivity")}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -175,19 +177,19 @@ export function OverviewPage() {
                 <thead>
                   <tr className="border-b border-border bg-muted/50">
                     <th className="px-3 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                      Time
+                      {t("overview.table.time")}
                     </th>
                     <th className="px-3 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                      Model
+                      {t("overview.table.model")}
                     </th>
                     <th className="px-3 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                      Tokens
+                      {t("overview.table.tokens")}
                     </th>
                     <th className="px-3 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                      Cost
+                      {t("overview.table.cost")}
                     </th>
                     <th className="px-3 py-2 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                      Status
+                      {t("overview.table.status")}
                     </th>
                   </tr>
                 </thead>
@@ -221,11 +223,11 @@ export function OverviewPage() {
         </div>
         <div className="rounded-lg border border-border bg-card p-4 flex flex-col items-center justify-center">
           <h2 className="mb-4 text-sm font-semibold text-foreground">
-            PII Detection Rate
+            {t("overview.charts.piiDetectionRate")}
           </h2>
           <DonutChart
             value={(stats?.piiDetectionRate ?? 0) * 100}
-            label="of requests flagged"
+            label={t("overview.ofRequestsFlagged")}
           />
         </div>
       </div>
