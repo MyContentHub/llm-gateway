@@ -22,6 +22,10 @@ const serveAdminPlugin: FastifyPluginCallback = async (server, _opts) => {
   server.addHook("onRequest", async (request, reply) => {
     if (!request.url.startsWith("/admin")) return;
     if (request.headers.authorization) return;
+    if (request.url === "/admin") {
+      reply.redirect("/admin/");
+      return reply;
+    }
     const accept = request.headers.accept ?? "";
     if (!accept.includes("text/html")) return;
 
