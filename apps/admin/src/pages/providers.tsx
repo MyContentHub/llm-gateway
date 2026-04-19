@@ -1,4 +1,5 @@
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { PageHeader } from "@/components/layout/page-header";
 import { cn, formatMs } from "@/lib/utils";
 import {
@@ -35,12 +36,12 @@ function HealthDot({ status }: { status: ReturnType<typeof getHealthStatus> }) {
   );
 }
 
-function KeyHealthBars({ health }: { health: ProviderHealth | undefined }) {
+function KeyHealthBars({ health, t }: { health: ProviderHealth | undefined; t: (key: string) => string }) {
   if (!health || health.keys.length === 0) return null;
 
   return (
     <div className="space-y-1.5">
-      <span className="text-xs font-medium text-muted-foreground">Key Health</span>
+      <span className="text-xs font-medium text-muted-foreground">{t("providers.card.keyHealth")}</span>
       {health.keys.map((key) => {
         const pct = key.isHealthy
           ? 100
@@ -75,19 +76,19 @@ function KeyHealthBars({ health }: { health: ProviderHealth | undefined }) {
   );
 }
 
-function ModelMappingsTable({ mappings }: { mappings: Record<string, string> }) {
+function ModelMappingsTable({ mappings, t }: { mappings: Record<string, string>; t: (key: string) => string }) {
   const entries = Object.entries(mappings);
   if (entries.length === 0) return null;
 
   return (
     <div className="space-y-1.5">
-      <span className="text-xs font-medium text-muted-foreground">Model Mappings</span>
+      <span className="text-xs font-medium text-muted-foreground">{t("providers.card.modelMappings")}</span>
       <div className="rounded-md border border-border overflow-hidden">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-muted/50">
-              <th className="text-left px-2 py-1 font-medium text-muted-foreground">Alias</th>
-              <th className="text-left px-2 py-1 font-medium text-muted-foreground">Model</th>
+              <th className="text-left px-2 py-1 font-medium text-muted-foreground">{t("providers.card.alias")}</th>
+              <th className="text-left px-2 py-1 font-medium text-muted-foreground">{t("providers.card.model")}</th>
             </tr>
           </thead>
           <tbody>
@@ -107,9 +108,11 @@ function ModelMappingsTable({ mappings }: { mappings: Record<string, string> }) 
 function ProviderCard({
   provider,
   health,
+  t,
 }: {
   provider: Provider;
   health: ProviderHealth | undefined;
+  t: (key: string, options?: { count?: number }) => string;
 }) {
   const status = getHealthStatus(health);
   const avgLatency = getAvgLatency(health);
@@ -123,7 +126,7 @@ function ProviderCard({
         </div>
         {provider.isDefault && (
           <span className="text-xs bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded">
-            Default
+            {t("providers.card.default")}
           </span>
         )}
       </div>
@@ -137,23 +140,24 @@ function ProviderCard({
           {provider.keyStrategy}
         </span>
         <span className="text-xs text-muted-foreground">
-          {provider.keyCount} {provider.keyCount === 1 ? "key" : "keys"}
+          {provider.keyCount} {t("providers.card.keys", { count: provider.keyCount })}
         </span>
         {avgLatency !== null && (
           <span className="text-xs text-muted-foreground">
-            avg {formatMs(avgLatency)}
+            {t("providers.card.avgLatency")} {formatMs(avgLatency)}
           </span>
         )}
       </div>
 
-      <ModelMappingsTable mappings={provider.modelMappings} />
+      <ModelMappingsTable mappings={provider.modelMappings} t={t} />
 
-      <KeyHealthBars health={health} />
+      <KeyHealthBars health={health} t={t} />
     </div>
   );
 }
 
 export function ProvidersPage() {
+  const { t } = useTranslation();
   const { data: providersData, isLoading: providersLoading } = useProviders();
   const { data: healthData } = useProvidersHealth();
 
@@ -165,7 +169,7 @@ export function ProvidersPage() {
 
   return (
     <div>
-      <PageHeader title="Providers" />
+      <PageHeader title={t("providers.title")} />
 
       {providersLoading ? (
         <div className="flex justify-center py-12">
@@ -178,6 +182,7 @@ export function ProvidersPage() {
               key={provider.name}
               provider={provider}
               health={healthMap.get(provider.name)}
+              t={t}
             />
           ))}
         </div>

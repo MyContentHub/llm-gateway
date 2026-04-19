@@ -183,5 +183,52 @@
     "none": "无",
     "default": "默认",
     "noProviders": "未配置提供商"
+  },
+  "providers": {
+    "title": "提供商",
+    "card": {
+      "default": "默认",
+      "keys_one": "个密钥",
+      "keys_other": "个密钥",
+      "avgLatency": "平均",
+      "keyHealth": "密钥健康状态",
+      "modelMappings": "模型映射",
+      "alias": "别名",
+      "model": "模型"
+    }
+  },
+  "security": {
+    "title": "安全监控",
+    "kpis": {
+      "blockedRequests": "已拦截请求",
+      "piiDetections": "PII 检测",
+      "injectionAttempts": "注入攻击",
+      "contentFilter": "内容过滤"
+    },
+    "subLabels": {
+      "types": "{{count}} 种类型",
+      "avgScore": "平均分数 {{score}}%",
+      "flaggedAllowed": "{{flagged}} 已标记 · {{allowed}} 已放行"
+    },
+    "charts": {
+      "piiByType": "按类型 PII 检测",
+      "injectionScore": "注入分数分布"
+    },
+    "threatFeed": {
+      "title": "威胁动态",
+      "subtitle": "近期拦截事件"
+    },
+    "table": {
+      "time": "时间",
+      "requestId": "请求 ID",
+      "model": "模型",
+      "pii": "PII",
+      "injectionScore": "注入分数"
+    },
+    "empty": {
+      "noPiiData": "暂无 PII 检测数据",
+      "noInjectionData": "暂无注入数据",
+      "noBlockedEvents": "暂无拦截事件"
+    }
   }
 }

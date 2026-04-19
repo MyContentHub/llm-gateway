@@ -183,5 +183,52 @@
     "none": "None",
     "default": "default",
     "noProviders": "No providers configured"
+  },
+  "providers": {
+    "title": "Providers",
+    "card": {
+      "default": "Default",
+      "keys_one": "key",
+      "keys_other": "keys",
+      "avgLatency": "avg",
+      "keyHealth": "Key Health",
+      "modelMappings": "Model Mappings",
+      "alias": "Alias",
+      "model": "Model"
+    }
+  },
+  "security": {
+    "title": "Security Monitor",
+    "kpis": {
+      "blockedRequests": "Blocked Requests",
+      "piiDetections": "PII Detections",
+      "injectionAttempts": "Injection Attempts",
+      "contentFilter": "Content Filter"
+    },
+    "subLabels": {
+      "types": "{{count}} types",
+      "avgScore": "avg score {{score}}%",
+      "flaggedAllowed": "{{flagged}} flagged · {{allowed}} allowed"
+    },
+    "charts": {
+      "piiByType": "PII Detection by Type",
+      "injectionScore": "Injection Score Distribution"
+    },
+    "threatFeed": {
+      "title": "Threat Feed",
+      "subtitle": "Recent blocked events"
+    },
+    "table": {
+      "time": "Time",
+      "requestId": "Request ID",
+      "model": "Model",
+      "pii": "PII",
+      "injectionScore": "Injection Score"
+    },
+    "empty": {
+      "noPiiData": "No PII detection data",
+      "noInjectionData": "No injection data",
+      "noBlockedEvents": "No blocked events"
+    }
   }
 }
