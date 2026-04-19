@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   createColumnHelper,
   flexRender,
@@ -55,6 +56,7 @@ function PiiBadge({ detected, types }: { detected: 0 | 1; types: string | null }
 }
 
 export function AuditPage() {
+  const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -88,7 +90,7 @@ export function AuditPage() {
   const columns = useMemo(
     () => [
       columnHelper.accessor("timestamp", {
-        header: "Time",
+        header: t("audit.table.time"),
         cell: (info: CellContext<AuditLogRow, string>) => (
           <span className="text-xs whitespace-nowrap">
             {formatDate(info.getValue())}
@@ -96,7 +98,7 @@ export function AuditPage() {
         ),
       }),
       columnHelper.accessor("request_id", {
-        header: "Request ID",
+        header: t("audit.table.requestId"),
         cell: (info: CellContext<AuditLogRow, string>) => {
           const val = info.getValue();
           return (
@@ -107,7 +109,7 @@ export function AuditPage() {
         },
       }),
       columnHelper.accessor("api_key_id", {
-        header: "Key",
+        header: t("audit.table.key"),
         cell: (info: CellContext<AuditLogRow, string>) => {
           const val = info.getValue();
           return (
@@ -118,7 +120,7 @@ export function AuditPage() {
         },
       }),
       columnHelper.accessor("model", {
-        header: "Model",
+        header: t("audit.table.model"),
         cell: (info: CellContext<AuditLogRow, string>) => (
           <span className="text-sm font-medium">{info.getValue()}</span>
         ),
@@ -127,30 +129,30 @@ export function AuditPage() {
         ((row: AuditLogRow) => row.prompt_tokens + row.completion_tokens) as AccessorFn<AuditLogRow, number>,
         {
           id: "tokens",
-          header: "Tokens",
+          header: t("audit.table.tokens"),
           cell: (info: CellContext<AuditLogRow, number>) => (
             <span className="text-xs tabular-nums">{info.getValue().toLocaleString()}</span>
           ),
         },
       ),
       columnHelper.accessor("cost_usd", {
-        header: "Cost",
+        header: t("audit.table.cost"),
         cell: (info: CellContext<AuditLogRow, number>) => (
           <span className="text-xs tabular-nums">{formatUsd(info.getValue())}</span>
         ),
       }),
       columnHelper.accessor("latency_ms", {
-        header: "Latency",
+        header: t("audit.table.latency"),
         cell: (info: CellContext<AuditLogRow, number>) => (
           <span className="text-xs tabular-nums">{formatMs(info.getValue())}</span>
         ),
       }),
       columnHelper.accessor("status", {
-        header: "Status",
+        header: t("audit.table.status"),
         cell: (info: CellContext<AuditLogRow, string>) => <StatusBadge status={info.getValue()} />,
       }),
       columnHelper.accessor("pii_detected", {
-        header: "PII",
+        header: t("audit.table.pii"),
         cell: (info: CellContext<AuditLogRow, 0 | 1>) => (
           <PiiBadge
             detected={info.getValue()}
@@ -159,11 +161,11 @@ export function AuditPage() {
         ),
       }),
       columnHelper.accessor("prompt_injection_score", {
-        header: "Injection",
+        header: t("audit.table.injection"),
         cell: (info: CellContext<AuditLogRow, number>) => <InjectionScoreBar score={info.getValue()} />,
       }),
     ],
-    [],
+    [t],
   );
 
   const table = useReactTable({
@@ -199,11 +201,11 @@ export function AuditPage() {
       const result = await exportAuditCsv(exportFilters);
       if (result.truncated) {
         setExportWarning(
-          `Export capped at ${result.maxRows.toLocaleString()} rows. Apply tighter filters to export all results.`,
+          t("audit.export.warning", { maxRows: result.maxRows.toLocaleString() }),
         );
       }
     } catch {
-      setExportError("Export failed. Please try again.");
+      setExportError(t("audit.export.error"));
     } finally {
       setExporting(false);
     }
@@ -211,11 +213,11 @@ export function AuditPage() {
 
   return (
     <div>
-      <PageHeader title="Audit Logs" />
+      <PageHeader title={t("audit.title")} />
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Start Date</label>
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t("audit.filters.startDate")}</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -226,7 +228,7 @@ export function AuditPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {startDate ? format(startDate, "MMM dd, yyyy") : "Pick a date"}
+                  {startDate ? format(startDate, "MMM dd, yyyy") : t("audit.filters.pickDate")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -243,7 +245,7 @@ export function AuditPage() {
             </Popover>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">End Date</label>
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t("audit.filters.endDate")}</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -254,7 +256,7 @@ export function AuditPage() {
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {endDate ? format(endDate, "MMM dd, yyyy") : "Pick a date"}
+                  {endDate ? format(endDate, "MMM dd, yyyy") : t("audit.filters.pickDate")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
@@ -271,7 +273,7 @@ export function AuditPage() {
             </Popover>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Model</label>
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t("audit.filters.model")}</label>
             <Select
               value={modelFilter || "__all__"}
               onValueChange={(value) => {
@@ -280,10 +282,10 @@ export function AuditPage() {
               }}
             >
               <SelectTrigger className="h-9 w-[180px]">
-                <SelectValue placeholder="All models" />
+                <SelectValue placeholder={t("audit.filters.allModels")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All models</SelectItem>
+                <SelectItem value="__all__">{t("audit.filters.allModels")}</SelectItem>
                 {modelsData?.models?.map((m) => (
                   <SelectItem key={m} value={m}>
                     {m}
@@ -293,7 +295,7 @@ export function AuditPage() {
             </Select>
           </div>
           <div className="flex items-center gap-2">
-            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Status</label>
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">{t("audit.filters.status")}</label>
             <Select
               value={statusFilter || "__all__"}
               onValueChange={(value) => {
@@ -302,13 +304,13 @@ export function AuditPage() {
               }}
             >
               <SelectTrigger className="h-9 w-[180px]">
-                <SelectValue placeholder="All statuses" />
+                <SelectValue placeholder={t("audit.filters.allStatuses")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">All statuses</SelectItem>
-                <SelectItem value="success">Success</SelectItem>
-                <SelectItem value="error">Error</SelectItem>
-                <SelectItem value="blocked">Blocked</SelectItem>
+                <SelectItem value="__all__">{t("audit.filters.allStatuses")}</SelectItem>
+                <SelectItem value="success">{t("audit.statusOptions.success")}</SelectItem>
+                <SelectItem value="error">{t("audit.statusOptions.error")}</SelectItem>
+                <SelectItem value="blocked">{t("audit.statusOptions.blocked")}</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -322,7 +324,7 @@ export function AuditPage() {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Export CSV
+            {t("audit.export.button")}
           </button>
         </div>
         {exportError && (
@@ -345,7 +347,7 @@ export function AuditPage() {
             </div>
           ) : !data?.logs.length ? (
             <div className="py-20 text-center text-muted-foreground">
-              No audit logs found
+              {t("audit.empty")}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -389,9 +391,11 @@ export function AuditPage() {
         {totalPages > 1 && (
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              Showing {page * PAGE_SIZE + 1}-
-              {Math.min((page + 1) * PAGE_SIZE, data?.total ?? 0)} of{" "}
-              {data?.total ?? 0}
+              {t("audit.pagination.showing", {
+                start: page * PAGE_SIZE + 1,
+                end: Math.min((page + 1) * PAGE_SIZE, data?.total ?? 0),
+                total: data?.total ?? 0,
+              })}
             </p>
             <div className="flex items-center gap-2">
               <button
@@ -400,17 +404,17 @@ export function AuditPage() {
                 className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="h-4 w-4" />
-                Previous
+                {t("audit.pagination.previous")}
               </button>
               <span className="text-sm text-muted-foreground">
-                Page {page + 1} of {totalPages}
+                {t("audit.pagination.page", { current: page + 1, total: totalPages })}
               </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
                 className="inline-flex items-center gap-1 rounded-md border border-input bg-background px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Next
+                {t("audit.pagination.next")}
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
