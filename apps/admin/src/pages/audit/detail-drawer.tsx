@@ -6,7 +6,7 @@ import { formatDate, formatUsd, formatMs } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
 import { InjectionScoreBar } from "@/components/injection-score-bar";
-import { JsonModal } from "./json-modal";
+import { JsonModal, JsonValue } from "./json-modal";
 import { useTranslation } from "react-i18next";
 
 interface DetailDrawerProps {
@@ -122,8 +122,6 @@ function PIIDetectedDisplay({ piiTypes }: { piiTypes: string[] }) {
   );
 }
 
-const PREVIEW_CAP = 2000;
-
 function BodySection({
   title,
   body,
@@ -151,12 +149,8 @@ function BodySection({
     );
   }
 
-  let preview = body;
-  try {
-    preview = JSON.stringify(JSON.parse(body), null, 2);
-  } catch {}
-  const isOverCap = preview.length > PREVIEW_CAP;
-  const displayPreview = isOverCap ? preview.slice(0, PREVIEW_CAP) : preview;
+  let parsed: unknown = null;
+  try { parsed = JSON.parse(body); } catch {}
 
   return (
     <div className="space-y-1">
@@ -187,10 +181,11 @@ function BodySection({
                 <span>{t("audit.detail.body.truncationWarning")}</span>
               </div>
             )}
-            <pre className="bg-muted/50 rounded-md p-3 text-xs font-mono overflow-x-auto whitespace-pre-wrap break-all max-h-64 overflow-y-auto">
-              {displayPreview}
-              {isOverCap && <span className="text-muted-foreground">...</span>}
-            </pre>
+            <div className="bg-muted/50 rounded-md p-3 overflow-x-auto max-h-64 overflow-y-auto">
+              <pre className="font-mono text-xs leading-relaxed whitespace-pre">
+                {parsed !== null ? <JsonValue value={parsed} /> : body}
+              </pre>
+            </div>
           </div>
         )}
         <button

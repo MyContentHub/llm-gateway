@@ -155,7 +155,7 @@ function JsonObject({ value }: { value: Record<string, unknown> }) {
   );
 }
 
-function JsonValue({ value }: { value: unknown }) {
+export function JsonValue({ value }: { value: unknown }) {
   if (value === null) return <JsonNull />;
   if (typeof value === "string") return <JsonString value={value} />;
   if (typeof value === "number") return <JsonNumber value={value} />;
