@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/layout/page-header";
 import { useConfig } from "@/hooks/use-config";
 import { useProviders } from "@/hooks/use-providers";
 import { Shield, RefreshCw, Server, FileText, Settings } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 function Card({
   title,
@@ -122,14 +123,15 @@ function generateTomlPreview(
 }
 
 export function SettingsPage() {
+  const { t } = useTranslation();
   const { data: config, isLoading: configLoading } = useConfig();
   const { data: providersData, isLoading: providersLoading } = useProviders();
 
   if (configLoading || providersLoading) {
     return (
       <div>
-        <PageHeader title="Settings" />
-        <div className="text-muted-foreground text-sm">Loading...</div>
+        <PageHeader title={t("settings.title")} />
+        <div className="text-muted-foreground text-sm">{t("settings.loading")}</div>
       </div>
     );
   }
@@ -140,26 +142,26 @@ export function SettingsPage() {
 
   return (
     <div>
-      <PageHeader title="Settings" />
+      <PageHeader title={t("settings.title")} />
       <div className="grid gap-4">
-        <Card title="General" icon={Settings}>
+        <Card title={t("settings.cards.general")} icon={Settings}>
           <dl className="space-y-2">
-            <Row label="Port" value={config.port} />
-            <Row label="Host" value={config.host} />
-            <Row label="Log Level" value={config.log_level} />
-            <Row label="Default RPM" value={config.default_rpm} />
-            <Row label="Default TPM" value={config.default_tpm} />
-            <Row label="Default RPD" value={config.default_rpd} />
+            <Row label={t("settings.fields.port")} value={config.port} />
+            <Row label={t("settings.fields.host")} value={config.host} />
+            <Row label={t("settings.fields.logLevel")} value={config.log_level} />
+            <Row label={t("settings.fields.defaultRpm")} value={config.default_rpm} />
+            <Row label={t("settings.fields.defaultTpm")} value={config.default_tpm} />
+            <Row label={t("settings.fields.defaultRpd")} value={config.default_rpd} />
           </dl>
         </Card>
 
-        <Card title="Security Rules" icon={Shield}>
+        <Card title={t("settings.cards.securityRules")} icon={Shield}>
           <dl className="space-y-2">
-            <Row label="Injection Threshold" value={config.security.injection_threshold} />
+            <Row label={t("settings.fields.injectionThreshold")} value={config.security.injection_threshold} />
           </dl>
           <div className="space-y-2 pt-2">
             <div>
-              <p className="text-sm text-muted-foreground mb-1.5">Blocked PII Types</p>
+              <p className="text-sm text-muted-foreground mb-1.5">{t("settings.fields.blockedPiiTypes")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {config.security.blocked_pii_types.length > 0 ? (
                   config.security.blocked_pii_types.map((t) => (
@@ -168,12 +170,12 @@ export function SettingsPage() {
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-sm text-muted-foreground">None</span>
+                  <span className="text-sm text-muted-foreground">{t("settings.none")}</span>
                 )}
               </div>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground mb-1.5">Flagged PII Types</p>
+              <p className="text-sm text-muted-foreground mb-1.5">{t("settings.fields.flaggedPiiTypes")}</p>
               <div className="flex flex-wrap gap-1.5">
                 {config.security.flagged_pii_types.length > 0 ? (
                   config.security.flagged_pii_types.map((t) => (
@@ -182,23 +184,23 @@ export function SettingsPage() {
                     </Badge>
                   ))
                 ) : (
-                  <span className="text-sm text-muted-foreground">None</span>
+                  <span className="text-sm text-muted-foreground">{t("settings.none")}</span>
                 )}
               </div>
             </div>
           </div>
         </Card>
 
-        <Card title="Retry Policy" icon={RefreshCw}>
+        <Card title={t("settings.cards.retryPolicy")} icon={RefreshCw}>
           <dl className="space-y-2">
-            <Row label="Max Retries" value={config.retry.max_retries} />
-            <Row label="Initial Delay" value={`${config.retry.initial_delay_ms}ms`} />
-            <Row label="Max Delay" value={`${config.retry.max_delay_ms}ms`} />
-            <Row label="Backoff Multiplier" value={config.retry.backoff_multiplier} />
+            <Row label={t("settings.fields.maxRetries")} value={config.retry.max_retries} />
+            <Row label={t("settings.fields.initialDelay")} value={`${config.retry.initial_delay_ms}ms`} />
+            <Row label={t("settings.fields.maxDelay")} value={`${config.retry.max_delay_ms}ms`} />
+            <Row label={t("settings.fields.backoffMultiplier")} value={config.retry.backoff_multiplier} />
           </dl>
         </Card>
 
-        <Card title="Provider Config" icon={Server}>
+        <Card title={t("settings.cards.providerConfig")} icon={Server}>
           {providers.length > 0 ? (
             <div className="space-y-3">
               {providers.map((p) => (
@@ -212,18 +214,18 @@ export function SettingsPage() {
                     </span>
                     {p.isDefault && (
                       <span className="text-xs bg-primary/10 text-primary border border-primary/20 rounded-full px-2 py-0.5">
-                        default
+                        {t("settings.default")}
                       </span>
                     )}
                   </div>
                   <dl className="space-y-1.5">
-                    <Row label="Base URL" value={p.baseUrl} />
-                    <Row label="Key Strategy" value={p.keyStrategy} />
-                    <Row label="Key Count" value={p.keyCount} />
+                    <Row label={t("settings.fields.baseUrl")} value={p.baseUrl} />
+                    <Row label={t("settings.fields.keyStrategy")} value={p.keyStrategy} />
+                    <Row label={t("settings.fields.keyCount")} value={p.keyCount} />
                   </dl>
                   {Object.keys(p.modelMappings).length > 0 && (
                     <div>
-                      <p className="text-sm text-muted-foreground mb-1">Model Mappings</p>
+                      <p className="text-sm text-muted-foreground mb-1">{t("settings.fields.modelMappings")}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {Object.entries(p.modelMappings).map(([from, to]) => (
                           <span
@@ -240,11 +242,11 @@ export function SettingsPage() {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No providers configured</p>
+            <p className="text-sm text-muted-foreground">{t("settings.noProviders")}</p>
           )}
         </Card>
 
-        <Card title="TOML Preview" icon={FileText}>
+        <Card title={t("settings.cards.tomlPreview")} icon={FileText}>
           <pre className="rounded-md bg-zinc-900 text-zinc-100 p-4 text-xs font-mono overflow-x-auto whitespace-pre">
             {generateTomlPreview(config, providers)}
           </pre>
