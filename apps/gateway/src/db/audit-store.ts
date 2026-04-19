@@ -95,15 +95,17 @@ export class AuditStore {
         request_id, timestamp, api_key_id, model, endpoint,
         prompt_tokens, completion_tokens, cost_usd, latency_ms,
         status, pii_detected, pii_types_found, prompt_injection_score,
-        content_hash_sha256
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        content_hash_sha256, request_body, response_body,
+        request_body_truncated, response_body_truncated
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     );
 
     this.stmtGetByRequestId = db.prepare(
       `SELECT id, request_id, timestamp, api_key_id, model, endpoint,
         prompt_tokens, completion_tokens, cost_usd, latency_ms,
         status, pii_detected, pii_types_found, prompt_injection_score,
-        content_hash_sha256
+        content_hash_sha256, request_body, response_body,
+        request_body_truncated, response_body_truncated
       FROM audit_logs WHERE request_id = ?`
     );
   }
@@ -123,7 +125,11 @@ export class AuditStore {
       entry.pii_detected ? 1 : 0,
       entry.pii_types_found ?? null,
       entry.prompt_injection_score ?? 0,
-      entry.content_hash_sha256 ?? null
+      entry.content_hash_sha256 ?? null,
+      entry.request_body ?? null,
+      entry.response_body ?? null,
+      entry.request_body_truncated ?? 0,
+      entry.response_body_truncated ?? 0
     );
   }
 
