@@ -80,6 +80,35 @@ export function createAuditLogger(db: Database.Database, config: AppConfig): Fas
 
       const apiKeyId = (request as any).apiKey?.id ?? null;
 
+      const MAX_BODY_BYTES = 131072;
+
+      let requestBody: string | null = null;
+      let requestBodyTruncated = 0;
+      if (request.body) {
+        const raw = JSON.stringify(request.body);
+        const buf = Buffer.from(raw, "utf-8");
+        if (buf.length > MAX_BODY_BYTES) {
+          requestBody = buf.slice(0, MAX_BODY_BYTES).toString("utf-8");
+          requestBodyTruncated = 1;
+        } else {
+          requestBody = raw;
+        }
+      }
+
+      let responseBodyField: string | null = null;
+      let responseBodyTruncated = 0;
+      if (securityScan?.action === "block") {
+        responseBodyField = null;
+      } else if (responseBody) {
+        const buf = Buffer.from(responseBody, "utf-8");
+        if (buf.length > MAX_BODY_BYTES) {
+          responseBodyField = buf.slice(0, MAX_BODY_BYTES).toString("utf-8");
+          responseBodyTruncated = 1;
+        } else {
+          responseBodyField = responseBody;
+        }
+      }
+
       const entry: AuditLogEntry = {
         request_id: randomUUID(),
         timestamp: new Date().toISOString(),
@@ -95,6 +124,10 @@ export function createAuditLogger(db: Database.Database, config: AppConfig): Fas
         pii_types_found: piiTypesFound,
         prompt_injection_score: injectionScore,
         content_hash_sha256: contentHash,
+        request_body: requestBody,
+        response_body: responseBodyField,
+        request_body_truncated: requestBodyTruncated,
+        response_body_truncated: responseBodyTruncated,
       };
 
       auditStore.insertAuditLog(entry);

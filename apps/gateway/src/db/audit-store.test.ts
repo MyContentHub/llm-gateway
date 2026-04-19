@@ -18,7 +18,11 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   pii_detected INTEGER DEFAULT 0,
   pii_types_found TEXT,
   prompt_injection_score REAL DEFAULT 0,
-  content_hash_sha256 TEXT
+  content_hash_sha256 TEXT,
+  request_body TEXT,
+  response_body TEXT,
+  request_body_truncated INTEGER DEFAULT 0,
+  response_body_truncated INTEGER DEFAULT 0
 );
 `;
 
