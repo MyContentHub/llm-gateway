@@ -214,8 +214,8 @@ export function AuditPage() {
       <PageHeader title="Audit Logs" />
       <div className="space-y-4">
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-border bg-card p-4">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Start Date</label>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Start Date</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -242,8 +242,8 @@ export function AuditPage() {
               </PopoverContent>
             </Popover>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">End Date</label>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">End Date</label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -270,8 +270,8 @@ export function AuditPage() {
               </PopoverContent>
             </Popover>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Model</label>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Model</label>
             <Select
               value={modelFilter || "__all__"}
               onValueChange={(value) => {
@@ -292,8 +292,8 @@ export function AuditPage() {
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-muted-foreground">Status</label>
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium text-muted-foreground whitespace-nowrap">Status</label>
             <Select
               value={statusFilter || "__all__"}
               onValueChange={(value) => {
