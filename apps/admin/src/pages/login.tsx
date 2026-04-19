@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/use-auth";
 
 export function LoginPage() {
+  const { t } = useTranslation();
   const { isAuthenticated, login } = useAuth();
   const navigate = useNavigate();
   const [token, setToken] = useState("");
@@ -22,7 +24,7 @@ export function LoginPage() {
       await login(token.trim());
       navigate("/");
     } catch {
-      setError("Token invalid");
+      setError(t("login.tokenInvalid"));
     } finally {
       setLoading(false);
     }
@@ -32,12 +34,12 @@ export function LoginPage() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-lg border border-border bg-card p-6 shadow-lg">
         <h1 className="text-xl font-bold text-foreground text-center mb-6">
-          LLM Gateway Admin
+          {t("login.title")}
         </h1>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <label htmlFor="login-token" className="text-sm font-medium text-foreground">
-              Admin Token
+              {t("login.tokenLabel")}
             </label>
             <div className="relative">
               <input
@@ -45,7 +47,7 @@ export function LoginPage() {
                 type={showToken ? "text" : "password"}
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
-                placeholder="Enter admin token"
+                placeholder={t("login.tokenPlaceholder")}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring pr-10"
                 autoFocus
               />
@@ -72,7 +74,7 @@ export function LoginPage() {
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin mx-auto" />
             ) : (
-              "Sign In"
+              t("login.signIn")
             )}
           </button>
         </form>

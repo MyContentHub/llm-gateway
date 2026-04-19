@@ -4,6 +4,13 @@
     "error": "错误",
     "success": "成功"
   },
+  "login": {
+    "title": "LLM Gateway 管理后台",
+    "tokenLabel": "管理员令牌",
+    "tokenPlaceholder": "请输入管理员令牌",
+    "signIn": "登录",
+    "tokenInvalid": "令牌无效"
+  },
   "nav": {
     "home": "首页",
     "keys": "密钥",

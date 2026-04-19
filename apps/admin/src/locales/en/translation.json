@@ -4,6 +4,13 @@
     "error": "Error",
     "success": "Success"
   },
+  "login": {
+    "title": "LLM Gateway Admin",
+    "tokenLabel": "Admin Token",
+    "tokenPlaceholder": "Enter admin token",
+    "signIn": "Sign In",
+    "tokenInvalid": "Token invalid"
+  },
   "nav": {
     "home": "Home",
     "keys": "Keys",
