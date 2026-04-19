@@ -33,207 +33,158 @@
   },
   "sprints": [
     {
-      "id": "sprint-013",
-      "name": "Phase 13 - Monorepo Restructuring with Turborepo",
-      "goal": "Restructure the project into a standard Turborepo monorepo with pnpm workspaces. Gateway and admin become independent apps in apps/ directory, E2E tests move to a separate workspace. Eliminate cross-project config interference and establish proper build pipeline.",
-      "status": "completed",
-      "created_at": "2026-04-19",
+      "id": "sprint-014",
+      "name": "Audit Log Body Storage & Retention",
+      "goal": "Store full request/response body in audit logs, display in Detail Drawer with JSON preview, and implement two-layer TTL cleanup (7-day body, 30-day metadata)",
+      "status": "planning",
+      "created_at": "2026-04-20",
       "features": [
         {
-          "id": "s13-feat-001",
-          "category": "infra",
+          "id": "s14-feat-001",
+          "category": "data",
           "priority": "high",
-          "title": "Create root monorepo config files",
-          "description": "Create the foundational monorepo configuration at the project root: (1) Replace root package.json with a workspace root package (name: llm-gateway-monorepo, private: true, turbo devDep, workspace scripts for build/dev/test/typecheck/lint). (2) Create turbo.json defining task pipeline with build dependsOn [\"^build\"], dev as persistent/uncached, test dependsOn [\"build\"], typecheck dependsOn [\"^build\"], lint with no deps. (3) Rewrite pnpm-workspace.yaml to declare packages: [\"apps/*\", \"packages/*\"]. (4) Create tsconfig.base.json extracting shared compilerOptions (strict, esModuleInterop, skipLibCheck, forceConsistentCasingInFileNames, resolveJsonModule, declaration, declarationMap, sourceMap). (5) Create .npmrc with shamefully-hoist=true and onlyBuiltDependencies for argon2, better-sqlite3, esbuild. (6) Delete old .npmrc.yml (incorrect format). (7) Create apps/ directory structure (apps/gateway/, apps/admin/, apps/e2e/ as empty dirs).",
+          "title": "Add body columns to audit_logs via migration",
+          "description": "Create migration 002-add-audit-body.sql adding request_body, response_body (TEXT), request_body_truncated, response_body_truncated (INTEGER DEFAULT 0) to audit_logs table. Update AuditLogEntry and AuditLogRow types in audit-store.ts to include these 4 fields.",
           "acceptance_criteria": [
-            "Given root package.json, when running pnpm install, then workspace packages are recognized",
-            "Given turbo.json, when running pnpm turbo build, then tasks execute in dependency order",
-            "Given pnpm-workspace.yaml, when running pnpm ls -r, then apps/* packages are listed",
-            "Given tsconfig.base.json, when referenced by child tsconfig, then shared options apply"
+            "Migration file 002-add-audit-body.sql created and runs successfully",
+            "audit_logs table has 4 new columns",
+            "AuditLogEntry interface includes request_body, response_body, request_body_truncated, response_body_truncated",
+            "AuditLogRow interface includes the same 4 fields",
+            "Existing tests pass after type changes"
           ],
-          "technical_notes": "Root package.json replaces the current one. Keep packageManager: pnpm@10.18.3. Move pnpm.onlyBuiltDependencies from current gateway package.json to root. The old pnpm-workspace.yaml content (onlyBuiltDependencies: esbuild) is incorrect syntax — this belongs in .npmrc or package.json pnpm field.",
-          "status": "completed",
+          "technical_notes": "Migration goes in apps/gateway/migrations/. Types in apps/gateway/src/db/audit-store.ts. Fields are optional/nullable since existing rows won't have body data.",
+          "status": "pending",
           "dependencies": [],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "package.json",
-            "turbo.json",
-            "pnpm-workspace.yaml",
-            "tsconfig.base.json",
-            ".npmrc",
-            ".npmrc.yml"
-          ]
-        },
-        {
-          "id": "s13-feat-002",
-          "category": "infra",
-          "priority": "high",
-          "title": "Move gateway to apps/gateway/ and update configs",
-          "description": "Move the entire gateway project into apps/gateway/: (1) Move src/, tests/, migrations/, vitest.config.ts, config.example.toml from root to apps/gateway/. (2) Create apps/gateway/package.json with name @llm-gateway/gateway, moving all current dependencies and scripts from the old root package.json. Keep all fields: type: module, main: dist/index.js, scripts (dev, build, start, test, test:watch, test:coverage, typecheck, lint, clean, gen-key). Remove the pnpm.onlyBuiltDependencies field (moved to root). (3) Create apps/gateway/tsconfig.json extending ../../tsconfig.base.json, keeping gateway-specific options: target ES2024, module Node16, moduleResolution Node16, rootDir src, outDir dist, include [\"src/**/*.ts\"], types [\"node\"]. (4) vitest.config.ts stays unchanged — test paths (src/**/*.test.ts, tests/**/*.test.ts) are relative to apps/gateway/ which is correct.",
-          "acceptance_criteria": [
-            "Given apps/gateway/package.json, when running pnpm install from root, then gateway deps are installed",
-            "Given apps/gateway/tsconfig.json, when extending tsconfig.base.json, then shared + specific options merge correctly",
-            "Given moved vitest.config.ts, when running pnpm test --filter=@llm-gateway/gateway, then tests are discovered from correct paths",
-            "Given apps/gateway/src/ structure preserved, when running pnpm build --filter=@llm-gateway/gateway, then tsc compiles successfully"
-          ],
-          "technical_notes": "Use git mv to preserve history. The critical change is tsconfig.json — it must extend ../../tsconfig.base.json while overriding with Node16 module resolution and ES2024 target. The include path stays [\"src/**/*.ts\"] since it's relative to apps/gateway/. Do NOT update import paths within src/ — they use relative .js imports which work regardless of directory depth.",
-          "status": "completed",
-          "dependencies": ["s13-feat-001"],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "apps/gateway/package.json",
-            "apps/gateway/tsconfig.json",
-            "apps/gateway/vitest.config.ts",
-            "apps/gateway/config.example.toml"
-          ]
-        },
-        {
-          "id": "s13-feat-003",
-          "category": "infra",
-          "priority": "high",
-          "title": "Move admin to apps/admin/ and update configs",
-          "description": "Move the admin project into apps/admin/: (1) Move all admin/ contents (src/, index.html, vite.config.ts, tailwind.config.ts, postcss.config.js, components.json, tsconfig.json, tsconfig.node.json) to apps/admin/. Do NOT move e2e/ directory. (2) Update apps/admin/package.json: change name to @llm-gateway/admin, remove package-lock.json. (3) Update tsconfig.json baseUrl and paths to remain correct (paths alias @/* → ./src/* stays the same since it's relative). (4) vite.config.ts proxy to localhost:3000 stays unchanged. (5) Delete admin/package-lock.json and admin/tsconfig.tsbuildinfo if present.",
-          "acceptance_criteria": [
-            "Given apps/admin/package.json, when running pnpm install from root, then admin deps are installed",
-            "Given apps/admin/vite.config.ts unchanged, when running pnpm dev --filter=@llm-gateway/admin, then Vite dev server starts",
-            "Given apps/admin/tsconfig.json, when tsc resolves @/* imports, then they map to ./src/* correctly",
-            "Given no package-lock.json in apps/admin/, then only root pnpm-lock.yaml exists"
-          ],
-          "technical_notes": "Delete admin/node_modules/, admin/package-lock.json, admin/tsconfig.tsbuildinfo before/after move — these are generated files. The admin's tsconfig.json uses moduleResolution: bundler which is independent from the base config and should NOT extend tsconfig.base.json (different module system). Same for tsconfig.node.json.",
-          "status": "completed",
-          "dependencies": ["s13-feat-001"],
           "estimated_complexity": "small",
           "files_affected": [
-            "apps/admin/package.json",
-            "apps/admin/tsconfig.json",
-            "apps/admin/tsconfig.node.json",
-            "apps/admin/vite.config.ts",
-            "apps/admin/tailwind.config.ts",
-            "apps/admin/postcss.config.js",
-            "apps/admin/components.json",
-            "apps/admin/index.html"
+            "apps/gateway/migrations/002-add-audit-body.sql",
+            "apps/gateway/src/db/audit-store.ts"
           ]
         },
         {
-          "id": "s13-feat-004",
-          "category": "infra",
-          "priority": "high",
-          "title": "Create apps/e2e/ workspace with Playwright tests",
-          "description": "Extract E2E tests into a dedicated workspace package: (1) Create apps/e2e/package.json with name @llm-gateway/e2e, private: true, scripts: { test:e2e: playwright test, test:e2e:ui: playwright test --ui }, devDependencies: { @playwright/test: ^1.59.1 }. (2) Move admin/e2e/*.spec.ts files to apps/e2e/admin/ (audit.spec.ts, keys.spec.ts, login.spec.ts, navigation.spec.ts, overview.spec.ts, providers.spec.ts, security.spec.ts, settings.spec.ts). (3) Move admin/e2e/fixtures/ to apps/e2e/admin/fixtures/ (index.ts, admin-server.ts). (4) Move admin/e2e/BUGS.md to apps/e2e/admin/BUGS.md. (5) Move root playwright.config.ts to apps/e2e/playwright.config.ts, update testDir from ./admin/e2e to ./admin, testMatch stays *.spec.ts, outputDir to ./admin/results. (6) CRITICAL: Update apps/e2e/admin/fixtures/admin-server.ts import paths: all ../../../src/... → ../../gateway/src/... and ../../../tests/helpers/... → ../../gateway/tests/helpers/.... This works because tsx resolves relative paths at runtime. (7) Update apps/e2e/admin/fixtures/index.ts if it references any paths.",
-          "acceptance_criteria": [
-            "Given apps/e2e/package.json, when running pnpm install from root, then @playwright/test is installed",
-            "Given apps/e2e/playwright.config.ts, when running pnpm test:e2e --filter=@llm-gateway/e2e, then specs are discovered from apps/e2e/admin/",
-            "Given admin-server.ts updated imports, when tsx resolves them, then gateway src modules load correctly from ../../gateway/src/",
-            "Given all spec files moved, when playwright runs, then all E2E test files are found"
-          ],
-          "technical_notes": "The import path change in admin-server.ts is the most critical part: from apps/e2e/admin/fixtures/admin-server.ts to apps/gateway/src/... requires ../../gateway/src/... (up from fixtures→admin→e2e→apps, then into gateway/src). Same for tests/helpers: ../../gateway/tests/helpers/.... These are relative file paths resolved by tsx at runtime, not package imports, so pnpm workspace isolation doesn't apply.",
-          "status": "completed",
-          "dependencies": ["s13-feat-002", "s13-feat-003"],
-          "estimated_complexity": "medium",
-          "files_affected": [
-            "apps/e2e/package.json",
-            "apps/e2e/playwright.config.ts",
-            "apps/e2e/admin/fixtures/admin-server.ts",
-            "apps/e2e/admin/fixtures/index.ts",
-            "apps/e2e/admin/audit.spec.ts",
-            "apps/e2e/admin/keys.spec.ts",
-            "apps/e2e/admin/login.spec.ts",
-            "apps/e2e/admin/navigation.spec.ts",
-            "apps/e2e/admin/overview.spec.ts",
-            "apps/e2e/admin/providers.spec.ts",
-            "apps/e2e/admin/security.spec.ts",
-            "apps/e2e/admin/settings.spec.ts",
-            "apps/e2e/admin/BUGS.md"
-          ]
-        },
-        {
-          "id": "s13-feat-005",
+          "id": "s14-feat-002",
           "category": "core",
           "priority": "high",
-          "title": "Update serve-admin.ts for monorepo admin/dist path",
-          "description": "Update the serve-admin plugin to resolve admin/dist from the new monorepo layout. Currently: resolve(process.cwd(), \"admin\", \"dist\"). In monorepo, when running from apps/gateway/ (dev mode), admin dist is at ../../admin/dist. When running from project root with turbo, or in Docker production, the path differs. Solution: use import.meta.url + fileURLToPath to resolve relative to the source file location. From apps/gateway/src/plugins/serve-admin.ts, the path to apps/admin/dist is ../../../../admin/dist (plugins→src→gateway→apps→admin/dist). Also update the isApiRoute / prefix checks if they reference hardcoded paths. Update serve-admin.test.ts to match new path resolution.",
+          "title": "Write request/response body in audit logger",
+          "description": "Update audit/logger.ts to capture and store request body and response body as JSON strings, with 128KB truncation per field. Set *_truncated=1 when content exceeds the limit. Blocked requests should have response_body=null.",
           "acceptance_criteria": [
-            "Given serve-admin.ts with new path resolution, when gateway runs from apps/gateway/, then admin/dist is found at ../../admin/dist",
-            "Given serve-admin.ts with new path resolution, when gateway runs in Docker production, then admin/dist is accessible",
-            "Given updated serve-admin.test.ts, when tests run, then all serve-admin tests pass",
-            "Given admin is built (apps/admin/dist exists), when gateway starts, then /admin/ serves the SPA"
+            "request_body stores JSON.stringify(request.body) capped at 128KB",
+            "response_body stores response payload capped at 128KB",
+            "request_body_truncated set to 1 when request body exceeds 128KB",
+            "response_body_truncated set to 1 when response body exceeds 128KB",
+            "Blocked requests have response_body=null",
+            "Streaming responses capture accumulated body",
+            "128KB = 131072 bytes",
+            "Existing audit tests pass"
           ],
-          "technical_notes": "Use: resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..', 'admin', 'dist'). Add import { fileURLToPath } from 'node:url' and import { dirname, resolve } from 'node:path'. For compiled output (dist/), the path from dist/plugins/serve-admin.js to apps/admin/dist is: ../../admin/dist (dist→gateway→apps→admin/dist) = ../../../admin/dist. Consider using process.cwd() approach with monorepo-aware fallback: try ../../admin/dist relative to cwd, then fall back to monorepo root. Actually, simplest: always resolve relative to file location using import.meta.url.",
-          "status": "completed",
-          "dependencies": ["s13-feat-002", "s13-feat-003"],
-          "estimated_complexity": "small",
-          "files_affected": [
-            "apps/gateway/src/plugins/serve-admin.ts",
-            "apps/gateway/src/plugins/serve-admin.test.ts"
-          ]
-        },
-        {
-          "id": "s13-feat-006",
-          "category": "infra",
-          "priority": "medium",
-          "title": "Update Dockerfile and docker-compose.yml for monorepo build",
-          "description": "Rewrite Dockerfile for Turborepo monorepo: Builder stage: (1) COPY pnpm-lock.yaml pnpm-workspace.yaml turbo.json package.json (root) + apps/gateway/package.json + apps/admin/package.json. (2) RUN pnpm install --frozen-lockfile. (3) COPY apps/ apps/ + migrations/ to apps/gateway/migrations/ + turbo.json. (4) RUN pnpm turbo build --filter=@llm-gateway/gateway... (builds admin first as gateway dependency, then gateway). Production stage: (1) COPY root + gateway package.json. (2) RUN pnpm install --frozen-lockfile --prod --filter=@llm-gateway/gateway. (3) COPY built dist from both apps: gateway dist + admin dist. (4) COPY migrations/ and config.example.toml. Ensure the admin/dist path is accessible from gateway's perspective (both under /app/apps/). Update docker-compose.yml build context if needed (should remain \".\" for root context).",
-          "acceptance_criteria": [
-            "Given Dockerfile, when docker build runs, then both admin and gateway are built",
-            "Given Dockerfile production stage, when container starts, then gateway serves both API and admin SPA",
-            "Given docker-compose.yml, when docker compose up runs, then gateway starts with admin UI accessible at /admin/",
-            "Given turbo build order, when gateway builds, then admin build has already completed"
-          ],
-          "technical_notes": "Key: use turbo --filter to build only needed packages. The --filter=@llm-gateway/gateway... (with trailing ...) means 'gateway and all its dependencies'. In monorepo, migrations/ and config.example.toml live inside apps/gateway/. Docker build context is the repo root. Consider using turbo prune for optimized Docker builds (copies only needed packages).",
-          "status": "completed",
-          "dependencies": ["s13-feat-002", "s13-feat-003", "s13-feat-005"],
+          "technical_notes": "The onSend hook already captures response body in (request as any)._auditResponseBody. Extend the onResponse hook to serialize and truncate both bodies. Use String.prototype.slice or Buffer.byteLength for truncation at UTF-8 byte level.",
+          "status": "pending",
+          "dependencies": ["s14-feat-001"],
           "estimated_complexity": "medium",
           "files_affected": [
-            "Dockerfile",
-            "docker-compose.yml"
+            "apps/gateway/src/audit/logger.ts"
           ]
         },
         {
-          "id": "s13-feat-007",
-          "category": "infra",
-          "priority": "medium",
-          "title": "Clean up old root files and update AGENTS.md",
-          "description": "Remove old root-level files that have been moved to apps/: (1) Delete root src/ directory (moved to apps/gateway/src/). (2) Delete root tests/ directory (moved to apps/gateway/tests/). (3) Delete root admin/ directory (moved to apps/admin/ and apps/e2e/). (4) Delete root vitest.config.ts (moved to apps/gateway/). (5) Delete root tsconfig.json (replaced by tsconfig.base.json + apps/gateway/tsconfig.json). (6) Delete root playwright.config.ts (moved to apps/e2e/). (7) Delete root .npmrc.yml (replaced by .npmrc). (8) Update .gitignore for monorepo (add .turbo/, ensure apps/*/dist/ patterns). (9) Update AGENTS.md with new monorepo structure, updated commands (pnpm --filter, turbo run), and new directory layout. (10) Ensure pnpm-lock.yaml is at root only.",
-          "acceptance_criteria": [
-            "Given old root files deleted, when listing root directory, then only monorepo config + apps/ + docs/ remain",
-            "Given updated .gitignore, when git status runs, then .turbo/ and dist/ directories are ignored",
-            "Given updated AGENTS.md, when reading project docs, then monorepo commands and structure are accurate",
-            "Given root cleanup complete, when running git status, then only intended changes appear"
-          ],
-          "technical_notes": "Use git rm for tracked files to preserve history. The root directory after cleanup should contain: apps/, docs/, .agent-harness/, .agents/, .git/, .gitignore, .npmrc, AGENTS.md, Dockerfile, docker-compose.yml, config.toml (gitignored), features.json, migrations (if kept at root), opencode.json, package.json, pnpm-lock.yaml, pnpm-workspace.yaml, progress.md, README.md, turbo.json, tsconfig.base.json. Note: migrations/ should be inside apps/gateway/ now.",
-          "status": "completed",
-          "dependencies": ["s13-feat-002", "s13-feat-003", "s13-feat-004"],
-          "estimated_complexity": "small",
-          "files_affected": [
-            ".gitignore",
-            "AGENTS.md"
-          ]
-        },
-        {
-          "id": "s13-feat-008",
-          "category": "infra",
+          "id": "s14-feat-003",
+          "category": "core",
           "priority": "high",
-          "title": "Install dependencies and full verification",
-          "description": "Final verification gate: (1) Run pnpm install from root — verify all workspace packages are recognized and deps resolve correctly. (2) Run pnpm turbo build — verify admin builds first (Vite), then gateway builds (tsc). (3) Run pnpm turbo typecheck — verify both packages typecheck. (4) Run pnpm turbo test — verify gateway unit + integration tests pass. (5) Fix any path issues, import errors, or missing dependencies that arise. This is the validation gate that ensures the monorepo restructuring is complete and working.",
+          "title": "Add audit config schema and cleanup cron plugin",
+          "description": "Add [audit] config section to config.toml schema with retention_days (default 30), body_retention_days (default 7), cleanup_cron (default '0 * * * *'). Create audit/cleanup.ts as a Fastify plugin using fastify-cron to run the two-layer TTL cleanup on schedule.",
           "acceptance_criteria": [
-            "Given pnpm install runs, when workspace resolves, then all 3 packages (@llm-gateway/gateway, @llm-gateway/admin, @llm-gateway/e2e) are installed",
-            "Given pnpm turbo build runs, when admin build completes, then apps/admin/dist/ contains built assets",
-            "Given pnpm turbo build runs, when gateway build completes, then apps/gateway/dist/ contains compiled JS",
-            "Given pnpm turbo typecheck runs, then 0 TypeScript errors across all packages",
-            "Given pnpm turbo test runs, then all gateway unit + integration tests pass",
-            "Given pnpm dev --filter=@llm-gateway/gateway runs, when gateway starts, then /health endpoint responds"
+            "config.toml schema supports [audit] section with 3 fields",
+            "All 3 fields have sensible defaults (30, 7, '0 * * * *')",
+            "cleanup.ts plugin registers cron job via fastify-cron",
+            "Cleanup step 1: SET body fields to NULL for rows older than body_retention_days",
+            "Cleanup step 2: DELETE rows older than retention_days",
+            "Cleanup runs once on server start, then on cron schedule",
+            "Plugin registered in index.ts"
           ],
-          "technical_notes": "Run: pnpm install && pnpm turbo build && pnpm turbo typecheck && pnpm turbo test. The first pnpm install may take time as it regenerates the lockfile for the new workspace structure. If tests fail due to path issues, fix and re-run. The turbo cache will speed up subsequent runs.",
-          "status": "completed",
-          "dependencies": ["s13-feat-001", "s13-feat-002", "s13-feat-003", "s13-feat-004", "s13-feat-005", "s13-feat-006", "s13-feat-007"],
+          "technical_notes": "Install fastify-cron package. Cleanup SQL uses SQLite datetime('now', '-N days') for date math. Plugin wraps both cleanup statements in a single db.transaction(). Register after DB plugin.",
+          "status": "pending",
+          "dependencies": ["s14-feat-001"],
           "estimated_complexity": "medium",
-          "files_affected": []
+          "files_affected": [
+            "apps/gateway/src/config/index.ts",
+            "apps/gateway/src/audit/cleanup.ts",
+            "apps/gateway/src/index.ts",
+            "apps/gateway/package.json"
+          ]
+        },
+        {
+          "id": "s14-feat-004",
+          "category": "api",
+          "priority": "high",
+          "title": "Return body fields in audit detail API",
+          "description": "Update the detail endpoint GET /admin/audit/logs/:requestId to include the 4 new body columns in the SQL SELECT. The list endpoint remains unchanged (no body columns in SELECT).",
+          "acceptance_criteria": [
+            "GET /admin/audit/logs/:requestId returns request_body, response_body, request_body_truncated, response_body_truncated",
+            "GET /admin/audit/logs (list) does NOT return body columns",
+            "AuditStore.getAuditLogById SELECT includes the 4 new columns",
+            "Existing admin audit tests pass"
+          ],
+          "technical_notes": "Only stmtGetByRequestId in AuditStore needs updating. The list query already uses explicit column names so no change needed there.",
+          "status": "pending",
+          "dependencies": ["s14-feat-001"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/gateway/src/db/audit-store.ts",
+            "apps/gateway/src/routes/admin/audit.ts"
+          ]
+        },
+        {
+          "id": "s14-feat-005",
+          "category": "ui",
+          "priority": "high",
+          "title": "Create JSON preview Modal component",
+          "description": "Create a new json-modal.tsx component in pages/audit/ for full-screen JSON preview. Shows request or response body with syntax highlighting, monospace font, scrollable content, copy-to-clipboard button, and close button. Only opens when body is non-null.",
+          "acceptance_criteria": [
+            "json-modal.tsx created in apps/admin/src/pages/audit/",
+            "Modal displays JSON with monospace font and syntax highlighting",
+            "Content is horizontally and vertically scrollable",
+            "Copy-to-clipboard button works",
+            "Close button and overlay click dismiss the modal",
+            "Modal only renders when body content is non-null"
+          ],
+          "technical_notes": "Follow existing Modal/Drawer patterns in the codebase. Use existing shadcn/ui dialog or custom overlay. For syntax highlighting, consider a lightweight approach (CSS classes for JSON keys/strings/numbers) rather than a full library like prism.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/pages/audit/json-modal.tsx"
+          ]
+        },
+        {
+          "id": "s14-feat-006",
+          "category": "ui",
+          "priority": "high",
+          "title": "Add body sections to Detail Drawer",
+          "description": "Update detail-drawer.tsx to show collapsible Request Body and Response Body sections after Injection Score, before Content Hash. Each section has a collapsed state showing endpoint, an expanded state with JSON preview (capped at 2000 chars), truncation warning, and a button to open the full JSON Modal. Handle null body states (expired vs blocked).",
+          "acceptance_criteria": [
+            "Request Body section appears after Injection Score field",
+            "Response Body section appears after Request Body section",
+            "Collapsed state shows endpoint label and '查看完整内容' button",
+            "Expanded state shows JSON preview capped at 2000 chars",
+            "Truncated warning shown when *_truncated === 1: '内容已被截断（超过 128KB）'",
+            "Null body for blocked response: '请求被拦截，无响应内容'",
+            "Null body for expired: '内容已过期清理（超过 7 天保留期）'",
+            "'查看完整内容' button opens JSON Modal",
+            "AuditLogRow type updated with 4 optional body fields in use-audit-logs.ts"
+          ],
+          "technical_notes": "Update AuditLogRow in use-audit-logs.ts to add request_body?, response_body?, request_body_truncated?, response_body_truncated?. Import and use JsonModal from ./json-modal. Follow existing collapsible pattern from PIIDetectedDisplay.",
+          "status": "pending",
+          "dependencies": ["s14-feat-004", "s14-feat-005"],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "apps/admin/src/hooks/use-audit-logs.ts",
+            "apps/admin/src/pages/audit/detail-drawer.tsx"
+          ]
         }
       ]
     }
   ],
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2026-04-19"
+    "last_updated": "2026-04-20"
   }
 }
