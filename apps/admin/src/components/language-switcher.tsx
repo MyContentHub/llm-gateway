@@ -16,7 +16,7 @@ export function LanguageSwitcher() {
       onClick={toggleLanguage}
       className="text-sm font-medium"
     >
-      {i18n.language === "en" ? "EN" : "中文"} / {i18n.language === "en" ? "中文" : "EN"}
+      {i18n.language === "en" ? "EN" : "中文"}
     </Button>
   );
 }
