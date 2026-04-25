@@ -37,22 +37,23 @@
       "id": "sprint-018",
       "name": "Fix Failing Test Cases",
       "goal": "Fix all 25 failing tests across 3 test files so that pnpm test passes with 0 failures",
-      "status": "in_progress",
+      "status": "completed",
       "created_at": "2026-04-25",
+      "completed_at": "2026-04-26",
       "features": [
         {
           "id": "s18-feat-001",
           "category": "data",
           "priority": "high",
           "title": "Fix audit.test.ts — missing migration 002 columns",
-          "description": "All 22 tests in src/routes/admin/audit.test.ts fail because initDb() only runs 001-init.sql but AuditStore references request_body, response_body, request_body_truncated, response_body_truncated columns added by 002-add-audit-body.sql. The test's insertTestLog() creates a new AuditStore(db) which crashes in the constructor at db.prepare() with SqliteError: table audit_logs has no column named request_body. Additionally, the adminAuditPlugin constructor also creates an AuditStore, causing unhandled exceptions on server.ready().",
+          "description": "All 22 tests in src/routes/admin/audit.test.ts fail because initDb() only runs 001-init.sql but AuditStore references request_body, response_body columns added by 002-add-audit-body.sql.",
           "acceptance_criteria": [
             "Given audit.test.ts initDb() is updated, when AuditStore constructor runs, then the INSERT prepared statement succeeds because request_body/response_body columns exist",
             "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run src/routes/admin/audit.test.ts, then all 22 tests pass",
             "Given the fix, when running full pnpm test, then 0 uncaught exceptions appear from audit.test.ts"
           ],
-          "technical_notes": "Change initDb() to use runMigrations() from src/db/migrations.ts (like tests/helpers/setup.ts does), OR manually read and exec 002-add-audit-body.sql after 001-init.sql. Using runMigrations() is preferred as it is future-proof and matches the production code path.",
-          "status": "pending",
+          "technical_notes": "Changed initDb() to use runMigrations() from src/db/migrations.ts instead of manually reading only 001-init.sql.",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -64,13 +65,13 @@
           "category": "infra",
           "priority": "medium",
           "title": "Fix serve-admin.test.ts — hardcoded stale asset filename",
-          "description": "The test 'serves static assets from admin/dist' hardcodes url /admin/assets/index-DY0WZrMU.js but the actual built file is index-B-RKMq1e.js (hash changed after admin rebuild). Test expects 200 but gets 404 because the filename doesn't exist in dist/assets/.",
+          "description": "The test 'serves static assets from admin/dist' hardcoded index-DY0WZrMU.js but the actual hash changes on each build.",
           "acceptance_criteria": [
             "Given the admin app has been built, when serve-admin.test.ts runs the static asset test, then it dynamically discovers the actual index-*.js filename from dist/assets/ and the test returns 200",
             "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run src/plugins/serve-admin.test.ts, then all 4 tests pass"
           ],
-          "technical_notes": "Use readdirSync or glob to find the actual index-*.js file in apps/admin/dist/assets/ at test time, rather than hardcoding the hash. Alternative: test any file that exists in dist/assets/ instead of a specific one.",
-          "status": "pending",
+          "technical_notes": "Used readdirSync to dynamically discover the actual index-*.js file in apps/admin/dist/assets/.",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -82,13 +83,13 @@
           "category": "core",
           "priority": "medium",
           "title": "Fix shutdown.test.ts — race condition in concurrent request test",
-          "description": "The test 'completes multiple concurrent in-flight requests before closing' starts 2 HTTP requests with delays of 20ms and 40ms, waits 10ms, then calls server.close(). The httpRequest() function sends connection: close header, which may cause the server to terminate the connection before the second request (40ms delay) completes. The test expects both requests to return 200 and completed array to equal [1, 2].",
+          "description": "The concurrent request test awaited server.close() before awaiting response promises, causing a race condition.",
           "acceptance_criteria": [
             "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run tests/integration/shutdown.test.ts, then all 6 tests pass",
             "Given the fix, when the concurrent in-flight request test runs, then both requests complete successfully before the server closes"
           ],
-          "technical_notes": "Options: (1) Remove connection: close header from httpRequest in this test to allow keep-alive, (2) Increase the wait time before server.close() to ensure both requests are in-flight, (3) Use a signal mechanism to know when both requests have started before calling close. The connection: close header is the most likely culprit as it signals the server to close the TCP connection after the response.",
-          "status": "pending",
+          "technical_notes": "Fixed ordering: fire server.close() without awaiting, await response promises, then await close promise. Mirrors the pattern in the single-request test.",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [

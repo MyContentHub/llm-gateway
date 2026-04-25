@@ -34,6 +34,38 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 <!-- New sessions should be added above this line -->
 
+## 996 Orchestration - 2026-04-26
+**Agent**: 996 Orchestrator
+**Sprint**: sprint-018 — Fix Failing Test Cases
+**Max Parallelism**: 3
+
+### Execution Summary
+| Feature | Status | Result |
+|---------|--------|--------|
+| s18-feat-001 | completed | Fixed initDb() to use runMigrations() — 23 tests pass |
+| s18-feat-002 | completed | Dynamic asset filename discovery via readdirSync — 4 tests pass |
+| s18-feat-003 | completed | Fixed await ordering in concurrent request test — 6 tests pass |
+
+### Statistics
+- Total features: 3
+- Completed: 3
+- Blocked: 0
+- Success rate: 100%
+
+### Files Changed
+- apps/gateway/src/routes/admin/audit.test.ts — Use runMigrations() instead of manual 001-init.sql read
+- apps/gateway/src/plugins/serve-admin.test.ts — Dynamic index-*.js filename discovery
+- apps/gateway/tests/integration/shutdown.test.ts — Fixed close/response await ordering
+
+### Verification
+- `pnpm typecheck` — passes clean
+- `pnpm test` — **678/678 tests pass** (47 test files)
+
+### Commits
+- fix(test): use runMigrations() in audit.test.ts to apply all migrations (Feature: s18-feat-001)
+- fix(test): dynamically discover admin asset filename in serve-admin.test.ts (Feature: s18-feat-002)
+- fix(test): resolve race condition in shutdown concurrent request test (Feature: s18-feat-003)
+
 ## Sprint Planning - 2026-04-25
 **Agent**: Sprint Agent
 **Sprint**: sprint-018 — Fix Failing Test Cases
