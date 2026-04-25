@@ -5,12 +5,12 @@ RUN apk add --no-cache python3 make g++
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json .npmrc ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 
 COPY apps/gateway/package.json apps/gateway/
 COPY apps/admin/package.json apps/admin/
 
-RUN pnpm install --frozen-lockfile
+RUN echo "node-linker=hoisted" > .npmrc && pnpm install --frozen-lockfile
 
 COPY apps/gateway/ apps/gateway/
 COPY apps/admin/ apps/admin/
