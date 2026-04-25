@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import Fastify from "fastify";
+import { readdirSync } from "node:fs";
+import { resolve } from "node:path";
 import { serveAdminPlugin } from "./serve-admin.js";
 
 describe("serve-admin plugin", () => {
@@ -37,9 +39,13 @@ describe("serve-admin plugin", () => {
   });
 
   it("serves static assets from admin/dist", async () => {
+    const assetsDir = resolve(import.meta.dirname, "../../../admin/dist/assets");
+    const files = readdirSync(assetsDir);
+    const indexJs = files.find((f) => /^index-[^/]+\.js$/.test(f));
+    expect(indexJs).toBeDefined();
     const res = await app.inject({
       method: "GET",
-      url: "/admin/assets/index-DY0WZrMU.js",
+      url: `/admin/assets/${indexJs}`,
     });
     expect(res.statusCode).toBe(200);
   });
