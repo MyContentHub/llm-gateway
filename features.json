@@ -37,7 +37,7 @@
       "id": "sprint-017",
       "name": "Docker Image Build & Local Run",
       "goal": "Fix .dockerignore bugs and build/run the gateway as a Docker container locally",
-      "status": "planning",
+      "status": "completed",
       "created_at": "2026-04-25",
       "features": [
         {
@@ -51,8 +51,8 @@
             "Given .dockerignore is updated, when `docker compose build` runs, then tsc can find tsconfig.json in apps/gateway/ and apps/admin/",
             "Given the fix, when `docker compose build` runs, then the full multi-stage build completes without error"
           ],
-          "technical_notes": "Remove `pnpm-workspace.yaml` line entirely. Change `tsconfig.json` to `/tsconfig.json` so it only excludes a root-level file (which doesn't exist anyway). The `vitest.config.ts` exclusion is harmless but also recursive — change to `/vitest.config.ts` for safety.",
-          "status": "pending",
+          "technical_notes": "Remove `pnpm-workspace.yaml` line entirely. Change `tsconfig.json` to `/tsconfig.json` so it only excludes a root-level file. Also changed `node_modules` to `**/node_modules` for recursive exclusion.",
+          "status": "completed",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
@@ -64,18 +64,20 @@
           "category": "infra",
           "priority": "high",
           "title": "Build Docker image and verify gateway starts",
-          "description": "Run `docker compose build` to build the multi-stage Docker image, then start the container with `docker compose up -d` and verify the gateway is healthy.",
+          "description": "Run `docker compose build` to build the multi-stage Docker image, then start the container with `docker compose up -d` and verify the gateway is healthy. Also required fixing Dockerfile to use node-linker=hoisted for pnpm install.",
           "acceptance_criteria": [
             "Given .dockerignore is fixed, when running `docker compose build`, then image builds successfully",
             "Given the image is built, when running `docker compose up -d`, then the container starts and health check passes",
             "Given the container is running, when hitting `http://localhost:3000/health`, then response is `{\"status\":\"ok\",...}`",
             "Given the container is running, when hitting `http://localhost:3000/admin`, then the admin SPA loads"
           ],
-          "technical_notes": "docker-compose.yml mounts `apps/gateway/config.toml` to `/app/config.toml:ro`. The gateway loads config from CWD which is `/app`, so config.toml in the mount is at the correct path. The admin SPA is built during the Docker build and served by the gateway via serveAdminPlugin at `/admin/`.",
-          "status": "pending",
+          "technical_notes": "Additional fix: Dockerfile builder stage uses `echo \"node-linker=hoisted\" > .npmrc` before pnpm install to ensure flat node_modules compatible with tsc binary resolution. Also configured Docker Hub mirror in ~/.docker/daemon.json for network access.",
+          "status": "completed",
           "dependencies": ["s17-feat-001"],
           "estimated_complexity": "medium",
-          "files_affected": []
+          "files_affected": [
+            "Dockerfile"
+          ]
         }
       ]
     }
