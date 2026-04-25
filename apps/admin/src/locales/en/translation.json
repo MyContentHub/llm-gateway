@@ -4,6 +4,7 @@
     "error": "Error",
     "success": "Success",
     "cancel": "Cancel",
+    "close": "Close",
     "done": "Done"
   },
   "login": {

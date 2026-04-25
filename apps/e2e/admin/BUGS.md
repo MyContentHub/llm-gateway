@@ -2,6 +2,8 @@
 
 Generated from E2E test execution (45/45 passing) and code analysis.
 
+**Status**: All 22 bugs resolved (4 found & fixed during E2E + 11 functional + 4 accessibility + 3 code quality).
+
 ---
 
 ## Bugs Found & Fixed During E2E Testing
@@ -15,35 +17,35 @@ Generated from E2E test execution (45/45 passing) and code analysis.
 
 ---
 
-## Remaining Functional Bugs
+## Functional Bugs — All Resolved
 
-| # | Severity | Location | Bug | Steps to Reproduce | Expected | Actual |
-|---|----------|----------|-----|---------------------|----------|--------|
-| 1 | **High** | `admin/src/lib/api-client.ts:22-25` | `apiClient` hard-redirects on 401 — `window.location.href = "/admin/login"` fires before React error handlers, making login error messages impossible to display | Submit invalid token on login page | "Token invalid" error message shown | Hard redirect to /admin/login, error message never displayed |
-| 2 | **High** | `admin/src/layout/*` (layout components) | Fixed header (h-16, z-30) overlaps page content — "Create Key" button on keys page is partially behind the header, blocking pointer events | Navigate to /admin/keys, try clicking "Create Key" button | Button clickable | Header div intercepts pointer events; must use dispatchEvent workaround |
-| 3 | **Medium** | `overview.tsx:60-63` | Latency delta color direction is inverted | View overview when avg latency increased vs previous period | Higher latency should show red (worse) | Shows green with ↑ arrow (implies improvement) |
-| 4 | **Medium** | `audit.tsx` (handleExport) | CSV export has no error UI — errors are swallowed silently | Trigger export when backend returns error | User sees error toast/message | Spinner disappears, no feedback |
-| 5 | **Medium** | `audit/export.ts:14-30` | Export accumulates ALL rows in memory before generating CSV | Export with thousands of audit logs | Streaming or chunked export | `allRows[]` grows unbounded, may OOM |
-| 6 | **Low** | `keys.tsx:25` | `navigator.clipboard.writeText` not wrapped in try/catch | Use admin on non-HTTPS, non-localhost origin | Graceful error or fallback | Throws `DOMException`, breaks copy flow |
-| 7 | **Low** | `keys/create-dialog.tsx:30-36`, `keys/edit-sheet.tsx:33-37` | Empty rate limit fields send `0` instead of being omitted | Create key, leave RPM/TPM/RPD empty, submit | Rate limits use server defaults | Sends `{rpm:0, tpm:0, rpd:0}`, effectively disabling limits |
-| 8 | **Low** | `components/charts/pie-chart.tsx` | Pie slice and legend colors can mismatch for non-standard status names | View overview with non-standard audit status | Legend dot and pie slice same color | Different colors for unknown statuses |
-| 9 | **Low** | `components/data-table.tsx:87` | Hardcoded empty state text "No keys found" in generic component | Use DataTable for non-key data with no results | Configurable empty message | Always shows "No keys found" |
-| 10 | **Low** | `lib/utils.ts:15-17` | `formatUsd()` has dead code — `if (n < 1)` branch identical to final return | Call `formatUsd(0.5)` | No redundant branches | `if (n < 1)` is dead code |
-| 11 | **Low** | `pages/providers.tsx` | Key health bar width proportional to latency — high-latency keys get wider bars | View providers with varying key latency | Intuitive visualization | Unhealthy high-latency keys get wider bars |
+| # | Severity | Location | Bug | Fix Applied |
+|---|----------|----------|-----|-------------|
+| 1 | **High** | `admin/src/lib/api-client.ts` | `apiClient` hard-redirected on 401 — `window.location.href` fired before React error handlers | Changed to `throw new Error("Unauthorized")`; `QueryErrorHandler` in App.tsx handles SPA navigation to `/login` |
+| 2 | **High** | `admin/src/layout/*` | Fixed header (h-16, z-30) overlapped page content, blocking pointer events | Added `pt-20` (80px) top padding to `<main>` in App.tsx, exceeding header height |
+| 3 | **Medium** | `overview.tsx` | Latency delta color direction inverted — higher latency showed green | Added `invertDelta` prop to `KpiCard`; latency card passes `invertDelta` to swap color semantics |
+| 4 | **Medium** | `audit.tsx` | CSV export had no error UI — errors swallowed silently | Added `exportError`/`exportWarning` state with red/amber alert banners and try/catch in `handleExport` |
+| 5 | **Medium** | `audit/export.ts` | Export accumulated ALL rows in `allRows[]` before generating CSV — potential OOM | Refactored to build CSV incrementally per page using `string[]` parts; old page objects GC'd each iteration |
+| 6 | **Low** | `keys.tsx` | `navigator.clipboard.writeText` not wrapped in try/catch | Wrapped in `try { ... } catch { }` block |
+| 7 | **Low** | `keys/create-dialog.tsx`, `keys/edit-sheet.tsx` | Empty rate limit fields sent `0` instead of being omitted | Added conditional spread: `rpmNum > 0 ? { rpm: rpmNum } : {}` pattern; entire `rateLimits` set to `undefined` when all empty (create) |
+| 8 | **Low** | `components/charts/pie-chart.tsx` | Pie slice and legend colors mismatched for non-standard status names | Both slice `<Cell fill>` and legend `<span style>` now use identical `COLORS[name] ?? DEFAULT_COLORS[index]` expression |
+| 9 | **Low** | `components/data-table.tsx` | Hardcoded empty state text "No keys found" in generic component | Added optional `emptyMessage` prop; falls back to `t("dataTable.empty")` i18n key |
+| 10 | **Low** | `lib/utils.ts` | `formatUsd()` had dead code — `if (n < 1)` branch identical to final return | Changed to `if (n < 0.01 && n > 0) return toFixed(4)` — distinct behavior for micro-costs |
+| 11 | **Low** | `pages/providers.tsx` | Key health bar width proportional to latency — high-latency keys got wider bars | Bar width now derived from health status + consecutive errors; latency displayed as separate text label |
 
-## Accessibility Bugs
+## Accessibility Bugs — All Resolved
 
-| # | Severity | Location | Bug | Steps to Reproduce | Expected | Actual |
-|---|----------|----------|-----|---------------------|----------|--------|
-| 12 | **Medium** | `login.tsx`, `create-dialog.tsx`, `edit-sheet.tsx`, `audit.tsx` | `<label>` elements not associated with inputs via `htmlFor`/`id` | Use screen reader on login form | Input announced with label | Input announced without label association |
-| 13 | **Medium** | All modals/drawers | No focus trap — Tab key navigates to elements behind overlay | Open any dialog, press Tab repeatedly | Focus cycles within dialog | Focus escapes to background elements |
-| 14 | **Medium** | All modals/drawers | Pressing Escape does not close any dialog or drawer | Open any modal, press Escape | Modal/drawer closes | Nothing happens |
-| 15 | **Low** | `login.tsx`, `keys.tsx` | Icon-only buttons missing `aria-label` | Navigate with screen reader | Buttons have accessible names | Buttons announced as unlabeled |
+| # | Severity | Location | Bug | Fix Applied |
+|---|----------|----------|-----|-------------|
+| 12 | **Medium** | `login.tsx`, `create-dialog.tsx`, `edit-sheet.tsx`, `audit.tsx` | `<label>` elements not associated with inputs via `htmlFor`/`id` | All `<label>`/`<input>` pairs now have matching `htmlFor`/`id` attributes |
+| 13 | **Medium** | All modals/drawers | No focus trap — Tab key navigated to elements behind overlay | Added `useFocusTrap` hook; applied to all modals including `json-modal.tsx` |
+| 14 | **Medium** | All modals/drawers | Pressing Escape did not close dialogs | `useFocusTrap` hook handles Escape key; closes all modals including `json-modal.tsx` |
+| 15 | **Low** | `login.tsx`, `keys.tsx`, close buttons in 4 modals | Icon-only buttons missing `aria-label` | Added `aria-label` with i18n key `t("common.close")` to all icon-only buttons including close (X) buttons |
 
-## Code Quality Issues
+## Code Quality Issues — All Resolved
 
-| # | Severity | Location | Issue | Expected | Actual |
-|---|----------|----------|-------|----------|--------|
-| 16 | **Low** | `admin/package.json` | Unused dependencies: `date-fns`, `class-variance-authority` | Only import deps that are used | Listed but never imported |
-| 17 | **Low** | `overview.tsx`, `audit.tsx` | `StatusBadge` component duplicated verbatim | Single shared component | Identical component in two files |
-| 18 | **Low** | `overview.tsx`, `audit.tsx`, `security.tsx`, `detail-drawer.tsx` | `InjectionScoreBar` logic duplicated 4 times | Single shared component | 4 independent implementations |
+| # | Severity | Location | Issue | Fix Applied |
+|---|----------|----------|-------|-------------|
+| 16 | **Low** | `admin/package.json` | Unused dependencies: `date-fns`, `class-variance-authority` | Both now actively imported — `date-fns` in `audit.tsx` and `calendar.tsx`; `class-variance-authority` in `button.tsx` |
+| 17 | **Low** | `overview.tsx`, `audit.tsx` | `StatusBadge` component duplicated verbatim | Extracted to shared `components/status-badge.tsx`; both files import it |
+| 18 | **Low** | `overview.tsx`, `audit.tsx`, `security.tsx`, `detail-drawer.tsx` | `InjectionScoreBar` logic duplicated 4 times | Extracted to shared `components/injection-score-bar.tsx`; all 3 consumers import it |

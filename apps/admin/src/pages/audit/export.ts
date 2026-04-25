@@ -70,7 +70,8 @@ export async function exportAuditCsv(
   const PAGE_SIZE = 200;
   let offset = 0;
   let hasMore = true;
-  const allRows: AuditLogRow[] = [];
+  let totalRows = 0;
+  const parts: string[] = [COLUMNS.join(",") + "\n"];
 
   while (hasMore) {
     const params = new URLSearchParams();
@@ -83,23 +84,29 @@ export async function exportAuditCsv(
       logs: AuditLogRow[];
       total: number;
     }>(`/admin/audit/logs?${params.toString()}`);
-    allRows.push(...res.logs);
+
+    const remaining = MAX_ROWS - totalRows;
+    const pageRows = remaining < res.logs.length
+      ? res.logs.slice(0, remaining)
+      : res.logs;
+
+    if (pageRows.length > 0) {
+      parts.push(pageRows.map(rowToCsv).join("\n"));
+    }
+
+    totalRows += pageRows.length;
     offset += res.logs.length;
-    if (allRows.length >= MAX_ROWS) {
+
+    if (totalRows >= MAX_ROWS) {
       hasMore = false;
     } else if (offset >= res.total || res.logs.length === 0) {
       hasMore = false;
     }
   }
 
-  const truncated = allRows.length >= MAX_ROWS;
-  const rowsToExport = truncated ? allRows.slice(0, MAX_ROWS) : allRows;
+  const truncated = totalRows >= MAX_ROWS;
 
-  const header = COLUMNS.join(",");
-  const rows = rowsToExport.map(rowToCsv).join("\n");
-  const csv = `${header}\n${rows}`;
-
-  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const blob = new Blob(parts, { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;

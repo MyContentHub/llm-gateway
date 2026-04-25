@@ -72,6 +72,7 @@ export function CreateKeyDialog({
           </h2>
           <button
             onClick={() => onOpenChange(false)}
+            aria-label={t("common.close")}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-4 w-4" />

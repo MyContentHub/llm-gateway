@@ -67,6 +67,7 @@ export function EditKeySheet({ open, onOpenChange, virtualKey }: EditSheetProps)
           <h2 className="text-lg font-semibold text-foreground">{t("keys.dialogs.edit.title")}</h2>
           <button
             onClick={() => onOpenChange(false)}
+            aria-label={t("common.close")}
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <X className="h-4 w-4" />

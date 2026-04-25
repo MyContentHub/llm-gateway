@@ -1,6 +1,7 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { X, Copy, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useFocusTrap } from "@/hooks/use-focus-trap";
 
 interface JsonModalProps {
   open: boolean;
@@ -173,6 +174,8 @@ export function JsonModal({ open, onClose, title, content }: JsonModalProps) {
   const { t } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [wrap, setWrap] = useState(false);
+  const modalRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(modalRef, open, onClose);
 
   const parsed = content ? tryParseJson(content) : null;
   const isJson = parsed !== null;
@@ -190,7 +193,7 @@ export function JsonModal({ open, onClose, title, content }: JsonModalProps) {
   return (
     <>
       <div className="fixed inset-0 z-40 bg-black/50" onClick={onClose} />
-      <div className="fixed inset-4 z-50 flex flex-col rounded-lg bg-card shadow-xl border border-border overflow-hidden">
+      <div ref={modalRef} className="fixed inset-4 z-50 flex flex-col rounded-lg bg-card shadow-xl border border-border overflow-hidden">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card shrink-0">
           <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           <div className="flex items-center gap-2">
@@ -220,6 +223,7 @@ export function JsonModal({ open, onClose, title, content }: JsonModalProps) {
             </button>
             <button
               onClick={onClose}
+              aria-label={t("common.close")}
               className="p-1 rounded-md hover:bg-muted text-muted-foreground"
             >
               <X className="h-5 w-5" />

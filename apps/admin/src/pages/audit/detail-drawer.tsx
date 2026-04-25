@@ -249,6 +249,7 @@ export function DetailDrawer({ log, open, onClose }: DetailDrawerProps) {
           <h2 className="text-lg font-semibold text-foreground">{t("audit.detail.title")}</h2>
           <button
             onClick={onClose}
+            aria-label={t("common.close")}
             className="p-1 rounded-md hover:bg-muted text-muted-foreground"
           >
             <X className="h-5 w-5" />
