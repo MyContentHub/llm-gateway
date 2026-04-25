@@ -25,8 +25,8 @@ port = 3000
 host = "0.0.0.0"
 log_level = "info"
 database_path = "./data/gateway.db"
-encryption_key = "4c6ea943237382acc9c683b9cdb11a9f"
-admin_token = "59e8947bd748122624f950f16f8859ff"
+encryption_key = "your-32-char-hex-key"
+admin_token = "your-secure-admin-token"
 default_rpm = 60
 default_tpm = 100000
 default_rpd = 1000
@@ -197,8 +197,8 @@ port = 3000
 host = "0.0.0.0"
 log_level = "info"
 database_path = "./data/gateway.db"
-encryption_key = "4c6ea943237382acc9c683b9cdb11a9f"
-admin_token = "59e8947bd748122624f950f16f8859ff"
+encryption_key = "your-32-char-hex-key"
+admin_token = "your-secure-admin-token"
 
 # 默认速率限制
 default_rpm = 60
