@@ -1,7 +1,7 @@
 {
   "project": {
     "name": "LLM Gateway",
-    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "description": "LLM API security proxy gateway — intercepts, scans, and audits all OpenAI-compatible API requests",
     "tech_stack": [
       "Node.js 22+ (LTS)",
       "Fastify 5",
@@ -31,9 +31,98 @@
     ],
     "created_at": "2025-01-15"
   },
-  "sprints": [],
+  "sprints": [
+    {
+      "id": "sprint-016",
+      "name": "Admin Dashboard Remaining Bug Fixes",
+      "goal": "Fix 4 remaining bugs from BUGS.md audit: CSV export memory issue (Bug 5), json-modal focus trap (Bug 13/14), and missing aria-labels on close buttons (Bug 15)",
+      "status": "planning",
+      "created_at": "2026-04-25",
+      "features": [
+        {
+          "id": "s16-feat-001",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Stream CSV export to avoid unbounded memory accumulation",
+          "description": "Bug 5: audit/export.ts accumulates ALL rows in `allRows[]` array before generating CSV string, potentially causing OOM with large datasets. Refactor to use streaming/incremental CSV generation instead of materializing entire dataset in memory.",
+          "acceptance_criteria": [
+            "Given a user exports audit logs, when there are thousands of rows, then memory usage stays bounded",
+            "Given a user exports audit logs, when the export completes, then the CSV file is correctly generated with all rows",
+            "Given a user exports audit logs, when the export is truncated at MAX_ROWS, then truncation warning still displays correctly"
+          ],
+          "technical_notes": "Consider building CSV string incrementally per page (append rows to a growing string or use Blob parts array), avoiding holding both the full object array AND the full CSV string simultaneously. Keep the MAX_ROWS truncation limit and warning UI.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "medium",
+          "files_affected": [
+            "apps/admin/src/pages/audit/export.ts"
+          ]
+        },
+        {
+          "id": "s16-feat-002",
+          "category": "ui",
+          "priority": "medium",
+          "title": "Add focus trap and Escape handler to json-modal.tsx",
+          "description": "Bug 13/14: json-modal.tsx (full-screen JSON viewer) is the only remaining modal without focus trap and Escape key support. Tab key escapes to background elements and Escape does not close it.",
+          "acceptance_criteria": [
+            "Given the JSON modal is open, when user presses Tab, then focus cycles within the modal only",
+            "Given the JSON modal is open, when user presses Escape, then the modal closes",
+            "Given the JSON modal is open, when it opens, then focus moves to the first focusable element inside the modal"
+          ],
+          "technical_notes": "Use existing `useFocusTrap` hook from `apps/admin/src/hooks/use-focus-trap.ts` — already used by all other modals (create-dialog, edit-sheet, key-display-dialog, revoke-dialog, detail-drawer). Follow the same pattern: pass a ref and onClose callback.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/pages/audit/json-modal.tsx"
+          ]
+        },
+        {
+          "id": "s16-feat-003",
+          "category": "ui",
+          "priority": "low",
+          "title": "Add aria-label to all icon-only close buttons",
+          "description": "Bug 15 (partial): Close (X) buttons in 4 modal/drawer components contain only an `<X>` icon with no `aria-label`, making them inaccessible to screen readers. Affected files: create-dialog.tsx, edit-sheet.tsx, detail-drawer.tsx, json-modal.tsx.",
+          "acceptance_criteria": [
+            "Given a screen reader user encounters a close button, when the button is announced, then it reads a descriptive label like 'Close'",
+            "Given any modal/drawer with a close button, when inspected, then the <button> element has an aria-label attribute"
+          ],
+          "technical_notes": "Use i18n translation key for the aria-label (e.g., `t('common.close')`). Add the translation to both en and zh-CN locale files. Affected files: create-dialog.tsx (~line 74), edit-sheet.tsx (~line 69), detail-drawer.tsx (~line 251), json-modal.tsx (~line 222).",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/admin/src/pages/keys/create-dialog.tsx",
+            "apps/admin/src/pages/keys/edit-sheet.tsx",
+            "apps/admin/src/pages/audit/detail-drawer.tsx",
+            "apps/admin/src/pages/audit/json-modal.tsx",
+            "apps/admin/src/locales/en/translation.json",
+            "apps/admin/src/locales/zh-CN/translation.json"
+          ]
+        },
+        {
+          "id": "s16-feat-004",
+          "category": "infra",
+          "priority": "low",
+          "title": "Update BUGS.md to reflect current fix status",
+          "description": "After all bugs are fixed, update BUGS.md to mark all remaining bugs as fixed and add fix descriptions, so the bug tracking document is accurate.",
+          "acceptance_criteria": [
+            "Given BUGS.md is read, when checking each bug, then all 18 bugs show correct fix status",
+            "Given BUGS.md is read, when checking the remaining bugs table, then no bugs remain unfixed"
+          ],
+          "technical_notes": "Move all remaining bugs (5, 13, 14, 15) to the 'Bugs Found & Fixed' section with fix descriptions. Update any summary text.",
+          "status": "pending",
+          "dependencies": ["s16-feat-001", "s16-feat-002", "s16-feat-003"],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/e2e/admin/BUGS.md"
+          ]
+        }
+      ]
+    }
+  ],
   "metadata": {
     "version": "1.0.0",
-    "last_updated": "2026-04-20"
+    "last_updated": "2026-04-25"
   }
 }

@@ -32,6 +32,47 @@ This file tracks the progress of all agent sessions. Each session should add an 
 
 ## Sessions
 
+## Sprint Planning - 2026-04-25
+**Agent**: Sprint Agent
+**Sprint**: sprint-016 - Admin Dashboard Remaining Bug Fixes
+
+### Requirements Received
+- Check all bugs in apps/e2e/admin/BUGS.md to determine which are fixed vs still present
+- Create a fix plan for remaining unfixed bugs
+
+### Bug Audit Results
+- **18 total bugs** listed in BUGS.md
+- **14 bugs FIXED**: #1, #2, #3, #4, #6, #7, #8, #9, #10, #11, #12, #16, #17, #18
+- **4 bugs remaining**: #5 (medium), #13 (medium, partial), #14 (medium, partial), #15 (low, partial)
+
+### Remaining Bugs Detail
+| Bug | Severity | Description | Status |
+|-----|----------|-------------|--------|
+| #5 | Medium | CSV export accumulates ALL rows in memory (`allRows[]`) before generating — may OOM with large datasets | Still present |
+| #13 | Medium | `json-modal.tsx` missing focus trap — Tab escapes to background | Mostly fixed (all others fixed) |
+| #14 | Medium | `json-modal.tsx` missing Escape handler — pressing Escape does nothing | Mostly fixed (all others fixed) |
+| #15 | Low | Close (X) buttons in 4 modals/drawers missing `aria-label` | Partially fixed (login/keys fixed, 4 close buttons still missing) |
+
+### Features Planned
+- Total: 4 features
+- Medium priority: 2 (s16-feat-001, s16-feat-002)
+- Low priority: 2 (s16-feat-003, s16-feat-004)
+
+### Sprint Goal
+Fix all 4 remaining admin dashboard bugs (CSV memory, json-modal accessibility, close button aria-labels) and update BUGS.md to reflect completion.
+
+### Implementation Order
+1. s16-feat-001 - Stream CSV export to avoid unbounded memory (medium) — no deps
+2. s16-feat-002 - Add focus trap + Escape to json-modal.tsx (medium) — no deps
+3. s16-feat-003 - Add aria-label to icon-only close buttons (low) — no deps
+4. s16-feat-004 - Update BUGS.md with final fix status (low) — depends on 001, 002, 003
+
+### Notes
+- Features 001, 002, 003 are independent and can run in parallel
+- Feature 004 depends on all others being complete
+- Bugs 13 and 14 are both fixed by the same change (adding useFocusTrap to json-modal.tsx)
+- After this sprint, all 18 bugs in BUGS.md will be resolved
+
 <!-- New sessions should be added above this line -->
 
 ## 996 Orchestration - 2026-04-20
