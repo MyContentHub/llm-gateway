@@ -34,49 +34,65 @@
   },
   "sprints": [
     {
-      "id": "sprint-017",
-      "name": "Docker Image Build & Local Run",
-      "goal": "Fix .dockerignore bugs and build/run the gateway as a Docker container locally",
-      "status": "completed",
+      "id": "sprint-018",
+      "name": "Fix Failing Test Cases",
+      "goal": "Fix all 25 failing tests across 3 test files so that pnpm test passes with 0 failures",
+      "status": "in_progress",
       "created_at": "2026-04-25",
       "features": [
         {
-          "id": "s17-feat-001",
-          "category": "infra",
+          "id": "s18-feat-001",
+          "category": "data",
           "priority": "high",
-          "title": "Fix .dockerignore to allow Docker build to succeed",
-          "description": ".dockerignore has two recursive exclusion patterns that break the Docker build: (1) `pnpm-workspace.yaml` is excluded but Dockerfile COPY commands need it for pnpm install, (2) `tsconfig.json` is excluded and the recursive match removes `apps/gateway/tsconfig.json` and `apps/admin/tsconfig.json` which tsc and vite need during build.",
+          "title": "Fix audit.test.ts — missing migration 002 columns",
+          "description": "All 22 tests in src/routes/admin/audit.test.ts fail because initDb() only runs 001-init.sql but AuditStore references request_body, response_body, request_body_truncated, response_body_truncated columns added by 002-add-audit-body.sql. The test's insertTestLog() creates a new AuditStore(db) which crashes in the constructor at db.prepare() with SqliteError: table audit_logs has no column named request_body. Additionally, the adminAuditPlugin constructor also creates an AuditStore, causing unhandled exceptions on server.ready().",
           "acceptance_criteria": [
-            "Given .dockerignore is updated, when `docker compose build` runs, then pnpm install succeeds (pnpm-workspace.yaml is available in build context)",
-            "Given .dockerignore is updated, when `docker compose build` runs, then tsc can find tsconfig.json in apps/gateway/ and apps/admin/",
-            "Given the fix, when `docker compose build` runs, then the full multi-stage build completes without error"
+            "Given audit.test.ts initDb() is updated, when AuditStore constructor runs, then the INSERT prepared statement succeeds because request_body/response_body columns exist",
+            "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run src/routes/admin/audit.test.ts, then all 22 tests pass",
+            "Given the fix, when running full pnpm test, then 0 uncaught exceptions appear from audit.test.ts"
           ],
-          "technical_notes": "Remove `pnpm-workspace.yaml` line entirely. Change `tsconfig.json` to `/tsconfig.json` so it only excludes a root-level file. Also changed `node_modules` to `**/node_modules` for recursive exclusion.",
-          "status": "completed",
+          "technical_notes": "Change initDb() to use runMigrations() from src/db/migrations.ts (like tests/helpers/setup.ts does), OR manually read and exec 002-add-audit-body.sql after 001-init.sql. Using runMigrations() is preferred as it is future-proof and matches the production code path.",
+          "status": "pending",
           "dependencies": [],
           "estimated_complexity": "small",
           "files_affected": [
-            ".dockerignore"
+            "apps/gateway/src/routes/admin/audit.test.ts"
           ]
         },
         {
-          "id": "s17-feat-002",
+          "id": "s18-feat-002",
           "category": "infra",
-          "priority": "high",
-          "title": "Build Docker image and verify gateway starts",
-          "description": "Run `docker compose build` to build the multi-stage Docker image, then start the container with `docker compose up -d` and verify the gateway is healthy. Also required fixing Dockerfile to use node-linker=hoisted for pnpm install.",
+          "priority": "medium",
+          "title": "Fix serve-admin.test.ts — hardcoded stale asset filename",
+          "description": "The test 'serves static assets from admin/dist' hardcodes url /admin/assets/index-DY0WZrMU.js but the actual built file is index-B-RKMq1e.js (hash changed after admin rebuild). Test expects 200 but gets 404 because the filename doesn't exist in dist/assets/.",
           "acceptance_criteria": [
-            "Given .dockerignore is fixed, when running `docker compose build`, then image builds successfully",
-            "Given the image is built, when running `docker compose up -d`, then the container starts and health check passes",
-            "Given the container is running, when hitting `http://localhost:3000/health`, then response is `{\"status\":\"ok\",...}`",
-            "Given the container is running, when hitting `http://localhost:3000/admin`, then the admin SPA loads"
+            "Given the admin app has been built, when serve-admin.test.ts runs the static asset test, then it dynamically discovers the actual index-*.js filename from dist/assets/ and the test returns 200",
+            "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run src/plugins/serve-admin.test.ts, then all 4 tests pass"
           ],
-          "technical_notes": "Additional fix: Dockerfile builder stage uses `echo \"node-linker=hoisted\" > .npmrc` before pnpm install to ensure flat node_modules compatible with tsc binary resolution. Also configured Docker Hub mirror in ~/.docker/daemon.json for network access.",
-          "status": "completed",
-          "dependencies": ["s17-feat-001"],
-          "estimated_complexity": "medium",
+          "technical_notes": "Use readdirSync or glob to find the actual index-*.js file in apps/admin/dist/assets/ at test time, rather than hardcoding the hash. Alternative: test any file that exists in dist/assets/ instead of a specific one.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
           "files_affected": [
-            "Dockerfile"
+            "apps/gateway/src/plugins/serve-admin.test.ts"
+          ]
+        },
+        {
+          "id": "s18-feat-003",
+          "category": "core",
+          "priority": "medium",
+          "title": "Fix shutdown.test.ts — race condition in concurrent request test",
+          "description": "The test 'completes multiple concurrent in-flight requests before closing' starts 2 HTTP requests with delays of 20ms and 40ms, waits 10ms, then calls server.close(). The httpRequest() function sends connection: close header, which may cause the server to terminate the connection before the second request (40ms delay) completes. The test expects both requests to return 200 and completed array to equal [1, 2].",
+          "acceptance_criteria": [
+            "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run tests/integration/shutdown.test.ts, then all 6 tests pass",
+            "Given the fix, when the concurrent in-flight request test runs, then both requests complete successfully before the server closes"
+          ],
+          "technical_notes": "Options: (1) Remove connection: close header from httpRequest in this test to allow keep-alive, (2) Increase the wait time before server.close() to ensure both requests are in-flight, (3) Use a signal mechanism to know when both requests have started before calling close. The connection: close header is the most likely culprit as it signals the server to close the TCP connection after the response.",
+          "status": "pending",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/gateway/tests/integration/shutdown.test.ts"
           ]
         }
       ]
