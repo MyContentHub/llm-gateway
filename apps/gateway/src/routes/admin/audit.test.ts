@@ -1,19 +1,18 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import Fastify from "fastify";
 import Database from "better-sqlite3";
-import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { adminAuditPlugin } from "./audit.js";
 import "../../types.js";
 import type { AppConfig } from "../../config/index.js";
 import { DEFAULT_SECURITY_CONFIG } from "../../config/index.js";
 import { AuditStore } from "../../db/audit-store.js";
+import { runMigrations } from "../../db/migrations.js";
 
 const ADMIN_TOKEN = "test-admin-token";
 
 function initDb(db: Database.Database): void {
-  const sql = readFileSync(resolve(import.meta.dirname, "../../../migrations/001-init.sql"), "utf-8");
-  db.exec(sql);
+  runMigrations(db, resolve(import.meta.dirname, "../../../migrations"));
 }
 
 function createServer(): Fastify.FastifyInstance {

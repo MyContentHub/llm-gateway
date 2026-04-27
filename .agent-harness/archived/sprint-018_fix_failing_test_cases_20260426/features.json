@@ -1,0 +1,106 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway — intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser",
+      "@fastify/swagger",
+      "@fastify/swagger-ui",
+      "zod-to-json-schema",
+      "React 18",
+      "Vite 5",
+      "Tailwind CSS 3",
+      "shadcn/ui",
+      "@tanstack/react-query v5",
+      "@tanstack/react-table v8",
+      "recharts 2",
+      "react-router-dom v6",
+      "@playwright/test",
+      "Turborepo",
+      "pnpm 10 (workspaces)",
+      "Docker"
+    ],
+    "created_at": "2025-01-15"
+  },
+  "sprints": [
+    {
+      "id": "sprint-018",
+      "name": "Fix Failing Test Cases",
+      "goal": "Fix all 25 failing tests across 3 test files so that pnpm test passes with 0 failures",
+      "status": "completed",
+      "created_at": "2026-04-25",
+      "completed_at": "2026-04-26",
+      "features": [
+        {
+          "id": "s18-feat-001",
+          "category": "data",
+          "priority": "high",
+          "title": "Fix audit.test.ts — missing migration 002 columns",
+          "description": "All 22 tests in src/routes/admin/audit.test.ts fail because initDb() only runs 001-init.sql but AuditStore references request_body, response_body columns added by 002-add-audit-body.sql.",
+          "acceptance_criteria": [
+            "Given audit.test.ts initDb() is updated, when AuditStore constructor runs, then the INSERT prepared statement succeeds because request_body/response_body columns exist",
+            "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run src/routes/admin/audit.test.ts, then all 22 tests pass",
+            "Given the fix, when running full pnpm test, then 0 uncaught exceptions appear from audit.test.ts"
+          ],
+          "technical_notes": "Changed initDb() to use runMigrations() from src/db/migrations.ts instead of manually reading only 001-init.sql.",
+          "status": "completed",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/gateway/src/routes/admin/audit.test.ts"
+          ]
+        },
+        {
+          "id": "s18-feat-002",
+          "category": "infra",
+          "priority": "medium",
+          "title": "Fix serve-admin.test.ts — hardcoded stale asset filename",
+          "description": "The test 'serves static assets from admin/dist' hardcoded index-DY0WZrMU.js but the actual hash changes on each build.",
+          "acceptance_criteria": [
+            "Given the admin app has been built, when serve-admin.test.ts runs the static asset test, then it dynamically discovers the actual index-*.js filename from dist/assets/ and the test returns 200",
+            "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run src/plugins/serve-admin.test.ts, then all 4 tests pass"
+          ],
+          "technical_notes": "Used readdirSync to dynamically discover the actual index-*.js file in apps/admin/dist/assets/.",
+          "status": "completed",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/gateway/src/plugins/serve-admin.test.ts"
+          ]
+        },
+        {
+          "id": "s18-feat-003",
+          "category": "core",
+          "priority": "medium",
+          "title": "Fix shutdown.test.ts — race condition in concurrent request test",
+          "description": "The concurrent request test awaited server.close() before awaiting response promises, causing a race condition.",
+          "acceptance_criteria": [
+            "Given the fix, when running pnpm --filter @llm-gateway/gateway vitest run tests/integration/shutdown.test.ts, then all 6 tests pass",
+            "Given the fix, when the concurrent in-flight request test runs, then both requests complete successfully before the server closes"
+          ],
+          "technical_notes": "Fixed ordering: fire server.close() without awaiting, await response promises, then await close promise. Mirrors the pattern in the single-request test.",
+          "status": "completed",
+          "dependencies": [],
+          "estimated_complexity": "small",
+          "files_affected": [
+            "apps/gateway/tests/integration/shutdown.test.ts"
+          ]
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "version": "1.0.0",
+    "last_updated": "2026-04-25"
+  }
+}

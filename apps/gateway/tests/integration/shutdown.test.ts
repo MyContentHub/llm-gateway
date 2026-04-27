@@ -78,11 +78,12 @@ describe("Graceful Shutdown Integration", () => {
     ];
 
     await new Promise((resolve) => setTimeout(resolve, 10));
-    await server.close();
+    const closePromise = server.close();
 
     const results = await Promise.all(promises);
     for (const r of results) expect(r.statusCode).toBe(200);
     expect(completed.sort()).toEqual([1, 2]);
+    await closePromise;
   });
 
   it("rejects new connections after server.close()", async () => {

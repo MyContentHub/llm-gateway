@@ -1,0 +1,89 @@
+{
+  "project": {
+    "name": "LLM Gateway",
+    "description": "LLM API security proxy gateway \u2014 intercepts, scans, and audits all OpenAI-compatible API requests",
+    "tech_stack": [
+      "Node.js 22+ (LTS)",
+      "Fastify 5",
+      "TypeScript 5 (strict)",
+      "better-sqlite3",
+      "vitest",
+      "zod",
+      "pino",
+      "prom-client",
+      "compromise",
+      "js-tiktoken",
+      "eventsource-parser",
+      "@fastify/swagger",
+      "@fastify/swagger-ui",
+      "zod-to-json-schema",
+      "React 18",
+      "Vite 5",
+      "Tailwind CSS 3",
+      "shadcn/ui",
+      "@tanstack/react-query v5",
+      "@tanstack/react-table v8",
+      "recharts 2",
+      "react-router-dom v6",
+      "@playwright/test",
+      "Turborepo",
+      "pnpm 10 (workspaces)",
+      "Docker"
+    ],
+    "created_at": "2025-01-15"
+  },
+  "archived_sprint": {
+    "id": "sprint-017",
+    "name": "Docker Image Build & Local Run",
+    "goal": "Fix .dockerignore bugs and build/run the gateway as a Docker container locally",
+    "status": "completed",
+    "created_at": "2026-04-25",
+    "features": [
+      {
+        "id": "s17-feat-001",
+        "category": "infra",
+        "priority": "high",
+        "title": "Fix .dockerignore to allow Docker build to succeed",
+        "description": ".dockerignore has two recursive exclusion patterns that break the Docker build: (1) `pnpm-workspace.yaml` is excluded but Dockerfile COPY commands need it for pnpm install, (2) `tsconfig.json` is excluded and the recursive match removes `apps/gateway/tsconfig.json` and `apps/admin/tsconfig.json` which tsc and vite need during build.",
+        "acceptance_criteria": [
+          "Given .dockerignore is updated, when `docker compose build` runs, then pnpm install succeeds (pnpm-workspace.yaml is available in build context)",
+          "Given .dockerignore is updated, when `docker compose build` runs, then tsc can find tsconfig.json in apps/gateway/ and apps/admin/",
+          "Given the fix, when `docker compose build` runs, then the full multi-stage build completes without error"
+        ],
+        "technical_notes": "Remove `pnpm-workspace.yaml` line entirely. Change `tsconfig.json` to `/tsconfig.json` so it only excludes a root-level file. Also changed `node_modules` to `**/node_modules` for recursive exclusion.",
+        "status": "completed",
+        "dependencies": [],
+        "estimated_complexity": "small",
+        "files_affected": [
+          ".dockerignore"
+        ]
+      },
+      {
+        "id": "s17-feat-002",
+        "category": "infra",
+        "priority": "high",
+        "title": "Build Docker image and verify gateway starts",
+        "description": "Run `docker compose build` to build the multi-stage Docker image, then start the container with `docker compose up -d` and verify the gateway is healthy. Also required fixing Dockerfile to use node-linker=hoisted for pnpm install.",
+        "acceptance_criteria": [
+          "Given .dockerignore is fixed, when running `docker compose build`, then image builds successfully",
+          "Given the image is built, when running `docker compose up -d`, then the container starts and health check passes",
+          "Given the container is running, when hitting `http://localhost:3000/health`, then response is `{\"status\":\"ok\",...}`",
+          "Given the container is running, when hitting `http://localhost:3000/admin`, then the admin SPA loads"
+        ],
+        "technical_notes": "Additional fix: Dockerfile builder stage uses `echo \"node-linker=hoisted\" > .npmrc` before pnpm install to ensure flat node_modules compatible with tsc binary resolution. Also configured Docker Hub mirror in ~/.docker/daemon.json for network access.",
+        "status": "completed",
+        "dependencies": [
+          "s17-feat-001"
+        ],
+        "estimated_complexity": "medium",
+        "files_affected": [
+          "Dockerfile"
+        ]
+      }
+    ]
+  },
+  "metadata": {
+    "archived_at": "2026-04-25 22:55:33",
+    "original_sprint_id": "sprint-017"
+  }
+}
